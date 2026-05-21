@@ -1,0 +1,91 @@
+.account-detail-content {
+  --padding-top: 16px;
+  --padding-end: 16px;
+  --padding-bottom: 80px;
+  --padding-start: 16px;
+}
+
+.month-selector {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  margin-bottom: 16px;
+}
+
+.month-title {
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--ion-color-dark, #222428);
+  text-align: center;
+  flex: 1;
+}
+
+.account-balance-card {
+  background: white;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--ion-color-step-200, #e5e7eb);
+}
+
+.balance-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 12px;
+}
+
+.balance-label {
+  font-size: 12px;
+  color: var(--ion-color-medium, #92949c);
+  margin-bottom: 4px;
+}
+
+.balance-amount {
+  font-size: 24px;
+  font-weight: 700;
+  display: flex;
+  align-items: flex-end;
+}
+
+.currency-symbol {
+  font-size: 18px;
+  margin-right: 4px;
+}
+
+.balance-amount .negative {
+  color: var(--ion-color-danger, #eb445a);
+}
+
+.balance-details {
+  text-align: right;
+  font-size: 12px;
+  color: var(--ion-color-medium, #92949c);
+}
+
+.chart-container {
+  height: 64px;
+  margin-top: 12px;
+}
+
+.day-header {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ion-color-medium, #92949c);
+  margin: 16px 0 8px 0;
+  padding-left: 8px;
+  border-left: 3px solid var(--ion-color-primary, #3880ff);
+}
+
+.no-transactions {
+  text-align: center;
+  color: var(--ion-color-medium, #92949c);
+  margin-top: 40px;
+  font-size: 14px;
+}
+
+ion-fab {
+  margin-bottom: env(safe-area-inset-bottom, 0px);
+}

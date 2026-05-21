@@ -1,0 +1,69 @@
+<ion-content class="accounts-content">
+  <div class="section">
+    <div class="section-header">
+      <h2>實體帳戶</h2>
+      <ion-button fill="outline" color="primary" size="small" (click)="openEditAccountModal()">
+        <ion-icon name="add"></ion-icon>
+        新增帳戶
+      </ion-button>
+    </div>
+    
+    <div *ngFor="let accountType of ['cash', 'bank', 'credit']" class="account-type-group">
+      <h3 class="account-type-title">
+        {{ accountType === 'cash' ? '現金' : accountType === 'bank' ? '銀行' : '信用卡' }}
+      </h3>
+      <div *ngIf="getAccountsByType(accountType).length > 0" class="accounts-grid">
+        <ion-card 
+          *ngFor="let account of getAccountsByType(accountType)" 
+          button 
+          (click)="viewAccountDetail(account.id)"
+          class="account-card">
+          <ion-card-header>
+            <ion-card-title>{{ account.name }}</ion-card-title>
+            <ion-card-subtitle>{{ account.currency }}</ion-card-subtitle>
+          </ion-card-header>
+          <ion-card-content>
+            <div class="account-balance" [class.negative]="getAccBalance(account.id) < 0">
+              {{ currencies[account.currency].symbol }}{{ getAccBalance(account.id) | number:'1.0-0' }}
+            </div>
+          </ion-card-content>
+        </ion-card>
+      </div>
+      <div *ngIf="getAccountsByType(accountType).length === 0" class="no-accounts">
+        尚無{{ accountType === 'cash' ? '現金' : accountType === 'bank' ? '銀行' : '信用卡' }}帳戶
+      </div>
+    </div>
+  </div>
+
+  <div class="section funds-section">
+    <div class="section-header">
+      <h2>虛擬基金 (目標預算)</h2>
+      <ion-button fill="outline" color="tertiary" size="small" (click)="openEditFundModal()">
+        <ion-icon name="add"></ion-icon>
+        新增基金
+      </ion-button>
+    </div>
+    <p class="funds-description">💡 基金純屬獨立預算，不計入實體總資產。</p>
+    
+    <div *ngIf="getFunds().length > 0" class="funds-grid">
+      <ion-card 
+        *ngFor="let fund of getFunds()" 
+        button 
+        (click)="viewFundDetail(fund.id)"
+        class="fund-card">
+        <ion-card-header>
+          <ion-card-title>{{ fund.name }}</ion-card-title>
+          <ion-card-subtitle>總預算: {{ fund.initAmount | number:'1.0-0' }}</ion-card-subtitle>
+        </ion-card-header>
+        <ion-card-content>
+          <div class="fund-balance">
+            {{ baseCurrencySymbol }}{{ getFundBalance(fund.id) | number:'1.0-0' }}
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </div>
+    <div *ngIf="getFunds().length === 0" class="no-funds">
+      尚無基金
+    </div>
+  </div>
+</ion-content>

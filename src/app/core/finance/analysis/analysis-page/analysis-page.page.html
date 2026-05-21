@@ -1,0 +1,87 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>分析與規劃</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="analysis-content">
+  <ion-segment [(ngModel)]="aiTab" (ionChange)="switchTab(aiTab)">
+    <ion-segment-button value="ai">
+      <ion-label>✨ AI 顧問</ion-label>
+    </ion-segment-button>
+    <ion-segment-button value="plans">
+      <ion-label>未來計畫</ion-label>
+    </ion-segment-button>
+  </ion-segment>
+
+  <div *ngIf="aiTab === 'ai'" class="ai-content">
+    <div *ngIf="!hasAPIKey()" class="api-key-warning">
+      <ion-card>
+        <ion-card-content>
+          <div class="warning-content">
+            <ion-icon name="warning" color="warning"></ion-icon>
+            <p>⚠️ 尚未設定 API Key，目前僅可查看過往分析紀錄。</p>
+            <ion-button routerLink="/settings" fill="outline" color="warning" size="small">
+              前往設定
+            </ion-button>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </div>
+
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>✨ 最新分析建議</ion-card-title>
+        <ion-card-subtitle *ngIf="getLastAITime()">最後分析: {{ getLastAITime() }}</ion-card-subtitle>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-button expand="block" (click)="triggerAIAnalysis()" [disabled]="!hasAPIKey()">
+          <ion-icon name="refresh" slot="start"></ion-icon>
+          重新分析
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-card *ngIf="getAIHistory().length > 0">
+      <ion-card-header>
+        <ion-card-title>過往分析紀錄</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-list>
+          <ion-item *ngFor="let history of getAIHistory().slice(0, 3)" lines="none">
+            <ion-label>
+              <h3>{{ history.date }}</h3>
+              <p>{{ history.text | slice:0:50 }}...</p>
+            </ion-label>
+          </ion-item>
+        </ion-list>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-card *ngIf="getAIHistory().length === 0">
+      <ion-card-content class="no-history">
+        <p>尚無分析紀錄</p>
+        <ion-button expand="block" (click)="triggerAIAnalysis()" [disabled]="!hasAPIKey()">
+          立即產生報告
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <div *ngIf="aiTab === 'plans'" class="plans-content">
+    <ion-card>
+      <ion-card-content class="add-plan-button">
+        <ion-button expand="block" color="primary">
+          <ion-icon name="add" slot="start"></ion-icon>
+          新增未來計畫
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+    
+    <ion-card *ngIf="false">
+      <ion-card-content>
+        <p>尚無未來計畫</p>
+      </ion-card-content>
+    </ion-card>
+  </div>
+</ion-content>

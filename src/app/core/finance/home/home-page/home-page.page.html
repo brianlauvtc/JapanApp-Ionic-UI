@@ -1,0 +1,74 @@
+<ion-content class="home-content">
+  <div class="month-selector">
+    <ion-button fill="clear" (click)="changeMonth(-1)" [disabled]="viewedMonth === today.substring(0, 7)">
+      <ion-icon name="chevron-back"></ion-icon>
+    </ion-button>
+    <h2 class="month-title">{{ formatMonthView() }}</h2>
+    <ion-button fill="clear" (click)="changeMonth(1)" [disabled]="viewedMonth >= today.substring(0, 7)">
+      <ion-icon name="chevron-forward"></ion-icon>
+    </ion-button>
+  </div>
+
+  <div class="net-worth-card">
+    <div class="net-worth-header">
+      <div>
+        <p class="net-worth-label">目前總資產 ({{ baseCurrency }})</p>
+        <div class="net-worth-amount">
+          <span class="currency-symbol">{{ baseCurrencySymbol }}</span>
+          <span>{{ getNetWorth().net | number:'1.0-0' }}</span>
+        </div>
+      </div>
+      <div class="balance-details">
+        <div>月頭: {{ calculateDailyGroupedData().openBal | number:'1.0-0' }}</div>
+        <div>月尾: {{ calculateDailyGroupedData().closeBal | number:'1.0-0' }}</div>
+      </div>
+    </div>
+    <div class="chart-container">
+      <apx-chart
+        [series]="chartSeries"
+        [chart]="chartOptions.chart"
+        [stroke]="chartOptions.stroke"
+        [fill]="chartOptions.fill"
+        [dataLabels]="chartOptions.dataLabels"
+        [markers]="chartOptions.markers"
+        [xaxis]="chartOptions.xaxis"
+        [yaxis]="chartOptions.yaxis"
+        [grid]="chartOptions.grid"
+        [colors]="chartOptions.colors">
+      </apx-chart>
+    </div>
+  </div>
+
+  <div class="summary-row">
+    <div class="summary-item">
+      <span class="summary-label">總支:</span>
+      <span class="summary-value text-danger">{{ calculateDailyGroupedData().totalExp | number:'1.0-0' }}</span>
+    </div>
+    <div class="summary-item">
+      <span class="summary-label">總收:</span>
+      <span class="summary-value text-success">{{ calculateDailyGroupedData().totalInc | number:'1.0-0' }}</span>
+    </div>
+  </div>
+
+  <div class="transactions-list">
+    <div *ngFor="let dayGroup of calculateDailyGroupedData().days" class="day-group">
+      <h4 class="day-header">{{ formatDate(dayGroup.date) }}</h4>
+      <app-transaction-item 
+        *ngFor="let transaction of dayGroup.txns" 
+        [transaction]="transaction" 
+        context="home"
+        (editTransaction)="editTransaction($event)">
+      </app-transaction-item>
+    </div>
+    
+    <div *ngIf="calculateDailyGroupedData().days.length === 0" class="no-transactions">
+      此月無紀錄
+    </div>
+  </div>
+</ion-content>
+
+<ion-fab vertical="bottom" horizontal="end" slot="fixed">
+  <ion-fab-button (click)="openAddForm()">
+    <ion-icon name="add"></ion-icon>
+  </ion-fab-button>
+</ion-fab>

@@ -1,0 +1,71 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>設定</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="settings-content">
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>系統與 AI 設定</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <form [formGroup]="settingsForm">
+        <ion-item>
+          <ion-label position="stacked">Gemini API Key</ion-label>
+          <ion-input 
+            formControlName="apiKey" 
+            type="password" 
+            placeholder="輸入 API 金鑰以解鎖 AI">
+          </ion-input>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="stacked">預設基礎貨幣</ion-label>
+          <ion-select formControlName="baseCurrency" interface="popover">
+            <ion-select-option value="HKD">HKD</ion-select-option>
+            <ion-select-option value="JPY">JPY</ion-select-option>
+          </ion-select>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="stacked">自動 AI 分析頻率</ion-label>
+          <ion-select formControlName="aiFrequency" interface="popover">
+            <ion-select-option 
+              *ngFor="let option of aiFrequencyOptions" 
+              [value]="option.value">
+              {{ option.label }}
+            </ion-select-option>
+          </ion-select>
+          <ion-note>控制 AI 讀取資料的頻率，以節省 API 配額。</ion-note>
+        </ion-item>
+
+        <ion-item>
+          <ion-label>AI 讀取過往建議 (加強連貫性)</ion-label>
+          <ion-toggle formControlName="enableAIHistory" slot="end"></ion-toggle>
+        </ion-item>
+      </form>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-card class="danger-zone">
+    <ion-card-header>
+      <ion-card-title class="danger-title">危險區域</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-button expand="block" color="danger" (click)="clearAllData()">
+        清空所有紀錄與帳戶
+      </ion-button>
+    </ion-card-content>
+  </ion-card>
+</ion-content>
+
+<ion-footer>
+  <ion-toolbar>
+    <ion-buttons slot="primary">
+      <ion-button expand="block" (click)="saveSettings()" color="primary">
+        儲存設定
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-footer>
