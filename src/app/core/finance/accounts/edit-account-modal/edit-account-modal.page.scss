@@ -1,0 +1,13 @@
+ion-item {
+  --padding-start: 0;
+  margin-bottom: 16px;
+}
+
+ion-input, ion-select {
+  --padding-start: 0;
+}
+
+ion-prefix {
+  font-size: 18px;
+  font-weight: bold;
+}

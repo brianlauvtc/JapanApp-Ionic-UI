@@ -1,0 +1,80 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>{{ isEditMode ? '編輯基金' : '新增基金' }}</ion-title>
+    <ion-buttons slot="start">
+      <ion-button (click)="cancel()">
+        <ion-icon name="close"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-buttons slot="end">
+      <ion-button (click)="saveFund()" [disabled]="fundForm.invalid">
+        <ion-icon name="checkmark"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <form [formGroup]="fundForm">
+    <ion-item>
+      <ion-label position="stacked">基金名稱 *</ion-label>
+      <ion-input formControlName="name" placeholder="輸入基金名稱"></ion-input>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="stacked">總預算金額 *</ion-label>
+      <ion-input 
+        type="number" 
+        formControlName="initAmount" 
+        placeholder="0"
+        [step]="'any'">
+        <ion-prefix>{{ getCurrencySymbol(fundForm.get('currency')?.value) }}</ion-prefix>
+      </ion-input>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="stacked">貨幣</ion-label>
+      <ion-select formControlName="currency" interface="action-sheet">
+        <ion-select-option *ngFor="let currency of currencies | keyvalue" [value]="currency.key">
+          {{ currency.value.name }} ({{ currency.value.symbol }})
+        </ion-select-option>
+      </ion-select>
+    </ion-item>
+
+    <ion-item lines="none">
+      <ion-label>每日限額</ion-label>
+      <ion-checkbox formControlName="hasDaily" (ionChange)="onHasDailyChange()"></ion-checkbox>
+    </ion-item>
+
+    <div *ngIf="fundForm.get('hasDaily')?.value" class="daily-limit-section">
+      <ion-item>
+        <ion-label position="stacked">每日限額</ion-label>
+        <ion-input 
+          type="number" 
+          formControlName="dailyLimit" 
+          placeholder="0"
+          [step]="'any'">
+          <ion-prefix>{{ getCurrencySymbol(fundForm.get('currency')?.value) }}</ion-prefix>
+        </ion-input>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="stacked">未用額度處理方式</ion-label>
+        <ion-select formControlName="unspentAction" interface="action-sheet" (ionChange)="onUnspentActionChange()">
+          <ion-select-option *ngFor="let action of unspentActions" [value]="action.value">
+            {{ action.label }}
+          </ion-select-option>
+        </ion-select>
+      </ion-item>
+
+      <ion-item *ngIf="fundForm.get('unspentAction')?.value === 'transfer'">
+        <ion-label position="stacked">轉移目標基金</ion-label>
+        <ion-select formControlName="transferTargetId" interface="action-sheet">
+          <ion-select-option *ngFor="let fund of getTransferTargetFunds()" [value]="fund.id">
+            {{ fund.name }}
+          </ion-select-option>
+        </ion-select>
+      </ion-item>
+    </div>
+  </form>
+</ion-content>

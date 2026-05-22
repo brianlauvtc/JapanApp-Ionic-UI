@@ -7,6 +7,7 @@ import { ApexOptions } from 'ng-apexcharts';
 import moment from 'moment';
 import { currencies } from '../../environment/environment';
 import { AddTransactionPagePage } from '../../add-transaction/add-transaction-page/add-transaction-page.page';
+import { EditFundModalPage } from '../edit-fund-modal/edit-fund-modal.page';
 
 @Component({
   selector: 'app-fund-detail',
@@ -179,8 +180,19 @@ export class FundDetailPage implements OnInit {
     }
   }
 
-  editFund() {
-    console.log('Edit fund:', this.fundId);
+  async editFund() {
+    const modal = await this.modalController.create({
+      component: 'app-edit-fund-modal',
+      componentProps: {
+        fundId: this.fundId
+      }
+    });
+    await modal.present();
+    const { data } = await modal.onWillDismiss();
+    if (data?.success) {
+      // Fund updated successfully
+      this.renderFundDetail();
+    }
   }
 
   goBack() {

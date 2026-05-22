@@ -1,8 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { ModalController } from '@ionic/angular';
 import { FinanceVarService } from '../../service/finance-var.service';
 import { FinanceService } from '../../service/finance.service';
 import { currencies } from '../../environment/environment';
+import { EditAccountModalPage } from '../edit-account-modal/edit-account-modal.page';
+import { EditFundModalPage } from '../edit-fund-modal/edit-fund-modal.page';
 
 @Component({
   selector: 'app-accounts-list',
@@ -17,7 +20,8 @@ export class AccountsListPage implements OnInit {
   constructor(
     private financeVar: FinanceVarService,
     private financeService: FinanceService,
-    private router: Router
+    private router: Router,
+    private modalController: ModalController
   ) {}
 
   ngOnInit() {
@@ -43,14 +47,28 @@ export class AccountsListPage implements OnInit {
     this.router.navigate(['/fund-detail', fundId]);
   }
 
-  openEditAccountModal() {
-    // This will be implemented with Ionic modal later
-    console.log('Open add account modal');
+  async openEditAccountModal() {
+    const modal = await this.modalController.create({
+      component: EditAccountModalPage,
+      componentProps: {}
+    });
+    await modal.present();
+    const { data } = await modal.onWillDismiss();
+    if (data?.success) {
+      // Account created/updated successfully
+    }
   }
 
-  openEditFundModal() {
-    // This will be implemented with Ionic modal later
-    console.log('Open add fund modal');
+  async openEditFundModal() {
+    const modal = await this.modalController.create({
+      component: EditFundModalPage,
+      componentProps: {}
+    });
+    await modal.present();
+    const { data } = await modal.onWillDismiss();
+    if (data?.success) {
+      // Fund created/updated successfully
+    }
   }
 
   getFunds() {

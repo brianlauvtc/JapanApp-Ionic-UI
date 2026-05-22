@@ -5,6 +5,7 @@ import { FundDetailPage } from './fund-detail/fund-detail.page';
 import { FundDetailRoutingModule } from './fund-detail-routing.module';
 import { SharedComponentsModule } from '../../../shared/components/shared-components.module';
 import { NgApexchartsModule } from 'ng-apexcharts';
+import { EditFundModalPageModule } from './edit-fund-modal/edit-fund-modal.module';
 
 @NgModule({
   imports: [
@@ -12,7 +13,8 @@ import { NgApexchartsModule } from 'ng-apexcharts';
     IonicModule,
     FundDetailRoutingModule,
     SharedComponentsModule,
-    NgApexchartsModule
+    NgApexchartsModule,
+    EditFundModalPageModule
   ],
   declarations: [FundDetailPage]
 })

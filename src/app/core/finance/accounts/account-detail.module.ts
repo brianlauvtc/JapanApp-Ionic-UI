@@ -5,6 +5,7 @@ import { AccountDetailPage } from './account-detail/account-detail.page';
 import { AccountDetailRoutingModule } from './account-detail-routing.module';
 import { SharedComponentsModule } from '../../../shared/components/shared-components.module';
 import { NgApexchartsModule } from 'ng-apexcharts';
+import { EditAccountModalPageModule } from './edit-account-modal/edit-account-modal.module';
 
 @NgModule({
   imports: [
@@ -12,7 +13,8 @@ import { NgApexchartsModule } from 'ng-apexcharts';
     IonicModule,
     AccountDetailRoutingModule,
     SharedComponentsModule,
-    NgApexchartsModule
+    NgApexchartsModule,
+    EditAccountModalPageModule
   ],
   declarations: [AccountDetailPage]
 })

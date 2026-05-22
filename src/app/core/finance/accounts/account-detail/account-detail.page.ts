@@ -7,6 +7,7 @@ import { ApexOptions } from 'ng-apexcharts';
 import moment from 'moment';
 import { currencies } from '../../environment/environment';
 import { AddTransactionPagePage } from '../../add-transaction/add-transaction-page/add-transaction-page.page';
+import { EditAccountModalPage } from '../edit-account-modal/edit-account-modal.page';
 
 @Component({
   selector: 'app-account-detail',
@@ -169,8 +170,19 @@ export class AccountDetailPage implements OnInit {
     }
   }
 
-  editAccount() {
-    console.log('Edit account:', this.accountId);
+  async editAccount() {
+    const modal = await this.modalController.create({
+      component: 'app-edit-account-modal',
+      componentProps: {
+        accountId: this.accountId
+      }
+    });
+    await modal.present();
+    const { data } = await modal.onWillDismiss();
+    if (data?.success) {
+      // Account updated successfully
+      this.renderAccountDetail();
+    }
   }
 
   goBack() {

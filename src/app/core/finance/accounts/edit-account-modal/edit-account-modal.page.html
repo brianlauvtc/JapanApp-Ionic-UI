@@ -1,0 +1,53 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>{{ isEditMode ? '編輯帳戶' : '新增帳戶' }}</ion-title>
+    <ion-buttons slot="start">
+      <ion-button (click)="cancel()">
+        <ion-icon name="close"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-buttons slot="end">
+      <ion-button (click)="saveAccount()" [disabled]="accountForm.invalid">
+        <ion-icon name="checkmark"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <form [formGroup]="accountForm">
+    <ion-item>
+      <ion-label position="stacked">帳戶名稱 *</ion-label>
+      <ion-input formControlName="name" placeholder="輸入帳戶名稱"></ion-input>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="stacked">帳戶類型 *</ion-label>
+      <ion-select formControlName="type" interface="action-sheet">
+        <ion-select-option *ngFor="let type of accountTypes" [value]="type.value">
+          {{ type.label }}
+        </ion-select-option>
+      </ion-select>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="stacked">貨幣 *</ion-label>
+      <ion-select formControlName="currency" interface="action-sheet">
+        <ion-select-option *ngFor="let currency of currencies | keyvalue" [value]="currency.key">
+          {{ currency.value.name }} ({{ currency.value.symbol }})
+        </ion-select-option>
+      </ion-select>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="stacked">初始餘額 *</ion-label>
+      <ion-input 
+        type="number" 
+        formControlName="initBalance" 
+        placeholder="0"
+        [step]="'any'">
+        <ion-prefix>{{ getCurrencySymbol(accountForm.get('currency')?.value) }}</ion-prefix>
+      </ion-input>
+    </ion-item>
+  </form>
+</ion-content>

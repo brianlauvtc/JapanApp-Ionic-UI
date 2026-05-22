@@ -1,0 +1,19 @@
+ion-item {
+  --padding-start: 0;
+  margin-bottom: 16px;
+}
+
+ion-input, ion-select {
+  --padding-start: 0;
+}
+
+ion-prefix {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.daily-limit-section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--ion-color-step-150, #e0e0e0);
+}
