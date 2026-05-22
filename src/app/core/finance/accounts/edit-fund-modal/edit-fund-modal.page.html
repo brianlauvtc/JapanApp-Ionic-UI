@@ -21,16 +21,16 @@
       <ion-input formControlName="name" placeholder="輸入基金名稱"></ion-input>
     </ion-item>
 
-    <ion-item>
-      <ion-label position="stacked">總預算金額 *</ion-label>
-      <ion-input 
-        type="number" 
-        formControlName="initAmount" 
-        placeholder="0"
-        [step]="'any'">
-        <ion-prefix>{{ getCurrencySymbol(fundForm.get('currency')?.value) }}</ion-prefix>
-      </ion-input>
-    </ion-item>
+      <ion-item>
+        <ion-label position="stacked">總預算金額 *</ion-label>
+        <ion-input 
+          type="number" 
+          formControlName="initAmount" 
+          placeholder="0"
+          [step]="'any'">
+        </ion-input>
+        <ion-note slot="end">{{ getCurrencySymbol(fundForm.get('currency')?.value) }}</ion-note>
+      </ion-item>
 
     <ion-item>
       <ion-label position="stacked">貨幣</ion-label>
@@ -54,8 +54,8 @@
           formControlName="dailyLimit" 
           placeholder="0"
           [step]="'any'">
-          <ion-prefix>{{ getCurrencySymbol(fundForm.get('currency')?.value) }}</ion-prefix>
         </ion-input>
+        <ion-note slot="start">{{ getCurrencySymbol(fundForm.get('currency')?.value) }}</ion-note>
       </ion-item>
 
       <ion-item>

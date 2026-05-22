@@ -11,6 +11,8 @@
     "noFallthroughCasesInSwitch": true,
     "sourceMap": true,
     "declaration": false,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
     "downlevelIteration": true,
     "experimentalDecorators": true,
     "moduleResolution": "node",

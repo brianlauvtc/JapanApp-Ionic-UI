@@ -46,8 +46,8 @@
         formControlName="initBalance" 
         placeholder="0"
         [step]="'any'">
-        <ion-prefix>{{ getCurrencySymbol(accountForm.get('currency')?.value) }}</ion-prefix>
       </ion-input>
+      <ion-note slot="end">{{ getCurrencySymbol(accountForm.get('currency')?.value) }}</ion-note>
     </ion-item>
   </form>
 </ion-content>

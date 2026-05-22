@@ -2,7 +2,7 @@ export interface Account {
   id: string;
   name: string;
   type: 'cash' | 'bank' | 'credit';
-  currency: string;
+  currency: 'HKD' | 'JPY';
   initBalance: number;
 }
 
@@ -14,14 +14,14 @@ export interface Fund {
   dailyLimit?: number;
   unspentAction?: 'none' | 'carry' | 'cancel' | 'transfer';
   transferTargetId?: string;
-  currency?: string;
+  currency?: 'HKD' | 'JPY';
 }
 
 export interface Transaction {
   id: string;
   type: 'expense' | 'income' | 'transfer' | 'sys_fund_cancel' | 'sys_fund_transfer_out' | 'sys_fund_transfer_in' | 'sys_fund_carry' | 'sys_alloc';
   amount: number;
-  currency: string;
+  currency: 'HKD' | 'JPY';
   exRate: number;
   accDeduction: number;
   toAccDeduction?: number;
@@ -53,7 +53,7 @@ export interface AIHistoryItem {
 export interface AppData {
   isInit: boolean;
   settings: {
-    baseCurrency: string;
+    baseCurrency: 'HKD' | 'JPY';
     apiKey: string;
     enableAIHistory: boolean;
     aiFrequency: string;

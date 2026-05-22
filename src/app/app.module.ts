@@ -8,6 +8,9 @@ import { HttpClientModule } from '@angular/common/http';
 import { AppComponent } from './app.component';
 import { AppRoutingModule } from './app-routing.module';
 import { AddTransactionPageSharedModule } from './core/finance/add-transaction/add-transaction-page/add-transaction-page-shared.module';
+import { FinanceVarService } from './core/finance/service/finance-var.service';
+import { FinanceService } from './core/finance/service/finance.service';
+import { AIService } from './core/finance/service/ai.service';
 
 @NgModule({
   declarations: [AppComponent],
@@ -20,7 +23,10 @@ import { AddTransactionPageSharedModule } from './core/finance/add-transaction/a
   ],
   providers: [
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
-    Storage
+    Storage,
+    FinanceVarService,
+    FinanceService,
+    AIService
   ],
   bootstrap: [AppComponent],
 })

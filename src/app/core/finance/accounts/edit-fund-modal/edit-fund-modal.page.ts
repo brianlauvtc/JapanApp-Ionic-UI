@@ -37,7 +37,7 @@ export class EditFundModalPage implements OnInit {
 
   initForm() {
     this.fundForm = this.fb.group({
-      name: ['', [Validators.required, Validators.minLength(1)]],
+      name: ['', [Validators.required, Validators.minLength(1), Validators.maxLength(20)]],
       initAmount: [0, [Validators.required, Validators.min(0)]],
       hasDaily: [false],
       dailyLimit: [0],

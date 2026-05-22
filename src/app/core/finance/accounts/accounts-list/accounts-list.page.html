@@ -23,9 +23,9 @@
             <ion-card-subtitle>{{ account.currency }}</ion-card-subtitle>
           </ion-card-header>
           <ion-card-content>
-            <div class="account-balance" [class.negative]="getAccBalance(account.id) < 0">
-              {{ currencies[account.currency].symbol }}{{ getAccBalance(account.id) | number:'1.0-0' }}
-            </div>
+              <div class="account-balance" [class.negative]="getAccBalance(account.id) < 0">
+                {{ getCurrencySymbol(account.currency) }}{{ getAccBalance(account.id) | number:'1.0-0' }}
+              </div>
           </ion-card-content>
         </ion-card>
       </div>

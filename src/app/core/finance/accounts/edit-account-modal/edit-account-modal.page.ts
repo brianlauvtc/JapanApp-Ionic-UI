@@ -36,7 +36,7 @@ export class EditAccountModalPage implements OnInit {
 
   initForm() {
     this.accountForm = this.fb.group({
-      name: ['', [Validators.required, Validators.minLength(1)]],
+      name: ['', [Validators.required, Validators.minLength(1), Validators.maxLength(20)]],
       type: ['cash', Validators.required],
       currency: ['HKD', Validators.required],
       initBalance: [0, [Validators.required, Validators.min(0)]]

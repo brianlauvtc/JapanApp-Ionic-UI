@@ -7,7 +7,7 @@ import { AppData, Account, Transaction, Fund, Plan, AIHistoryItem } from '../mod
   providedIn: 'root'
 })
 export class FinanceVarService {
-  private appDataSubject = new BehaviorSubject<AppData>(this.getDefaultAppData());
+  public appDataSubject = new BehaviorSubject<AppData>(null);
   public appData$ = this.appDataSubject.asObservable();
 
   constructor(private storage: Storage) {
@@ -33,9 +33,10 @@ export class FinanceVarService {
     };
   }
 
-  private async initStorage() {
+  public async initStorage() {
     await this.storage.create();
     const savedData = await this.storage.get('accApp_data_v6');
+    console.log('Loaded app data from storage:', savedData);
     if (savedData) {
       this.appDataSubject.next(savedData);
     } else {
@@ -46,7 +47,7 @@ export class FinanceVarService {
   }
 
   getAppData(): AppData {
-    return this.appDataSubject.value;
+    return this.appDataSubject.getValue();
   }
 
   updateAppData(newData: Partial<AppData>) {

@@ -195,41 +195,55 @@ export class AddTransactionPagePage implements OnInit {
       return;
     }
     
-    const formValue = this.transactionForm.value;
-    const amount = parseFloat(formValue.amount);
-    const exchangeRate = parseFloat(formValue.exchangeRate) || 1;
-    const accDeduction = this.txnType === 'income' ? -(amount * exchangeRate) : (amount * exchangeRate);
-    
-    const transaction: Transaction = {
-      id: this.isEditMode ? this.editTransactionId! : `t_${Date.now()}`,
-      type: this.txnType,
-      amount: amount,
-      currency: formValue.currency,
-      exRate: exchangeRate,
-      accDeduction: accDeduction,
-      accountId: formValue.accountId,
-      toAccountId: this.txnType === 'transfer' ? formValue.accountToId : undefined,
-      toAccDeduction: this.txnType === 'transfer' ? -accDeduction : undefined,
-      category: this.selectedCategory?.name || formValue.category,
-      icon: this.selectedCategory?.icon || '💰',
-      note: formValue.note,
-      date: formValue.date,
-      fundId: this.txnType === 'expense' ? formValue.fundId || undefined : undefined,
-      _warnLimit: false
-    };
-    
-    if (this.isEditMode) {
-      this.financeVar.updateTransaction(this.editTransactionId!, transaction);
-    } else {
-      this.financeVar.addTransaction(transaction);
+    // Disable the save button to prevent multiple clicks
+    const saveButton = document.querySelector('.save-transaction-btn');
+    if (saveButton) {
+      saveButton.setAttribute('disabled', 'true');
     }
     
-    // Handle income allocation if applicable
-    if (this.txnType === 'income' && formValue.allocations?.length > 0) {
-      // This would be implemented with allocation logic
+    try {
+      const formValue = this.transactionForm.value;
+      const amount = parseFloat(formValue.amount);
+      const exchangeRate = parseFloat(formValue.exchangeRate) || 1;
+      const accDeduction = this.txnType === 'income' ? -(amount * exchangeRate) : (amount * exchangeRate);
+      
+      const transaction: Transaction = {
+        id: this.isEditMode ? this.editTransactionId! : `t_${Date.now()}`,
+        type: this.txnType,
+        amount: amount,
+        currency: formValue.currency,
+        exRate: exchangeRate,
+        accDeduction: accDeduction,
+        accountId: formValue.accountId,
+        toAccountId: this.txnType === 'transfer' ? formValue.accountToId : undefined,
+        toAccDeduction: this.txnType === 'transfer' ? -accDeduction : undefined,
+        category: this.selectedCategory?.name || formValue.category,
+        icon: this.selectedCategory?.icon || '💰',
+        note: formValue.note,
+        date: formValue.date,
+        fundId: this.txnType === 'expense' ? formValue.fundId || undefined : undefined,
+        _warnLimit: false
+      };
+      
+      if (this.isEditMode) {
+        this.financeVar.updateTransaction(this.editTransactionId!, transaction);
+      } else {
+        this.financeVar.addTransaction(transaction);
+      }
+      
+      // Handle income allocation if applicable
+      if (this.txnType === 'income' && formValue.allocations?.length > 0) {
+        // This would be implemented with allocation logic
+      }
+      
+      await this.goBack();
+    } catch (error) {
+      console.error('Error saving transaction:', error);
+      // Re-enable the save button on error
+      if (saveButton) {
+        saveButton.removeAttribute('disabled');
+      }
     }
-    
-    this.goBack();
   }
 
   deleteTransaction() {
@@ -239,9 +253,9 @@ export class AddTransactionPagePage implements OnInit {
     }
   }
 
-  goBack() {
+  async goBack() {
     if (this.isModal && this.modalCtrl) {
-      this.modalCtrl.dismiss();
+      await this.modalCtrl.dismiss();
       return;
     }
     
@@ -250,7 +264,7 @@ export class AddTransactionPagePage implements OnInit {
     } else if (this.contextType === 'fund' && this.contextFundId) {
       this.router.navigate(['/fund-detail', this.contextFundId]);
     } else {
-      this.router.navigate(['/home']);
+      this.router.navigate(['/tabs/home']);
     }
   }
 

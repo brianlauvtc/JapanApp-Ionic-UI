@@ -9,15 +9,7 @@ const routes: Routes = [
   {
     path: 'accounts',
     loadChildren: () => import('./accounts/accounts.module').then(m => m.AccountsModule)
-  },
-  {
-    path: 'account-detail/:id',
-    loadChildren: () => import('./accounts/account-detail/account-detail.module').then(m => m.AccountDetailModule)
-  },
-  {
-    path: 'fund-detail/:id',
-    loadChildren: () => import('./accounts/fund-detail/fund-detail.module').then(m => m.FundDetailModule)
-  },
+  }, 
   {
     path: 'add-transaction',
     loadChildren: () => import('./add-transaction/add-transaction.module').then(m => m.AddTransactionModule)

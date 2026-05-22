@@ -17,11 +17,19 @@ const routes: Routes = [
       },
       {
         path: 'analysis',
-        loadChildren: () => import('../core/finance/analysis/analysis-page.module').then(m => m.AnalysisPageModule)
+        loadChildren: () => import('../core/finance/analysis/analysis-page/analysis-page.module').then(m => m.AnalysisPageModule)
       },
       {
         path: 'settings',
-        loadChildren: () => import('../core/finance/settings/settings-page.module').then(m => m.SettingsPageModule)
+        loadChildren: () => import('../core/finance/settings/settings-page/settings-page.module').then(m => m.SettingsPageModule)
+      },
+      {
+        path: 'account-detail/:id',
+        loadChildren: () => import('../core/finance/accounts/account-detail/account-detail.module').then(m => m.AccountDetailModule)
+      },
+      {
+        path: 'fund-detail/:id',
+        loadChildren: () => import('../core/finance/accounts/fund-detail/fund-detail.module').then(m => m.FundDetailModule)
       },
       {
         path: '',

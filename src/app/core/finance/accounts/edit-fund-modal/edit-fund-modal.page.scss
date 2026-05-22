@@ -7,9 +7,11 @@ ion-input, ion-select {
   --padding-start: 0;
 }
 
-ion-prefix {
+ion-note {
   font-size: 18px;
   font-weight: bold;
+  min-width: 20px;
+  text-align: right;
 }
 
 .daily-limit-section {

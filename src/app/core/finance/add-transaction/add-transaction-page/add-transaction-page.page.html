@@ -73,7 +73,7 @@
             <ion-select-option 
               *ngFor="let account of getAccounts()" 
               [value]="account.id">
-              {{ account.name }} ({{ account.currency }})
+              {{ account.name }} ({{ currencies[account.currency].symbol }}{{ getAccBalance(account.id) | number:'1.0-0' }})
             </ion-select-option>
           </ion-select>
         </ion-item>
@@ -88,7 +88,7 @@
               *ngFor="let account of getAccounts()" 
               [value]="account.id"
               [disabled]="account.id === transactionForm.get('accountId')?.value">
-              {{ account.name }} ({{ account.currency }})
+              {{ account.name }} ({{ currencies[account.currency].symbol }}{{ getAccBalance(account.id) | number:'1.0-0' }})
             </ion-select-option>
           </ion-select>
         </ion-item>
@@ -175,7 +175,8 @@
         expand="block" 
         (click)="saveTransaction()" 
         [disabled]="!validateForm()"
-        color="primary">
+        color="primary"
+        class="save-transaction-btn">
         {{ isEditMode ? '更新紀錄' : '儲存紀錄' }}
       </ion-button>
     </ion-buttons>

@@ -18,4 +18,4 @@ import { EditFundModalPageModule } from '../edit-fund-modal/edit-fund-modal.modu
   ],
   declarations: [AccountsListPage]
 })
-export class AccountsListModule { }
+export class AccountsListModule {}

@@ -1,4 +1,12 @@
-export const currencies = {
+export type CurrencyCode = 'HKD' | 'JPY';
+
+export interface CurrencyInfo {
+  symbol: string;
+  rate: number;
+  name: string;
+}
+
+export const currencies: Record<CurrencyCode, CurrencyInfo> = {
   HKD: { symbol: '$', rate: 1, name: 'HKD' },
   JPY: { symbol: '¥', rate: 0.05, name: 'JPY' }
 };
