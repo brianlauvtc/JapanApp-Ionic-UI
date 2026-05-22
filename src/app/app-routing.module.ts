@@ -13,11 +13,11 @@ const routes: Routes = [
   },
   {
     path: 'account-detail/:id',
-    loadChildren: () => import('./core/finance/accounts/account-detail.module').then(m => m.AccountDetailModule)
+    loadChildren: () => import('./core/finance/accounts/account-detail/account-detail.module').then(m => m.AccountDetailModule)
   },
   {
     path: 'fund-detail/:id',
-    loadChildren: () => import('./core/finance/accounts/fund-detail.module').then(m => m.FundDetailModule)
+    loadChildren: () => import('./core/finance/accounts/fund-detail/fund-detail.module').then(m => m.FundDetailModule)
   }
 ];
 

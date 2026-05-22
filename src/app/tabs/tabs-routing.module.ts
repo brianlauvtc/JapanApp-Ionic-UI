@@ -13,7 +13,7 @@ const routes: Routes = [
       },
       {
         path: 'accounts',
-        loadChildren: () => import('../core/finance/accounts/accounts-list.module').then(m => m.AccountsListModule)
+        loadChildren: () => import('../core/finance/accounts/accounts-list/accounts-list.module').then(m => m.AccountsListModule)
       },
       {
         path: 'analysis',

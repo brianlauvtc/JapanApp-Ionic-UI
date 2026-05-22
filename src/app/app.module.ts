@@ -7,7 +7,7 @@ import { HttpClientModule } from '@angular/common/http';
 
 import { AppComponent } from './app.component';
 import { AppRoutingModule } from './app-routing.module';
-import { AddTransactionPageSharedModule } from './core/finance/add-transaction/add-transaction-page-shared.module';
+import { AddTransactionPageSharedModule } from './core/finance/add-transaction/add-transaction-page/add-transaction-page-shared.module';
 
 @NgModule({
   declarations: [AppComponent],

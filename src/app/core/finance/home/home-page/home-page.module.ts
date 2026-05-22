@@ -5,7 +5,7 @@ import { HomePagePage } from './home-page.page';
 import { HomePageRoutingModule } from './home-page-routing.module';
 import { SharedComponentsModule } from '../../../../shared/components/shared-components.module';
 import { NgApexchartsModule } from 'ng-apexcharts';
-import { AddTransactionPageSharedModule } from '../../add-transaction/add-transaction-page-shared.module';
+import { AddTransactionPageSharedModule } from '../../add-transaction/add-transaction-page/add-transaction-page-shared.module';
 
 @NgModule({
   imports: [
