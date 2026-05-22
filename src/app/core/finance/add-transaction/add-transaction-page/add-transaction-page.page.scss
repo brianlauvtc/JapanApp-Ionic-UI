@@ -67,37 +67,35 @@ ion-select {
   gap: 8px;
   
   .category-button {
-    height: auto;
-    padding: 12px 8px;
-    text-align: center;
-    white-space: nowrap;
-    word-wrap: normal;
-    flex-direction: column !important;
-    justify-content: center !important;
-    
+    height: auto; // 讓按鈕高度隨內容長大
+    --padding-top: 12px;
+    --padding-bottom: 12px;
+    --padding-start: 4px;
+    --padding-end: 4px;
+    margin: 0;
+
+    /* 重點：用這個 div 來做垂直排列 */
     .icon-text-stack {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 4px;
-    }
-    
-    ion-icon {
-      font-size: 24px;
-      display: block;
+      gap: 6px; /* Icon 和文字之間的垂直距離 */
+      width: 100%;
     }
     
     .category-icon {
-      font-size: 24px;
+      font-size: 26px; /* 可以稍微調大 icon 比例 */
       display: flex;
       align-items: center;
       justify-content: center;
-      min-height: 24px;
+      margin: 0; // 清除可能預設的 margin
     }
     
-    span {
+    .category-text {
+      font-size: 14px;
       white-space: nowrap;
+      line-height: 1;
     }
   }
   
@@ -112,7 +110,7 @@ ion-select {
     --background-focused: var(--background);
   }
 }
-  
+
 .category-button.selected {
   --background: var(--ion-color-primary-tint);
   --color: var(--ion-color-primary);

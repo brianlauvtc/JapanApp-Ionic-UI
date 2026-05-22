@@ -39,6 +39,9 @@
 
     <!-- Category Selection -->
     <ion-card *ngIf="txnType !== 'transfer'">
+      <ion-card-header>
+        <ion-card-title>選擇分類</ion-card-title>
+      </ion-card-header>
       <ion-card-content>
         <div class="category-grid">
             <ion-button 
@@ -47,12 +50,12 @@
               (click)="selectCategory(category)"
               [class.selected]="selectedCategory?.id === category.id"
               class="category-button">
-              <div class="category-icon">
-                <!-- Use emoji directly if it contains non-ASCII characters, otherwise use ion-icon -->
-                <span *ngIf="isEmoji(category.icon)">{{ category.icon }}</span>
-                <ion-icon *ngIf="!isEmoji(category.icon)" [name]="category.icon"></ion-icon>
-              </div>
-              {{ category.name }}
+            <div class="icon-text-stack">
+              <span class="category-icon" *ngIf="isEmoji(category.icon)">{{ category.icon }}</span>
+              <ion-icon class="category-icon" *ngIf="!isEmoji(category.icon)" [name]="category.icon"></ion-icon>
+              
+              <span class="category-text">{{ category.name }}</span>
+            </div>
             </ion-button>
         </div>
         <div class="show-more-categories" *ngIf="categories.length > 8">
