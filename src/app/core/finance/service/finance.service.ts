@@ -131,11 +131,23 @@ export class FinanceService {
 
   // Daily rollover processing
   async processDailyRollovers(): Promise<void> {
-   // this.financeVar.initStorage();
-    const today = this.getToday();
-    const appData = this.financeVar.getAppData();
+    // Ensure storage is initialized and appData is available
+    let appData = this.financeVar.getAppData();
+    if (!appData) {
+      // Wait for initialization to complete
+      await new Promise(resolve => {
+        const subscription = this.financeVar.appData$.subscribe(data => {
+          if (data !== null) {
+            subscription.unsubscribe();
+            resolve(null);
+          }
+        });
+      });
+      appData = this.financeVar.getAppData();
+    }
     
-    console.log(appData)
+    const today = this.getToday();
+    
     if (!appData.lastRolloverDate) {
       this.financeVar.updateAppData({ lastRolloverDate: today });
       return;

@@ -6,12 +6,18 @@
       </ion-button>
     </ion-buttons>
     <ion-title>{{ isEditMode ? '編輯紀錄' : '新增紀錄' }}</ion-title>
-    <ion-buttons slot="end" *ngIf="isEditMode">
-      <ion-button (click)="deleteTransaction()" color="danger">
+    <ion-buttons slot="end">
+      <ion-button (click)="deleteTransaction()" color="danger" *ngIf="isEditMode">
         刪除
       </ion-button>
+      <ion-button 
+        (click)="saveTransaction()" 
+        [disabled]="!validateForm()"
+        color="primary"
+        class="save-transaction-btn">
+        {{ isEditMode ? '更新' : '儲存' }}
+      </ion-button>
     </ion-buttons>
-    
   </ion-toolbar>
 </ion-header>
 
@@ -31,115 +37,207 @@
       </ion-segment>
     </div>
 
+    <!-- Category Selection -->
+    <ion-card *ngIf="txnType !== 'transfer'">
+      <ion-card-content>
+        <div class="category-grid">
+            <ion-button 
+              *ngFor="let category of getVisibleCategories(); let i = index" 
+              fill="outline"
+              (click)="selectCategory(category)"
+              [class.selected]="selectedCategory?.id === category.id"
+              class="category-button">
+              <div class="category-icon">
+                <!-- Use emoji directly if it contains non-ASCII characters, otherwise use ion-icon -->
+                <span *ngIf="isEmoji(category.icon)">{{ category.icon }}</span>
+                <ion-icon *ngIf="!isEmoji(category.icon)" [name]="category.icon"></ion-icon>
+              </div>
+              {{ category.name }}
+            </ion-button>
+        </div>
+        <div class="show-more-categories" *ngIf="categories.length > 8">
+          <ion-button 
+            fill="clear" 
+            size="small"
+            (click)="toggleShowAllCategories()">
+            {{ showAllCategories ? '顯示較少' : '顯示更多 (' + (categories.length - 8) + ')' }}
+          </ion-button>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
     <!-- Amount and Currency -->
     <ion-card>
       <ion-card-header>
         <ion-card-title>輸入金額與幣別</ion-card-title>
       </ion-card-header>
       <ion-card-content>
-        <ion-item lines="none">
-          <ion-select 
-            formControlName="currency" 
-            interface="popover"
-            slot="end">
-            <ion-select-option value="HKD">HKD</ion-select-option>
-            <ion-select-option value="JPY">JPY</ion-select-option>
-          </ion-select>
-          <ion-input 
+        <ion-item lines="none" class="amount-currency-container">
+         <ion-input 
             formControlName="amount" 
             type="number" 
             placeholder="0"
-            inputmode="decimal"
-            slot="start">
+            inputmode="decimal">
           </ion-input>
-          <ion-label slot="start" class="currency-symbol">
-            {{ getCurrencySymbol(transactionForm.get('currency')?.value) }}
-          </ion-label>
+          <div class="currency-section">
+            <ion-label class="currency-symbol">
+              {{ getCurrencySymbol(transactionForm.get('currency')?.value) }}
+            </ion-label>
+            <ion-select 
+              formControlName="currency" 
+              interface="popover">
+              <ion-select-option value="HKD">HKD</ion-select-option>
+              <ion-select-option value="JPY">JPY</ion-select-option>
+            </ion-select>
+          </div>
+          
         </ion-item>
       </ion-card-content>
     </ion-card>
 
-    <!-- Account Selection -->
-    <ion-card>
-      <ion-card-content>
-        <ion-item>
-          <ion-label position="stacked">
-            {{ txnType === 'transfer' ? '轉出帳戶' : '付款帳戶' }}
-          </ion-label>
-          <ion-select 
-            formControlName="accountId" 
-            interface="popover"
-            [disabled]="!!contextAccountId">
-            <ion-select-option 
-              *ngFor="let account of getAccounts()" 
-              [value]="account.id">
-              {{ account.name }} ({{ currencies[account.currency].symbol }}{{ getAccBalance(account.id) | number:'1.0-0' }})
-            </ion-select-option>
-          </ion-select>
-        </ion-item>
+        <!-- Account Selection -->
+        <ion-card>
+          <ion-card-content>
+            <div *ngIf="txnType !== 'transfer'">
+              <ion-item>
+                <ion-label position="stacked">
+                  {{ getAccountLabel() }}
+                </ion-label>
+                <ion-select 
+                  formControlName="accountId" 
+                  interface="popover"
+                  [disabled]="!!contextAccountId">
+                  <ion-select-option 
+                    *ngFor="let account of getAccounts()" 
+                    [value]="account.id">
+                    {{ account.name }} ({{ getCurrencySymbol(account.currency) }}{{ getAccBalance(account.id) | number:'1.0-0' }})
+                  </ion-select-option>
+                </ion-select>
+              </ion-item>
+            </div>
 
-        <!-- Transfer To Account -->
-        <ion-item *ngIf="txnType === 'transfer'">
-          <ion-label position="stacked">轉入帳戶</ion-label>
-          <ion-select 
-            formControlName="accountToId" 
-            interface="popover">
-            <ion-select-option 
-              *ngFor="let account of getAccounts()" 
-              [value]="account.id"
-              [disabled]="account.id === transactionForm.get('accountId')?.value">
-              {{ account.name }} ({{ currencies[account.currency].symbol }}{{ getAccBalance(account.id) | number:'1.0-0' }})
-            </ion-select-option>
-          </ion-select>
-        </ion-item>
+            <!-- Fund Selection for Expense -->
+            <ion-item *ngIf="txnType === 'expense'">
+              <ion-label position="stacked">動用基金</ion-label>
+              <ion-select 
+                formControlName="fundId" 
+                interface="popover">
+                <ion-select-option value="">無</ion-select-option>
+                <ion-select-option 
+                  *ngFor="let fund of getFunds()" 
+                  [value]="fund.id">
+                  {{ fund.name }}
+                </ion-select-option>
+              </ion-select>
+            </ion-item>
 
-        <!-- Fund Selection -->
-        <ion-item *ngIf="txnType === 'expense'">
-          <ion-label position="stacked">動用基金</ion-label>
-          <ion-select 
-            formControlName="fundId" 
-            interface="popover">
-            <ion-select-option value="">無</ion-select-option>
-            <ion-select-option 
-              *ngFor="let fund of getFunds()" 
-              [value]="fund.id">
-              {{ fund.name }}
-            </ion-select-option>
-          </ion-select>
-        </ion-item>
-
-        <!-- Exchange Rate -->
-        <ion-item *ngIf="showExchangeRate()" lines="none">
-          <ion-label position="stacked">自訂匯率</ion-label>
-          <ion-input 
-            formControlName="exchangeRate" 
-            type="number" 
-            inputmode="decimal"
-            slot="end">
-          </ion-input>
-          <ion-label slot="end" class="calculated-amount">
-            = 扣款 <strong>{{ calculatedAmount() }}</strong> {{ getAccountCurrency(transactionForm.get('accountId')?.value) }}
-          </ion-label>
-        </ion-item>
-      </ion-card-content>
+            <!-- Transfer Accounts - Single line layout -->
+            <ion-item *ngIf="txnType === 'transfer'" class="transfer-accounts-row">
+              <div class="transfer-accounts-container">
+                <div class="transfer-account-group">
+                  <ion-label class="transfer-label">從</ion-label>
+                  <ion-select 
+                    formControlName="accountId" 
+                    interface="popover"
+                    [disabled]="!!contextAccountId"
+                    class="transfer-account-select">
+                    <ion-select-option 
+                      *ngFor="let account of getAccounts()" 
+                      [value]="account.id">
+                      {{ account.name }} ({{ getCurrencySymbol(account.currency) }}{{ getAccBalance(account.id) | number:'1.0-0' }})
+                    </ion-select-option>
+                  </ion-select>
+                </div>
+                <ion-icon name="arrow-forward" class="transfer-icon"></ion-icon>
+                <div class="transfer-account-group">
+                  <ion-label class="transfer-label">到</ion-label>
+                  <ion-select 
+                    formControlName="accountToId" 
+                    interface="popover"
+                    class="transfer-account-select">
+                    <ion-select-option 
+                      *ngFor="let account of getAccounts()" 
+                      [value]="account.id"
+                      [disabled]="account.id === transactionForm.get('accountId')?.value">
+                      {{ account.name }} ({{ getCurrencySymbol(account.currency) }}{{ getAccBalance(account.id) | number:'1.0-0' }})
+                    </ion-select-option>
+                  </ion-select>
+                </div>
+              </div>
+            </ion-item>
+          </ion-card-content>
     </ion-card>
 
-    <!-- Category Selection -->
-    <ion-card *ngIf="txnType !== 'transfer'">
+        <!-- Transaction Details (Items) -->
+    <ion-card *ngIf="txnType === 'expense'">
       <ion-card-header>
-        <ion-card-title>選擇分類</ion-card-title>
+        <ion-card-title>交易明細</ion-card-title>
       </ion-card-header>
       <ion-card-content>
-        <div class="category-grid">
+        <!-- Items Form -->
+        <div class="items-form">
+          <ion-item>
+            <ion-input 
+              [(ngModel)]="itemForm.name" 
+              [ngModelOptions]="{standalone: true}"
+              placeholder="商品名稱"
+              type="text">
+            </ion-input>
+          </ion-item>
+          <div class="quantity-price-row">
+            <ion-item>
+              <ion-input 
+                [(ngModel)]="itemForm.quantity" 
+                [ngModelOptions]="{standalone: true}"
+                placeholder="數量"
+                type="number"
+                inputmode="decimal">
+              </ion-input>
+            </ion-item>
+            <ion-item>
+              <ion-label slot="start">{{ getCurrencySymbol(transactionForm.get('currency')?.value) }}</ion-label>
+              <ion-input 
+                [(ngModel)]="itemForm.price" 
+                [ngModelOptions]="{standalone: true}"
+                placeholder="價格"
+                type="number"
+                inputmode="decimal">
+              </ion-input>
+            </ion-item>
+          </div>
           <ion-button 
-            *ngFor="let category of categories" 
-            fill="outline"
-            (click)="selectCategory(category)"
-            [class.selected]="selectedCategory?.id === category.id"
-            class="category-button">
-            <ion-icon [name]="getCategoryIconName(category.icon)" slot="start"></ion-icon>
-            {{ category.name }}
+            expand="block" 
+            (click)="addItem()" 
+            [disabled]="!canAddItem()"
+            size="small">
+            新增明細
           </ion-button>
+        </div>
+
+        <!-- Items Table -->
+        <div class="items-table" *ngIf="items.length > 0">
+          <ion-list>
+            <ion-item *ngFor="let item of items; let i = index">
+              <ion-label>
+                <h3>{{ item.name }}</h3>
+                <p>{{ item.quantity }} x {{ getCurrencySymbol(transactionForm.get('currency')?.value) }}{{ item.price }}</p>
+              </ion-label>
+              <div class="item-actions" slot="end">
+                <ion-button fill="clear" color="primary" (click)="editItem(i)" size="small">
+                  <ion-icon name="create-outline"></ion-icon>
+                </ion-button>
+                <ion-button fill="clear" color="danger" (click)="removeItem(i)" size="small">
+                  <ion-icon name="trash-outline"></ion-icon>
+                </ion-button>
+              </div>
+            </ion-item>
+          </ion-list>
+          <div class="items-total">
+            <strong>明細總計: {{ getCurrencySymbol(transactionForm.get('currency')?.value) }}{{ getItemsTotal() | number:'1.2-2' }}</strong>
+            <span *ngIf="getItemsTotal() > transactionForm.get('amount')?.value" class="total-warning">
+              (超過總金額)
+            </span>
+          </div>
         </div>
       </ion-card-content>
     </ion-card>
@@ -167,18 +265,3 @@
     </ion-card>
   </div>
 </ion-content>
-
-<ion-footer>
-  <ion-toolbar>
-    <ion-buttons slot="primary">
-      <ion-button 
-        expand="block" 
-        (click)="saveTransaction()" 
-        [disabled]="!validateForm()"
-        color="primary"
-        class="save-transaction-btn">
-        {{ isEditMode ? '更新紀錄' : '儲存紀錄' }}
-      </ion-button>
-    </ion-buttons>
-  </ion-toolbar>
-</ion-footer>

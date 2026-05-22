@@ -17,6 +17,12 @@ export interface Fund {
   currency?: 'HKD' | 'JPY';
 }
 
+export interface TransactionItem {
+  name: string;
+  quantity: number;
+  price: number;
+}
+
 export interface Transaction {
   id: string;
   type: 'expense' | 'income' | 'transfer' | 'sys_fund_cancel' | 'sys_fund_transfer_out' | 'sys_fund_transfer_in' | 'sys_fund_carry' | 'sys_alloc';
@@ -35,6 +41,7 @@ export interface Transaction {
   toFundId?: string;
   _warnLimit?: boolean;
   _runningBal?: number;
+  items?: TransactionItem[];
 }
 
 export interface Plan {

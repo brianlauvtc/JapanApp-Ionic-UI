@@ -8,33 +8,44 @@ ion-card {
 }
 
 // Fix amount input layout
-ion-item[lines="none"] {
+ion-item.amount-currency-container {
   --padding-start: 0;
   --padding-end: 0;
+  display: flex;
+  align-items: center;
+  
+  .currency-section {
+    width: 30%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 4px;
+  }
   
   ion-label.currency-symbol {
     font-size: 24px;
     font-weight: bold;
-    min-width: 30px;
+    min-width: 24px;
     text-align: center;
-    padding-right: 8px;
   }
   
   ion-input {
-    flex: 1;
-    text-align: right;
+    width: 80%;
+    text-align: left;
     font-size: 24px;
     font-weight: bold;
+    margin: 0;
     
     input {
-      text-align: right;
+      text-align: left;
+      width: 100%;
     }
   }
   
   ion-select {
-    max-width: 80px;
-    min-width: 60px;
+    min-width: 40px;
     font-size: 14px;
+    max-width: calc(100% - 30px);
   }
 }
 
@@ -59,23 +70,136 @@ ion-select {
     height: auto;
     padding: 12px 8px;
     text-align: center;
-    white-space: normal;
-    word-wrap: break-word;
+    white-space: nowrap;
+    word-wrap: normal;
+    flex-direction: column !important;
+    justify-content: center !important;
+    
+    .icon-text-stack {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
     
     ion-icon {
       font-size: 24px;
-      margin-bottom: 4px;
       display: block;
     }
     
-    // Remove default button press effect
+    .category-icon {
+      font-size: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 24px;
+    }
+    
+    span {
+      white-space: nowrap;
+    }
+  }
+  
+  .category-button.selected {
+    --background: var(--ion-color-primary-tint);
+    --color: var(--ion-color-primary);
+  }
+  
+  .category-button:not(.selected) {
     --ripple-color: transparent;
     --background-hover: var(--background);
     --background-focused: var(--background);
+  }
+}
+  
+.category-button.selected {
+  --background: var(--ion-color-primary-tint);
+  --color: var(--ion-color-primary);
+}
+
+.category-button:not(.selected) {
+  --ripple-color: transparent;
+  --background-hover: var(--background);
+  --background-focused: var(--background);
+}
+  
+ion-icon, .category-icon {
+  font-size: 24px;
+  display: block;
+}
+
+.category-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+}
+
+span {
+  white-space: nowrap;
+}
+
+  
+.show-more-categories {
+  text-align: center;
+  margin-top: 8px;
+  
+  ion-button {
+    --padding-start: 0;
+    --padding-end: 0;
+    font-size: 12px;
+    color: var(--ion-color-medium);
+  }
+}
     
-    &.selected {
-      --background: var(--ion-color-primary-tint);
-      --color: var(--ion-color-primary);
+ion-icon {
+  font-size: 24px;
+  display: block;
+}
+
+span {
+  white-space: nowrap;
+}
+
+
+
+
+
+// Transfer accounts row styling
+ion-item.transfer-accounts-row {
+  --padding-start: 0;
+  --padding-end: 0;
+  
+  .transfer-accounts-container {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 12px;
+    
+    .transfer-account-group {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-width: 0;
+      
+      .transfer-label {
+        font-size: 12px;
+        color: var(--ion-color-medium);
+        font-weight: 500;
+        margin-bottom: 4px;
+        text-align: center;
+      }
+      
+      .transfer-account-select {
+        width: 100%;
+      }
+    }
+    
+    .transfer-icon {
+      font-size: 24px;
+      color: var(--ion-color-primary);
+      flex-shrink: 0;
     }
   }
 }
@@ -86,6 +210,50 @@ ion-select {
   color: var(--ion-color-medium);
   text-align: right;
   min-width: 120px;
+}
+
+// Transaction items section
+.items-form {
+  margin-bottom: 16px;
+  
+  .quantity-price-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    
+    ion-item {
+      flex: 1;
+      
+      ion-label {
+        min-width: 20px;
+        text-align: center;
+      }
+    }
+  }
+}
+
+.items-table {
+  .item-actions {
+    display: flex;
+    gap: 8px;
+    
+    ion-button {
+      --padding-start: 4px;
+      --padding-end: 4px;
+    }
+  }
+  
+  .items-total {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--ion-color-medium);
+    text-align: right;
+    
+    .total-warning {
+      color: var(--ion-color-danger);
+      margin-left: 8px;
+    }
+  }
 }
 
 // Ensure proper spacing on all devices
@@ -102,5 +270,10 @@ ion-select {
     ion-icon {
       font-size: 20px;
     }
+  }
+  
+  .quantity-price-row {
+    flex-direction: column;
+    gap: 4px;
   }
 }

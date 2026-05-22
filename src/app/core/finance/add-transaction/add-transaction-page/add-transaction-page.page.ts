@@ -27,6 +27,14 @@ export class AddTransactionPagePage implements OnInit {
   contextType: string | null = null;
   
   isModal: boolean = false;
+  
+  // Items form and data
+  items: { name: string; quantity: number; price: number }[] = [];
+  itemForm = { name: '', quantity: 1, price: 0 };
+  editingIndex: number | null = null;
+  
+  // Category display state
+  showAllCategories = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -43,6 +51,8 @@ export class AddTransactionPagePage implements OnInit {
   ngOnInit() {
     this.initForm();
     this.loadContextFromRoute();
+    // Ensure categories are set for initial transaction type
+    this.categories = this.getCategories();
     this.setupFormListeners();
   }
 
@@ -88,9 +98,20 @@ export class AddTransactionPagePage implements OnInit {
       this.loadTransactionForEdit(id);
     } else {
       // Set default values based on context
-      if (this.contextAccountId) {
-        this.transactionForm.patchValue({ accountId: this.contextAccountId });
+      let defaultAccountId = this.contextAccountId;
+      
+      // If no context account, try to use last used account for this transaction type
+      if (!defaultAccountId) {
+        const lastAccount = this.loadLastAccount();
+        if (lastAccount) {
+          defaultAccountId = lastAccount;
+        }
       }
+      
+      if (defaultAccountId) {
+        this.transactionForm.patchValue({ accountId: defaultAccountId });
+      }
+      
       if (this.contextFundId && this.contextType === 'fund') {
         this.transactionForm.patchValue({ fundId: this.contextFundId });
         this.txnType = 'expense';
@@ -153,6 +174,9 @@ export class AddTransactionPagePage implements OnInit {
       this.selectedCategory = { name: '轉帳', icon: '🔄' };
       this.transactionForm.patchValue({ category: '轉帳' });
     }
+    
+    // Refresh categories based on new transaction type
+    this.categories = this.getCategories();
   }
 
   selectCategory(category: any) {
@@ -160,14 +184,88 @@ export class AddTransactionPagePage implements OnInit {
     this.transactionForm.patchValue({ category: category.name });
   }
 
+  getVisibleCategories() {
+    if (this.showAllCategories || this.categories.length <= 8) {
+      return this.categories;
+    }
+    return this.categories.slice(0, 8);
+  }
+
+  toggleShowAllCategories() {
+    this.showAllCategories = !this.showAllCategories;
+  }
+
   getCategories() {
-    return [
-      { id: 'c1', name: '飲食', icon: '🍱' },
-      { id: 't1', name: '交通', icon: '🚌' },
-      { id: 's1', name: '購物', icon: '🛍️' },
-      { id: 'e1', name: '娛樂', icon: '🎮' },
-      { id: 'o1', name: '其他', icon: '📝' }
-    ];
+    const allTransactions = this.financeVar.getTransactions();
+    
+    if (this.txnType === 'income') {
+      const incomeCategories = [
+        { id: 'bonus', name: '獎金', icon: '🏆' },
+        { id: 'salary', name: '工資', icon: '💼' },
+        { id: 'investment', name: '理財投資', icon: '📈' },
+        { id: 'parttime', name: '兼職', icon: '🕒' },
+        { id: 'debt_collection', name: '欠債收款', icon: '📥' },
+        { id: 'transport_subsidy', name: '交通補貼', icon: '🚇' },
+        { id: 'other_income', name: '其他', icon: '✨' },
+        { id: 'credit_repayment', name: '信用卡還款', icon: '💳' },
+        { id: 'interest', name: '利息', icon: '📊' },
+        { id: 'insurance', name: '保險', icon: '🛡️' }
+      ];
+      
+      return this.sortCategoriesByFrequency(incomeCategories, allTransactions);
+    } else if (this.txnType === 'expense') {
+      const expenseCategories = [
+        { id: 'food', name: '飲食', icon: '🍜' },
+        { id: 'daily', name: '日用', icon: '🧼' },
+        { id: 'transport', name: '交通', icon: '🚗' },
+        { id: 'social', name: '社交', icon: '🎉' },
+        { id: 'housing', name: '住房物業', icon: '🏢' },
+        { id: 'gift', name: '禮物', icon: '🎁' },
+        { id: 'clothing', name: '服飾', icon: '👗' },
+        { id: 'communication', name: '通信', icon: '📞' },
+        { id: 'entertainment', name: '娛樂', icon: '🎬' },
+        { id: 'beauty', name: '美容', icon: '💅' },
+        { id: 'medical', name: '醫療', icon: '💊' },
+        { id: 'tax', name: '稅金', icon: '🏛️' },
+        { id: 'education', name: '教育', icon: '🎓' },
+        { id: 'baby', name: '寶寶', icon: '🍼' },
+        { id: 'pet', name: '寵物', icon: '🐱' },
+        { id: 'travel', name: '旅行', icon: '🌴' },
+        { id: 'household', name: '家用', icon: '🧹' },
+        { id: 'savings_insurance', name: '儲蓄保險', icon: '🏦' },
+        { id: 'credit_payment', name: '信用卡還款', icon: '💳' },
+        { id: 'shopping_dining', name: '買野飲', icon: '🛍️' },
+        { id: 'snacks', name: '零食', icon: '🍬' },
+        { id: 'gaming', name: '遊戲', icon: '🕹️' },
+        { id: 'other_expense', name: '其他', icon: '⭐' },
+        { id: 'on9_stuff', name: 'on9野', icon: '🤪' },
+        { id: 'debt_repayment', name: '欠債還款', icon: '📤' }
+      ];
+      
+      return this.sortCategoriesByFrequency(expenseCategories, allTransactions);
+    } else {
+      // Transfer - only show transfer category
+      return [
+        { id: 'transfer', name: '轉帳', icon: '🔀' }
+      ];
+    }
+  }
+
+  private sortCategoriesByFrequency(categories: any[], transactions: any[]): any[] {
+    // Count transactions for each category
+    const categoryCounts: { [key: string]: number } = {};
+    transactions.forEach(txn => {
+      if (txn.type === this.txnType && txn.category) {
+        categoryCounts[txn.category] = (categoryCounts[txn.category] || 0) + 1;
+      }
+    });
+    
+    // Sort categories by count (descending)
+    return [...categories].sort((a, b) => {
+      const countA = categoryCounts[a.name] || 0;
+      const countB = categoryCounts[b.name] || 0;
+      return countB - countA; // Descending order
+    });
   }
 
   getAccounts() {
@@ -187,9 +285,196 @@ export class AddTransactionPagePage implements OnInit {
     if (this.txnType !== 'transfer' && !this.selectedCategory) return false;
     if (this.txnType === 'transfer' && !this.transactionForm.get('accountToId')?.value) return false;
     
+    // For expense with items, warn but don't block if items total exceeds amount
+    // The user can still save, but they'll see a warning
     return true;
   }
 
+  deleteTransaction() {
+    if (this.editTransactionId) {
+      this.financeVar.deleteTransaction(this.editTransactionId);
+      this.goBack();
+    }
+  }
+
+  async goBack() {
+    if (this.isModal && this.modalCtrl) {
+      await this.modalCtrl.dismiss();
+      return;
+    }
+    
+    if (this.contextType === 'account' && this.contextAccountId) {
+      this.router.navigate(['/account-detail', this.contextAccountId]);
+    } else if (this.contextType === 'fund' && this.contextFundId) {
+      this.router.navigate(['/fund-detail', this.contextFundId]);
+    } else {
+      this.router.navigate(['/tabs/home']);
+    }
+  }
+
+  getAccountCurrency(accountId: string): string {
+    const account = this.financeVar.getAccounts().find(a => a.id === accountId);
+    return account?.currency || 'HKD';
+  }
+
+  getAccBalance(accountId: string): number {
+    return this.financeService.getAccBalance(accountId);
+  }
+
+  getCurrencySymbol(currency: string): string {
+    const currencies = {
+      HKD: { symbol: '$', rate: 1, name: 'HKD' },
+      JPY: { symbol: '¥', rate: 0.05, name: 'JPY' }
+    };
+    return currencies[currency as keyof typeof currencies]?.symbol || '$';
+  }
+
+  showExchangeRate(): boolean {
+    const currency = this.transactionForm.get('currency')?.value;
+    const accountId = this.transactionForm.get('accountId')?.value;
+    if (!currency || !accountId) return false;
+    
+    const account = this.financeVar.getAccounts().find(a => a.id === accountId);
+    return !!account && currency !== account.currency;
+  }
+
+  calculatedAmount(): string {
+    const amount = parseFloat(this.transactionForm.get('amount')?.value) || 0;
+    const exchangeRate = parseFloat(this.transactionForm.get('exchangeRate')?.value) || 1;
+    const accountCurrency = this.getAccountCurrency(this.transactionForm.get('accountId')?.value);
+    return `${this.getCurrencySymbol(accountCurrency)}${(amount * exchangeRate).toFixed(2)}`;
+  }
+
+  getAccountLabel(): string {
+    if (this.txnType === 'transfer') {
+      return '轉出帳戶';
+    } else if (this.txnType === 'income') {
+      return '收款帳戶';
+    } else {
+      return '付款帳戶';
+    }
+  }
+
+  isEmoji(str: string): boolean {
+    return /[^\x00-\x7F]/.test(str);
+  }
+
+  getCategoryIconName(icon: string): string {
+    // Check if icon is already an emoji (contains non-ASCII characters)
+    if (/[^\x00-\x7F]/.test(icon)) {
+      return ''; // Return empty string to use emoji directly
+    }
+    
+    // Map custom icons to Ionicons
+    const iconMap: { [key: string]: string } = {
+      'fast-food': 'fast-food',
+      'bus': 'bus',
+      'cart': 'cart',
+      'game-controller': 'game-controller',
+      'document-text': 'document-text',
+      'swap-horizontal': 'swap-horizontal',
+      'cash': 'cash'
+    };
+    return iconMap[icon] || 'cash';
+  }
+
+  // Items management methods
+  canAddItem(): boolean {
+    return this.itemForm.name.trim() !== '' && 
+           this.itemForm.quantity > 0 && 
+           this.itemForm.price >= 0;
+  }
+
+  addItem() {
+    if (!this.canAddItem()) return;
+    
+    const newItem = {
+      name: this.itemForm.name.trim(),
+      quantity: this.itemForm.quantity,
+      price: this.itemForm.price
+    };
+    
+    if (this.editingIndex !== null) {
+      this.items[this.editingIndex] = newItem;
+      this.editingIndex = null;
+    } else {
+      this.items.push(newItem);
+    }
+    
+    this.resetItemForm();
+  }
+
+  editItem(index: number) {
+    const item = this.items[index];
+    this.itemForm = { ...item };
+    this.editingIndex = index;
+  }
+
+  removeItem(index: number) {
+    this.items.splice(index, 1);
+    if (this.editingIndex === index) {
+      this.resetItemForm();
+    } else if (this.editingIndex !== null && this.editingIndex > index) {
+      this.editingIndex--;
+    }
+  }
+
+  resetItemForm() {
+    this.itemForm = { name: '', quantity: 1, price: 0 };
+    this.editingIndex = null;
+  }
+
+  getItemsTotal(): number {
+    return this.items.reduce((total, item) => total + (item.quantity * item.price), 0);
+  }
+
+  // Override loadTransactionForEdit to handle items
+  loadTransactionForEdit(id: string) {
+    const transaction = this.financeVar.getTransactions().find(t => t.id === id);
+    if (!transaction) {
+      this.goBack();
+      return;
+    }
+    
+    this.txnType = transaction.type as any;
+    this.selectedCategory = { name: transaction.category, icon: transaction.icon || '💰' };
+    
+    this.transactionForm.patchValue({
+      amount: transaction.amount,
+      currency: transaction.currency,
+      accountId: transaction.accountId,
+      accountToId: transaction.toAccountId || '',
+      fundId: transaction.fundId || '',
+      date: transaction.date,
+      note: transaction.note || '',
+      category: transaction.category,
+      exchangeRate: transaction.exRate || 1
+    });
+    
+    // Load items if they exist
+    if (transaction.items && transaction.items.length > 0) {
+      this.items = [...transaction.items];
+    }
+    
+    // Refresh categories for the loaded transaction type
+    this.categories = this.getCategories();
+    
+    this.calculateExchangeRate();
+  }
+
+  // Save last used account for this transaction type
+  private saveLastAccount(accountId: string) {
+    if (accountId) {
+      localStorage.setItem(`lastAccount_${this.txnType}`, accountId);
+    }
+  }
+
+  // Load last used account for this transaction type
+  private loadLastAccount(): string | null {
+    return localStorage.getItem(`lastAccount_${this.txnType}`);
+  }
+
+  // Override saveTransaction to include items and save last account
   async saveTransaction() {
     if (!this.validateForm()) {
       return;
@@ -225,11 +510,19 @@ export class AddTransactionPagePage implements OnInit {
         _warnLimit: false
       };
       
+      // Add items if they exist and it's an expense
+      if (this.txnType === 'expense' && this.items.length > 0) {
+        transaction.items = [...this.items];
+      }
+      
       if (this.isEditMode) {
         this.financeVar.updateTransaction(this.editTransactionId!, transaction);
       } else {
         this.financeVar.addTransaction(transaction);
       }
+      
+      // Save last used account for this transaction type
+      this.saveLastAccount(formValue.accountId);
       
       // Handle income allocation if applicable
       if (this.txnType === 'income' && formValue.allocations?.length > 0) {
@@ -244,94 +537,5 @@ export class AddTransactionPagePage implements OnInit {
         saveButton.removeAttribute('disabled');
       }
     }
-  }
-
-  deleteTransaction() {
-    if (this.editTransactionId) {
-      this.financeVar.deleteTransaction(this.editTransactionId);
-      this.goBack();
-    }
-  }
-
-  async goBack() {
-    if (this.isModal && this.modalCtrl) {
-      await this.modalCtrl.dismiss();
-      return;
-    }
-    
-    if (this.contextType === 'account' && this.contextAccountId) {
-      this.router.navigate(['/account-detail', this.contextAccountId]);
-    } else if (this.contextType === 'fund' && this.contextFundId) {
-      this.router.navigate(['/fund-detail', this.contextFundId]);
-    } else {
-      this.router.navigate(['/tabs/home']);
-    }
-  }
-
-  loadTransactionForEdit(id: string) {
-    const transaction = this.financeVar.getTransactions().find(t => t.id === id);
-    if (!transaction) {
-      this.goBack();
-      return;
-    }
-    
-    this.txnType = transaction.type as any;
-    this.selectedCategory = { name: transaction.category, icon: transaction.icon || '💰' };
-    
-    this.transactionForm.patchValue({
-      amount: transaction.amount,
-      currency: transaction.currency,
-      accountId: transaction.accountId,
-      accountToId: transaction.toAccountId || '',
-      fundId: transaction.fundId || '',
-      date: transaction.date,
-      note: transaction.note || '',
-      category: transaction.category,
-      exchangeRate: transaction.exRate || 1
-    });
-    
-    this.calculateExchangeRate();
-  }
-
-  getAccountCurrency(accountId: string): string {
-    const account = this.financeVar.getAccounts().find(a => a.id === accountId);
-    return account?.currency || 'HKD';
-  }
-
-  getCurrencySymbol(currency: string): string {
-    const currencies = {
-      HKD: { symbol: '$', rate: 1, name: 'HKD' },
-      JPY: { symbol: '¥', rate: 0.05, name: 'JPY' }
-    };
-    return currencies[currency as keyof typeof currencies]?.symbol || '$';
-  }
-
-  showExchangeRate(): boolean {
-    const currency = this.transactionForm.get('currency')?.value;
-    const accountId = this.transactionForm.get('accountId')?.value;
-    if (!currency || !accountId) return false;
-    
-    const account = this.financeVar.getAccounts().find(a => a.id === accountId);
-    return !!account && currency !== account.currency;
-  }
-
-  calculatedAmount(): string {
-    const amount = parseFloat(this.transactionForm.get('amount')?.value) || 0;
-    const exchangeRate = parseFloat(this.transactionForm.get('exchangeRate')?.value) || 1;
-    const accountCurrency = this.getAccountCurrency(this.transactionForm.get('accountId')?.value);
-    return `${this.getCurrencySymbol(accountCurrency)}${(amount * exchangeRate).toFixed(2)}`;
-  }
-
-  getCategoryIconName(icon: string): string {
-    // Map custom icons to Ionicons
-    const iconMap: { [key: string]: string } = {
-      '🍱': 'fast-food',
-      '🚌': 'bus',
-      '🛍️': 'cart',
-      '🎮': 'game-controller',
-      '📝': 'document-text',
-      '🔄': 'swap-horizontal'
-    };
-    return iconMap[icon] || 'cash';
   }
 }
