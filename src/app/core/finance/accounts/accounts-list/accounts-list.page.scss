@@ -1,7 +1,8 @@
 .accounts-content {
+  --background: #f9fafb;
   --padding-top: 16px;
   --padding-end: 16px;
-  --padding-bottom: 16px;
+  --padding-bottom: 80px;
   --padding-start: 16px;
 }
 
@@ -14,92 +15,116 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
-}
 
-.section-header h2 {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--ion-color-dark, #222428);
+  h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0;
+  }
 }
 
 .account-type-title {
   font-size: 14px;
-  font-weight: 600;
-  color: var(--ion-color-medium, #92949c);
+  font-weight: 700;
+  color: #6b7280;
   margin: 16px 0 8px 0;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 4px;
 }
 
 .accounts-grid,
 .funds-grid {
-  display: grid;
-  gap: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .account-card,
 .fund-card {
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  margin: 0;
+  cursor: pointer;
 }
 
 .account-card {
-  --background: white;
+  --background: #ffffff;
+  border: 1px solid #f3f4f6;
+
+  &:hover {
+    --background: #eef2ff;
+  }
 }
 
 .fund-card {
-  --background: var(--ion-color-tertiary-contrast, #e0e7ff);
-  border: 1px solid var(--ion-color-tertiary, #5260ff);
+  --background: #ffffff;
+  border: 1px solid #ccfbf1;
+
+  &:hover {
+    --background: #f0fdfa;
+  }
 }
 
 ion-card-header {
-  padding: 12px;
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 ion-card-title {
   font-size: 16px;
-  font-weight: 600;
-  color: var(--ion-color-dark, #222428);
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.fund-card ion-card-title {
+  color: #115e59;
 }
 
 ion-card-subtitle {
   font-size: 12px;
-  color: var(--ion-color-medium, #92949c);
+  color: #9ca3af;
+  margin-top: 2px;
 }
 
 ion-card-content {
-  padding: 8px 12px 12px 12px;
+  display: none;
 }
 
 .account-balance,
 .fund-balance {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   text-align: right;
+  color: #1f2937;
 }
 
 .account-balance.negative {
-  color: var(--ion-color-danger, #eb445a);
+  color: #ef4444;
 }
 
 .fund-balance {
-  color: var(--ion-color-tertiary, #5260ff);
+  color: #0d9488;
 }
 
 .no-accounts,
 .no-funds {
   text-align: center;
-  color: var(--ion-color-medium, #92949c);
+  color: #9ca3af;
   font-size: 14px;
-  padding: 24px 0;
+  padding: 16px 0;
 }
 
 .funds-section {
   padding-top: 24px;
-  border-top: 1px solid var(--ion-color-step-200, #e5e7eb);
+  border-top: 1px solid #e5e7eb;
 }
 
 .funds-description {
   font-size: 12px;
-  color: var(--ion-color-medium, #92949c);
+  color: #6b7280;
   margin-bottom: 16px;
   line-height: 1.4;
 }

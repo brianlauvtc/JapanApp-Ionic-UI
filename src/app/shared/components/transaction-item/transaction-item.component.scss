@@ -1,17 +1,25 @@
 .transaction-item {
-  --background: var(--ion-item-background, #ffffff);
-  --color: var(--ion-text-color, #000000);
+  --background: #ffffff;
+  --color: #1f2937;
+  --border-radius: 12px;
+  --padding-start: 12px;
+  --padding-end: 12px;
+  --inner-padding-end: 0;
   border-radius: 12px;
   margin-bottom: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  padding: 12px;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  border: 1px solid #f3f4f6;
+
+  &:hover {
+    --background: #f9fafb;
+  }
 }
 
 .icon-container {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background-color: var(--ion-color-step-100, #f4f5f8);
+  background-color: #f9fafb;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -19,35 +27,55 @@
 }
 
 .category-name {
-  font-weight: 600;
+  font-weight: 700;
   font-size: 14px;
-  margin-bottom: 4px;
+  margin: 0 0 2px 0;
+  color: #1f2937;
+  display: flex;
+  align-items: center;
 }
 
 .fund-badge,
 .warn-badge {
-  font-size: 10px;
+  font-size: 9px;
   margin-left: 4px;
   --padding-start: 4px;
   --padding-end: 4px;
   --padding-top: 2px;
   --padding-bottom: 2px;
+  border-radius: 4px;
+}
+
+.fund-badge {
+  --background: #ccfbf1;
+  color: #0f766e;
+}
+
+.warn-badge {
+  --background: #fee2e2;
+  color: #dc2626;
 }
 
 .transaction-note {
-  font-size: 12px;
-  color: var(--ion-color-medium, #92949c);
+  font-size: 11px;
+  color: #6b7280;
   margin: 0;
 }
 
 .amount-container {
   text-align: right;
   min-width: 80px;
+
+  h2 {
+    font-weight: 700;
+    font-size: 14px;
+    margin: 0;
+  }
 }
 
 .running-balance {
   font-size: 10px;
-  color: var(--ion-color-medium, #92949c);
+  color: #9ca3af;
   margin: 0;
-  margin-top: 4px;
+  margin-top: 2px;
 }
