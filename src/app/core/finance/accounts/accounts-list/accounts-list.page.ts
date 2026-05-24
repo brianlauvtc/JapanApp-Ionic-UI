@@ -17,7 +17,7 @@ export class AccountsListPage implements OnInit {
   currencies = currencies;
   baseCurrency: CurrencyCode = 'HKD';
   baseCurrencySymbol: string = '$';
-  
+  netWorth: any = { net: 0, ast: 0, liab: 0 };
   constructor(
     private financeVar: FinanceVarService,
     private financeService: FinanceService,
@@ -31,8 +31,16 @@ export class AccountsListPage implements OnInit {
     this.baseCurrencySymbol = this.currencies[this.baseCurrency].symbol;
   }
 
+  get accounts() {
+    return this.financeVar.getAccounts();
+  }
+
   getAccountsByType(type: string) {
-    return this.financeVar.getAccounts().filter(a => a.type === type);
+    return this.accounts.filter(a => a.type === type);
+  }
+
+  hasAccountType(type: string): boolean {
+    return this.accounts.some(acc => acc.type === type);
   }
 
   getAccBalance(accountId: string) {

@@ -1,21 +1,83 @@
-ion-item {
-  --padding-start: 0;
-  margin-bottom: 16px;
+// 統一背景底色
+ion-content, ion-toolbar {
+  --background: #f4f5f8;
 }
 
-ion-input, ion-select {
-  --padding-start: 0;
+// 現代化圓角列表卡片
+ion-list.modern-list {
+  border-radius: 16px;
+  margin: 16px 16px 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
+
+  ion-item {
+    --padding-start: 16px;
+    --inner-padding-end: 16px;
+    --min-height: 64px;
+
+    // 左側圖示風格
+    ion-icon[slot="start"] {
+      font-size: 24px;
+      margin-right: 12px;
+    }
+
+    // Toggle 標籤樣式調整
+    ion-toggle {
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    // 名稱輸入框佈局
+    .input-wrapper {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 8px 0;
+      
+      .custom-input {
+        font-size: 18px;
+        font-weight: 600;
+        --padding-start: 0;
+      }
+    }
+  }
 }
 
-ion-note {
-  font-size: 18px;
-  font-weight: bold;
-  min-width: 20px;
-  text-align: right;
-}
+// 金額輸入框專屬設計
+.balance-input-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  
+  .currency-symbol {
+    font-size: 18px;
+    color: var(--ion-color-medium);
+    margin-right: 6px;
+    font-weight: 600;
+  }
+  
+  .balance-input {
+    font-size: 24px;
+    font-weight: 700;
+    text-align: right;
+    max-width: 140px;
+    color: var(--ion-color-dark);
+    --padding-start: 0;
+    --padding-end: 0;
+    
+    input {
+      text-align: right;
+    }
+  }
 
-.daily-limit-section {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid var(--ion-color-step-150, #e0e0e0);
+  // 針對每日限額的小型數字輸入框
+  &.small {
+    .currency-symbol {
+      font-size: 15px;
+    }
+    .balance-input {
+      font-size: 20px;
+      color: var(--ion-color-tertiary); // 使用基金專屬紫色/青色突顯
+    }
+  }
 }

@@ -1,130 +1,191 @@
-.accounts-content {
-  --background: #f9fafb;
-  --padding-top: 16px;
-  --padding-end: 16px;
-  --padding-bottom: 80px;
-  --padding-start: 16px;
+// 全局底色與佈局優化
+ion-content, ion-toolbar {
+  --background: #f4f5f8;
 }
 
-.section {
-  margin-bottom: 24px;
-}
+// 頂部沉浸式微型看板
+.assets-dashboard-hero {
+  background: #f4f5f8;
+  padding: 16px 16px 8px;
 
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
+  .dashboard-card {
+    background: white;
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.01);
 
-  h2 {
-    font-size: 18px;
-    font-weight: 600;
-    color: #1f2937;
-    margin: 0;
+    .card-header-label {
+      font-size: 13px;
+      color: var(--ion-color-medium);
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .net-worth-amount {
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--ion-color-dark);
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+
+      .currency-symbol {
+        font-size: 24px;
+        color: var(--ion-color-medium);
+        font-weight: 600;
+      }
+    }
+
+    .dashboard-divider {
+      height: 1px;
+      background: #f0f0f5;
+      margin: 16px 0;
+    }
+
+    .details-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+
+      .detail-block {
+        display: flex;
+        align-items: center;
+        flex: 1;
+
+        .dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          margin-right: 8px;
+          
+          &.asset-dot { background-color: var(--ion-color-success); }
+          &.liability-dot { background-color: var(--ion-color-danger); }
+        }
+
+        .detail-info {
+          display: flex;
+          flex-direction: column;
+
+          .label {
+            font-size: 11px;
+            color: var(--ion-color-medium);
+            margin-bottom: 2px;
+          }
+          .value {
+            font-size: 15px;
+            font-weight: 600;
+          }
+        }
+      }
+    }
   }
 }
 
-.account-type-title {
-  font-size: 14px;
-  font-weight: 700;
-  color: #6b7280;
-  margin: 16px 0 8px 0;
-  border-bottom: 1px solid #e5e7eb;
-  padding-bottom: 4px;
-}
+// 分組區塊樣式
+.account-groups-container {
+  padding-bottom: 32px;
 
-.accounts-grid,
-.funds-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
+  .group-section {
+    margin-top: 20px;
 
-.account-card,
-.fund-card {
-  border-radius: 12px;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  margin: 0;
-  cursor: pointer;
-}
+    .group-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ion-color-medium);
+      padding-left: 28px;
+      margin-bottom: 6px;
+      letter-spacing: 0.3px;
+    }
 
-.account-card {
-  --background: #ffffff;
-  border: 1px solid #f3f4f6;
+    // 基金專屬的標題列佈局，將新增按鈕完美的向右靠齊
+    .group-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-right: 16px;
 
-  &:hover {
-    --background: #eef2ff;
+      .add-fund-inline-btn {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 600;
+        --padding-end: 0;
+      }
+    }
+
+    .group-empty-state {
+      margin: 0 16px;
+      padding: 16px;
+      background: rgba(0, 0, 0, 0.01);
+      border: 1px dashed #e0e0e6;
+      border-radius: 12px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--ion-color-medium);
+    }
   }
 }
 
-.fund-card {
-  --background: #ffffff;
-  border: 1px solid #ccfbf1;
+// 現代化內嵌清單
+ion-list.modern-account-list {
+  border-radius: 16px;
+  margin: 0 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
 
-  &:hover {
-    --background: #f0fdfa;
+  ion-item {
+    --min-height: 68px;
+    --padding-start: 16px;
+    --inner-padding-end: 16px;
+
+    // 圓形淡色圖標背景
+    .account-icon-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      margin-right: 16px;
+      
+      &.cash { background-color: rgba(var(--ion-color-success-rgb), 0.1); }
+      &.bank { background-color: rgba(var(--ion-color-primary-rgb), 0.1); }
+      &.credit { background-color: rgba(var(--ion-color-danger-rgb), 0.1); }
+      &.fund { background-color: rgba(var(--ion-color-tertiary-rgb), 0.1); }
+    }
+
+    .account-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--ion-color-dark);
+      margin-bottom: 4px;
+    }
+
+    .account-currency-badge {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--ion-color-medium);
+      background: #f0f0f5;
+      padding: 2px 6px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+
+    // 基金預算文字樣式
+    .fund-budget-text {
+      font-size: 12px;
+      color: var(--ion-color-medium);
+      margin: 0;
+    }
+
+    .account-balance {
+      font-size: 17px;
+      font-weight: 700;
+      
+      &.text-tertiary {
+        color: var(--ion-color-tertiary-shade);
+      }
+    }
   }
-}
-
-ion-card-header {
-  padding: 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-ion-card-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: #1f2937;
-}
-
-.fund-card ion-card-title {
-  color: #115e59;
-}
-
-ion-card-subtitle {
-  font-size: 12px;
-  color: #9ca3af;
-  margin-top: 2px;
-}
-
-ion-card-content {
-  display: none;
-}
-
-.account-balance,
-.fund-balance {
-  font-size: 16px;
-  font-weight: 700;
-  text-align: right;
-  color: #1f2937;
-}
-
-.account-balance.negative {
-  color: #ef4444;
-}
-
-.fund-balance {
-  color: #0d9488;
-}
-
-.no-accounts,
-.no-funds {
-  text-align: center;
-  color: #9ca3af;
-  font-size: 14px;
-  padding: 16px 0;
-}
-
-.funds-section {
-  padding-top: 24px;
-  border-top: 1px solid #e5e7eb;
-}
-
-.funds-description {
-  font-size: 12px;
-  color: #6b7280;
-  margin-bottom: 16px;
-  line-height: 1.4;
 }

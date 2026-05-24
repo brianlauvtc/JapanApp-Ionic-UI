@@ -1,15 +1,76 @@
-ion-item {
-  --padding-start: 0;
-  margin-bottom: 16px;
+// 統一背景底色，讓白色卡片浮出來
+ion-content, ion-toolbar {
+  --background: #f4f5f8;
 }
 
-ion-input, ion-select {
-  --padding-start: 0;
+// 膠囊切換按鈕區塊
+.segment-container {
+  padding: 16px 16px 24px;
+  background: #f4f5f8;
+  
+  ion-segment {
+    background: #e4e4ed;
+  }
 }
 
-ion-note {
-  font-size: 18px;
-  font-weight: bold;
-  min-width: 20px;
-  text-align: right;
+// 現代化圓角列表卡片
+ion-list.modern-list {
+  border-radius: 16px;
+  margin: 0 16px 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
+
+  ion-item {
+    --padding-start: 16px;
+    --inner-padding-end: 16px;
+    --min-height: 64px;
+
+    // 左側圖示風格
+    ion-icon[slot="start"] {
+      font-size: 24px;
+      margin-right: 12px;
+    }
+
+    // 帳戶名稱輸入框佈局
+    .input-wrapper {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 8px 0;
+      
+      .custom-input {
+        font-size: 18px;
+        font-weight: 600;
+        --padding-start: 0;
+      }
+    }
+  }
+}
+
+// 初始餘額輸入框專屬設計
+.balance-input-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  
+  .currency-symbol {
+    font-size: 18px;
+    color: var(--ion-color-medium);
+    margin-right: 6px;
+    font-weight: 600;
+  }
+  
+  .balance-input {
+    font-size: 24px;
+    font-weight: 700;
+    text-align: right;
+    max-width: 140px;
+    color: var(--ion-color-dark);
+    --padding-start: 0;
+    --padding-end: 0;
+    
+    input {
+      text-align: right;
+    }
+  }
 }

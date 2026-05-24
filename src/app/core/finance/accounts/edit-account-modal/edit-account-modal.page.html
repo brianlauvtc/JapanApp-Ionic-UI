@@ -1,53 +1,70 @@
-<ion-header>
+<ion-header class="ion-no-border">
   <ion-toolbar>
-    <ion-title>{{ isEditMode ? '編輯帳戶' : '新增帳戶' }}</ion-title>
     <ion-buttons slot="start">
-      <ion-button (click)="cancel()">
-        <ion-icon name="close"></ion-icon>
-      </ion-button>
+      <ion-button (click)="cancel()" color="medium">取消</ion-button>
     </ion-buttons>
+    <ion-title mode="ios">{{ isEditMode ? '編輯帳戶' : '新增帳戶' }}</ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="saveAccount()" [disabled]="accountForm.invalid">
-        <ion-icon name="checkmark"></ion-icon>
+      <ion-button (click)="saveAccount()" [disabled]="accountForm.invalid" color="primary" style="font-weight: 600;">
+        儲存
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding">
+<ion-content class="ion-padding-bottom">
   <form [formGroup]="accountForm">
-    <ion-item>
-      <ion-label position="stacked">帳戶名稱 *</ion-label>
-      <ion-input formControlName="name" placeholder="輸入帳戶名稱"></ion-input>
-    </ion-item>
+    
+    <div class="segment-container">
+      <ion-segment formControlName="type" mode="ios">
+        <ion-segment-button value="cash"><ion-label>現金</ion-label></ion-segment-button>
+        <ion-segment-button value="bank"><ion-label>銀行</ion-label></ion-segment-button>
+        <ion-segment-button value="credit"><ion-label>信用卡</ion-label></ion-segment-button>
+      </ion-segment>
+    </div>
 
-    <ion-item>
-      <ion-label position="stacked">帳戶類型 *</ion-label>
-      <ion-select formControlName="type" interface="action-sheet">
-        <ion-select-option *ngFor="let type of accountTypes" [value]="type.value">
-          {{ type.label }}
-        </ion-select-option>
-      </ion-select>
-    </ion-item>
+    <ion-list inset="true" class="modern-list">
+      <ion-item lines="none">
+        <div class="input-wrapper">
+          <ion-label color="medium" style="font-size: 13px; margin-bottom: 4px;">帳戶名稱</ion-label>
+          <ion-input 
+            formControlName="name" 
+            placeholder="例如：中銀出糧戶口、八達通..." 
+            class="custom-input">
+          </ion-input>
+        </div>
+      </ion-item>
+    </ion-list>
 
-    <ion-item>
-      <ion-label position="stacked">貨幣 *</ion-label>
-      <ion-select formControlName="currency" interface="action-sheet">
-        <ion-select-option *ngFor="let currency of currencies | keyvalue" [value]="currency.key">
-          {{ currency.value.name }} ({{ currency.value.symbol }})
-        </ion-select-option>
-      </ion-select>
-    </ion-item>
+    <ion-list inset="true" class="modern-list">
+      
+      <ion-item lines="full" button detail="false">
+        <ion-icon name="globe-outline" slot="start" color="secondary"></ion-icon>
+        <ion-select formControlName="currency" interface="action-sheet" label="預設貨幣" style="width: 100%;">
+          <ion-select-option *ngFor="let currency of currencies | keyvalue" [value]="currency.key">
+            {{ currency.value.name }} ({{ currency.value.symbol }})
+          </ion-select-option>
+        </ion-select>
+      </ion-item>
 
-    <ion-item>
-      <ion-label position="stacked">初始餘額 *</ion-label>
-      <ion-input 
-        type="number" 
-        formControlName="initBalance" 
-        placeholder="0"
-        [step]="'any'">
-      </ion-input>
-      <ion-note slot="end">{{ getCurrencySymbol(accountForm.get('currency')?.value) }}</ion-note>
-    </ion-item>
+      <ion-item lines="none">
+        <ion-icon name="wallet-outline" slot="start" color="primary"></ion-icon>
+        <ion-label>初始餘額</ion-label>
+        
+        <div slot="end" class="balance-input-wrapper">
+          <span class="currency-symbol">{{ getCurrencySymbol(accountForm.get('currency')?.value) }}</span>
+          <ion-input 
+            type="number" 
+            formControlName="initBalance" 
+            placeholder="0"
+            [step]="'any'"
+            class="balance-input"
+            inputmode="decimal">
+          </ion-input>
+        </div>
+      </ion-item>
+      
+    </ion-list>
+
   </form>
 </ion-content>
