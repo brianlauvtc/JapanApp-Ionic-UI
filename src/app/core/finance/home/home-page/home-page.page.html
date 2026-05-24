@@ -15,15 +15,15 @@
         <p class="net-worth-label">目前總資產 ({{ baseCurrency }})</p>
         <div class="net-worth-amount">
           <span class="currency-symbol">{{ baseCurrencySymbol }}</span>
-          <span>{{ getNetWorth().net | number:'1.0-0' }}</span>
+          <span>{{ netWorthData.net | number:'1.0-0' }}</span>
         </div>
       </div>
       <div class="balance-details">
-        <div>月頭: {{ calculateDailyGroupedData().openBal | number:'1.0-0' }}</div>
-        <div>月尾: {{ calculateDailyGroupedData().closeBal | number:'1.0-0' }}</div>
+        <div>月頭: {{ homeData.openBal | number:'1.0-0' }}</div>
+        <div>月尾: {{ homeData.closeBal | number:'1.0-0' }}</div>
       </div>
     </div>
-    <div class="chart-container">
+    <div class="chart-container" *ngIf="homeData.days.length > 0">
       <apx-chart
         [series]="chartSeries"
         [chart]="chartOptions.chart"
@@ -42,28 +42,47 @@
   <div class="summary-row">
     <div class="summary-item">
       <span class="summary-label">總支:</span>
-      <span class="summary-value text-danger">{{ calculateDailyGroupedData().totalExp | number:'1.0-0' }}</span>
+      <span class="summary-value text-danger">{{ homeData.totalExp | number:'1.0-0' }}</span>
     </div>
     <div class="summary-item">
       <span class="summary-label">總收:</span>
-      <span class="summary-value text-success">{{ calculateDailyGroupedData().totalInc | number:'1.0-0' }}</span>
+      <span class="summary-value text-success">{{ homeData.totalInc | number:'1.0-0' }}</span>
     </div>
   </div>
 
   <div class="transactions-list">
-    <div *ngFor="let dayGroup of calculateDailyGroupedData().days" class="day-group">
-      <h4 class="day-header">{{ formatDate(dayGroup.date) }}</h4>
-      <app-transaction-item 
-        *ngFor="let transaction of dayGroup.txns" 
-        [transaction]="transaction" 
-        context="home"
-        (editTransaction)="editTransaction($event)">
-      </app-transaction-item>
-    </div>
     
-    <div *ngIf="calculateDailyGroupedData().days.length === 0" class="no-transactions">
-      此月無紀錄
+    <div *ngIf="isLoading" class="skeleton-container">
+      <ion-item *ngFor="let i of [1, 2, 3, 4]" lines="none">
+        <ion-avatar slot="start">
+          <ion-skeleton-text [animated]="true"></ion-skeleton-text>
+        </ion-avatar>
+        <ion-label>
+          <h3><ion-skeleton-text [animated]="true" style="width: 40%"></ion-skeleton-text></h3>
+          <p><ion-skeleton-text [animated]="true" style="width: 70%"></ion-skeleton-text></p>
+        </ion-label>
+        <div slot="end">
+          <ion-skeleton-text [animated]="true" style="width: 50px; height: 20px;"></ion-skeleton-text>
+        </div>
+      </ion-item>
     </div>
+
+    <ng-container *ngIf="!isLoading">
+      <div *ngFor="let dayGroup of homeData.days" class="day-group">
+        <h4 class="day-header">{{ formatDate(dayGroup.date) }}</h4>
+        <app-transaction-item 
+          *ngFor="let transaction of dayGroup.txns" 
+          [transaction]="transaction" 
+          context="home"
+          (editTransaction)="editTransaction($event)"
+          (deleteTransaction)="deleteTransaction($event)">
+        </app-transaction-item>
+      </div>
+      
+      <div *ngIf="homeData.days.length === 0" class="no-transactions">
+        此月無紀錄
+      </div>
+    </ng-container>
   </div>
 </ion-content>
 

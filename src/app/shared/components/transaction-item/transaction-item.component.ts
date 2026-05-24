@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { Transaction } from '../../../core/finance/model/finance.model';
 import { FinanceService } from '../../../core/finance/service/finance.service';
 import { currencies } from '../../../core/finance/environment/environment';
+import { IonItemSliding } from '@ionic/angular';
 
 @Component({
   selector: 'app-transaction-item',
@@ -13,10 +14,17 @@ export class TransactionItemComponent {
   @Input() context: 'home' | 'account' | 'fund' = 'home';
   @Input() contextId?: string;
   @Output() editTransaction = new EventEmitter<string>();
+  @Output() deleteTransaction = new EventEmitter<string>();
 
+  
   constructor(private financeService: FinanceService) {}
 
   getTransactionDisplay(): { prefix: string; color: string; note: string; displayHtml: string } {
+
+    if (!this.transaction) {
+      return { prefix: '', color: '', note: '', displayHtml: '' };
+    }
+
     let prefix = '', color = 'text-gray-800', note = this.transaction.note || '', catName = this.transaction.category;
     let displayAmt = this.transaction.amount;
     const currenciesObj = currencies as any;
@@ -103,6 +111,18 @@ export class TransactionItemComponent {
   onEdit() {
     if (!this.transaction.type.startsWith('sys_')) {
       this.editTransaction.emit(this.transaction.id);
+    }
+  }
+
+  onDelete(slidingItem?: IonItemSliding) {
+    if (!this.transaction.type.startsWith('sys_')) {
+      // 觸發事件，將交易 ID 傳給父組件
+      this.deleteTransaction.emit(this.transaction.id);
+      
+      // (可選) 如果有傳入 slidingItem，在點擊後自動收起滑動選單
+      if (slidingItem) {
+        slidingItem.close();
+      }
     }
   }
 }

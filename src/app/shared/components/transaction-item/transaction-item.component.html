@@ -1,23 +1,34 @@
-<ion-item [button]="!transaction.type.startsWith('sys_')" (click)="onEdit()" lines="none" class="transaction-item">
-  <ion-avatar slot="start">
-    <div class="icon-container">
-      {{ transaction.icon || '💰' }}
+<ion-item-sliding *ngIf="transaction">
+  
+  <ion-item [button]="!transaction?.type?.startsWith('sys_')" (click)="onEdit()" lines="none" class="transaction-item">
+    <ion-avatar slot="start">
+      <div class="icon-container">
+        {{ transaction?.icon || '💰' }}
+      </div>
+    </ion-avatar>
+    
+    <ion-label>
+      <h2 class="category-name">
+        {{ getTransactionDisplay().catName || (transaction?.type === 'transfer' ? '轉帳' : transaction?.category) }}
+        
+        <ion-badge *ngIf="transaction?.fundId && context !== 'fund' && !transaction?.type?.startsWith('sys_')" color="tertiary" class="fund-badge">基金</ion-badge>
+        <ion-badge *ngIf="transaction?._warnLimit" color="danger" class="warn-badge">⚠️ 超限</ion-badge>
+      </h2>
+      <p class="transaction-note">{{ getTransactionDisplay().note }}</p>
+    </ion-label>
+    
+    <div class="amount-container" slot="end">
+      <h2 [class]="getTransactionDisplay().color" [innerHTML]="getTransactionDisplay().displayHtml"></h2>
+      <p *ngIf="transaction?._runningBal !== undefined && context !== 'home_recent'" class="running-balance">
+        餘: {{ getCurrencySymbol() }}{{ transaction?._runningBal | number:'1.0-0' }}
+      </p>
     </div>
-  </ion-avatar>
+  </ion-item>
+
+  <ion-item-options side="end">
+    <ion-item-option color="danger" expandable (click)="onDelete()">
+      <ion-icon slot="icon-only" name="trash"></ion-icon>
+    </ion-item-option>
+  </ion-item-options>
   
-  <ion-label>
-    <h2 class="category-name">
-      {{ getTransactionDisplay().catName || (transaction.type === 'transfer' ? '轉帳' : transaction.category) }}
-      <ion-badge *ngIf="transaction.fundId && context !== 'fund' && !transaction.type.startsWith('sys_')" color="tertiary" class="fund-badge">基金</ion-badge>
-      <ion-badge *ngIf="transaction._warnLimit" color="danger" class="warn-badge">⚠️ 超限</ion-badge>
-    </h2>
-    <p class="transaction-note">{{ getTransactionDisplay().note }}</p>
-  </ion-label>
-  
-  <div class="amount-container" slot="end">
-    <h2 [class]="getTransactionDisplay().color" [innerHTML]="getTransactionDisplay().displayHtml"></h2>
-    <p *ngIf="transaction._runningBal !== undefined && context !== 'home_recent'" class="running-balance">
-      餘: {{ getCurrencySymbol() }}{{ transaction._runningBal | number:'1.0-0' }}
-    </p>
-  </div>
-</ion-item>
+</ion-item-sliding>

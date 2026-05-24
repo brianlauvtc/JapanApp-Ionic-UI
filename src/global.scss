@@ -46,3 +46,42 @@ ion-tab-button {
   --padding-top: 8px;
   --padding-bottom: 8px;
 }
+
+/* ==========================================================================
+   自訂 UI 現代化設計優化
+   ========================================================================== */
+
+// 1. 卡片設計：加入大圓角與柔和陰影，消除死板的邊框
+ion-card, .net-worth-card {
+  border-radius: 16px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.6); // 帶點毛玻璃的高光感
+  margin-bottom: 16px;
+}
+
+// 2. 交易列表樣式：增加一點間距讓點擊區域更舒服
+.transaction-item {
+  --padding-start: 12px;
+  --inner-padding-end: 12px;
+  margin-bottom: 8px;
+  border-radius: 12px;
+  background: white; // 讓每個 item 獨立出來
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+// 3. 圖標容器優化：讓左側的 emoji 或 icon 看起來更像精緻的 App
+.icon-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background-color: var(--ion-color-light);
+  border-radius: 50%;
+  font-size: 24px;
+}
+
+// 4. FAB 按鈕漂浮感加強
+ion-fab-button {
+  --box-shadow: 0 10px 20px rgba(var(--ion-color-primary-rgb), 0.4);
+}
