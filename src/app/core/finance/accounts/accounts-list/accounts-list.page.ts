@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { ModalController } from '@ionic/angular';
+import { ModalController, NavController } from '@ionic/angular';
 import { FinanceVarService } from '../../service/finance-var.service';
 import { FinanceService } from '../../service/finance.service';
 import { currencies, CurrencyCode } from '../../environment/environment';
@@ -17,18 +17,24 @@ export class AccountsListPage implements OnInit {
   currencies = currencies;
   baseCurrency: CurrencyCode = 'HKD';
   baseCurrencySymbol: string = '$';
-  netWorth: any = { net: 0, ast: 0, liab: 0 };
+
   constructor(
     private financeVar: FinanceVarService,
     private financeService: FinanceService,
     private router: Router,
-    private modalController: ModalController
+    private modalController: ModalController,
+    private navCtrl: NavController
   ) {}
 
   ngOnInit() {
     const appData = this.financeVar.getAppData();
     this.baseCurrency = appData.settings.baseCurrency;
     this.baseCurrencySymbol = this.currencies[this.baseCurrency].symbol;
+  }
+
+  get netWorth() {
+    // 呼叫 financeService 即時計算，若尚未載入完畢則回傳預設的 0
+    return this.financeService.getNetWorth() || { net: 0, ast: 0, liab: 0 };
   }
 
   get accounts() {
@@ -48,11 +54,11 @@ export class AccountsListPage implements OnInit {
   }
 
   viewAccountDetail(accountId: string) {
-    this.router.navigate(['/tabs//account-detail/' + accountId]);
+    this.navCtrl.navigateForward(`/tabs/accounts/account-detail/${accountId}`);
   }
 
   viewFundDetail(fundId: string) {
-    this.router.navigate(['/tabs/fund-detail', fundId]);
+    this.navCtrl.navigateForward(`/tabs/accounts/fund-detail/${fundId}`);
   }
 
   async openEditAccountModal() {

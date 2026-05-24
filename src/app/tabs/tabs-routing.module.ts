@@ -13,7 +13,7 @@ const routes: Routes = [
       },
       {
         path: 'accounts',
-        loadChildren: () => import('../core/finance/accounts/accounts-list/accounts-list.module').then(m => m.AccountsListModule)
+        loadChildren: () => import('../core/finance/accounts/accounts.module').then(m => m.AccountsModule)
       },
       {
         path: 'analysis',
@@ -23,14 +23,7 @@ const routes: Routes = [
         path: 'settings',
         loadChildren: () => import('../core/finance/settings/settings-page/settings-page.module').then(m => m.SettingsPageModule)
       },
-      {
-        path: 'account-detail/:id',
-        loadChildren: () => import('../core/finance/accounts/account-detail/account-detail.module').then(m => m.AccountDetailModule)
-      },
-      {
-        path: 'fund-detail/:id',
-        loadChildren: () => import('../core/finance/accounts/fund-detail/fund-detail.module').then(m => m.FundDetailModule)
-      },
+     
       {
         path: '',
         redirectTo: '/tabs/home',
