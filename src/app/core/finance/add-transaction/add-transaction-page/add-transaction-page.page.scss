@@ -1,277 +1,266 @@
-.transaction-type-tabs {
-  padding: 0 16px;
-  margin-bottom: 16px;
+// 整體背景設定為帶有一點灰度，讓 inset list 更突出
+ion-content {
+  --background: #f4f5f8;
 }
 
-ion-card {
-  margin: 8px 16px;
+ion-toolbar {
+  --background: #f4f5f8;
 }
 
-// Fix amount input layout
-ion-item.amount-currency-container {
-  --padding-start: 0;
-  --padding-end: 0;
-  display: flex;
-  align-items: center;
+// 頂部 Segment 
+.segment-container {
+  padding: 8px 16px 16px;
+  background: #f4f5f8;
   
-  .currency-section {
-    width: 30%;
+  ion-segment {
+    background: #e4e4ed;
+  }
+}
+
+.amount-card-container {
+  padding: 0 16px 12px;
+  background: #f4f5f8;
+
+  .modern-amount-box {
     display: flex;
     align-items: center;
-    justify-content: flex-start;
-    gap: 4px;
-  }
-  
-  ion-label.currency-symbol {
-    font-size: 24px;
-    font-weight: bold;
-    min-width: 24px;
-    text-align: center;
-  }
-  
-  ion-input {
-    width: 80%;
-    text-align: left;
-    font-size: 24px;
-    font-weight: bold;
-    margin: 0;
-    
-    input {
-      text-align: left;
-      width: 100%;
-    }
-  }
-  
-  ion-select {
-    min-width: 40px;
-    font-size: 14px;
-    max-width: calc(100% - 30px);
-  }
-}
+    justify-content: space-between;
+    background: white;
+    padding: 16px 20px;
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
+    border: 1px solid rgba(0, 0, 0, 0.01);
 
-// Account and fund selects
-ion-select {
-  max-width: 100%;
-  
-  .select-text {
-    white-space: normal;
-    word-wrap: break-word;
-    max-width: 100%;
-  }
-}
+    // 依據交易類型動態變換金額顏色
+    &.expense { .input-main-zone { color: var(--ion-color-danger); } }
+    &.income { .input-main-zone { color: var(--ion-color-success); } }
+    &.transfer { .input-main-zone { color: var(--ion-color-dark); } }
 
-// Category buttons - remove click effect
-.category-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-  gap: 8px;
-  
-  .category-button {
-    height: auto; // 讓按鈕高度隨內容長大
-    --padding-top: 12px;
-    --padding-bottom: 12px;
-    --padding-start: 4px;
-    --padding-end: 4px;
-    margin: 0;
-
-    /* 重點：用這個 div 來做垂直排列 */
-    .icon-text-stack {
+    .input-main-zone {
       display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 6px; /* Icon 和文字之間的垂直距離 */
-      width: 100%;
-    }
-    
-    .category-icon {
-      font-size: 26px; /* 可以稍微調大 icon 比例 */
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0; // 清除可能預設的 margin
-    }
-    
-    .category-text {
-      font-size: 14px;
-      white-space: nowrap;
-      line-height: 1;
-    }
-  }
-  
-  .category-button.selected {
-    --background: var(--ion-color-primary-tint);
-    --color: var(--ion-color-primary);
-  }
-  
-  .category-button:not(.selected) {
-    --ripple-color: transparent;
-    --background-hover: var(--background);
-    --background-focused: var(--background);
-  }
-}
-
-.category-button.selected {
-  --background: var(--ion-color-primary-tint);
-  --color: var(--ion-color-primary);
-}
-
-.category-button:not(.selected) {
-  --ripple-color: transparent;
-  --background-hover: var(--background);
-  --background-focused: var(--background);
-}
-  
-ion-icon, .category-icon {
-  font-size: 24px;
-  display: block;
-}
-
-.category-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 24px;
-}
-
-span {
-  white-space: nowrap;
-}
-
-  
-.show-more-categories {
-  text-align: center;
-  margin-top: 8px;
-  
-  ion-button {
-    --padding-start: 0;
-    --padding-end: 0;
-    font-size: 12px;
-    color: var(--ion-color-medium);
-  }
-}
-    
-ion-icon {
-  font-size: 24px;
-  display: block;
-}
-
-span {
-  white-space: nowrap;
-}
-
-
-
-
-
-// Transfer accounts row styling
-ion-item.transfer-accounts-row {
-  --padding-start: 0;
-  --padding-end: 0;
-  
-  .transfer-accounts-container {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    gap: 12px;
-    
-    .transfer-account-group {
-      display: flex;
-      flex-direction: column;
+      align-items: baseline;
       flex: 1;
       min-width: 0;
+      transition: color 0.2s ease;
+
+      .currency-symbol {
+        font-size: 30px;
+        font-weight: 700;
+        margin-right: 6px;
+      }
+
+      .massive-amount-input {
+        font-size: 38px;
+        font-weight: 700;
+        --padding-start: 0;
+        --padding-end: 0;
+        margin: 0;
+        
+        input {
+          text-align: left;
+        }
+      }
+    }
+
+    // 右側貨幣選擇膠囊式設計
+    .currency-picker-pill {
+      display: flex;
+      align-items: center;
+      background: #f0f0f5;
+      padding: 6px 12px;
+      border-radius: 12px;
+      margin-left: 12px;
+      color: var(--ion-color-dark);
+      font-weight: 600;
+      flex-shrink: 0;
       
-      .transfer-label {
+      ion-select {
+        font-size: 14px;
+        --padding-start: 0;
+        --padding-end: 2px;
+        min-height: auto;
+      }
+
+      .select-arrow {
         font-size: 12px;
         color: var(--ion-color-medium);
-        font-weight: 500;
-        margin-bottom: 4px;
-        text-align: center;
       }
-      
-      .transfer-account-select {
-        width: 100%;
-      }
-    }
-    
-    .transfer-icon {
-      font-size: 24px;
-      color: var(--ion-color-primary);
-      flex-shrink: 0;
     }
   }
 }
-
-// Calculated amount display
-.calculated-amount {
-  font-size: 12px;
-  color: var(--ion-color-medium);
-  text-align: right;
-  min-width: 120px;
-}
-
-// Transaction items section
-.items-form {
+// 沉浸式大金額輸入區
+.hero-amount-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 24px 32px;
+  background: white;
+  border-bottom-left-radius: 24px;
+  border-bottom-right-radius: 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
   margin-bottom: 16px;
-  
-  .quantity-price-row {
+  transition: color 0.3s ease;
+
+  // 根據收支改變字體顏色
+  &.expense { color: var(--ion-color-danger); }
+  &.income { color: var(--ion-color-success); }
+  &.transfer { color: var(--ion-color-dark); }
+
+  .currency-pill {
     display: flex;
-    gap: 8px;
-    margin-top: 8px;
+    align-items: center;
+    background: #f0f0f5;
+    padding: 4px 12px;
+    border-radius: 20px;
+    margin-bottom: 12px;
+    color: var(--ion-color-medium);
     
-    ion-item {
-      flex: 1;
+    ion-select {
+      font-size: 14px;
+      font-weight: 600;
+      --padding-start: 0;
+      --padding-end: 4px;
+      min-width: 45px;
+    }
+    .select-icon { font-size: 14px; }
+  }
+
+  .amount-input-wrapper {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    width: 100%;
+
+    .currency-symbol {
+      font-size: 32px;
+      font-weight: 700;
+      margin-right: 4px;
+    }
+
+    .massive-amount-input {
+      font-size: 48px;
+      font-weight: 700;
+      text-align: center;
+      --padding-start: 0;
+      --padding-end: 0;
+      max-width: 250px; // 限制寬度避免跑版
       
-      ion-label {
-        min-width: 20px;
-        text-align: center;
+      input { text-align: center; }
+    }
+  }
+}
+
+// 現代化分類網格 (圓形圖標)
+.modern-category-section {
+  padding: 8px 16px 16px;
+
+  .category-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); // 一排 4 個
+    gap: 16px 8px;
+  }
+
+  .category-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    .icon-circle {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      font-size: 24px;
+      color: var(--ion-color-medium);
+      transition: all 0.2s ease;
+    }
+
+    .category-text {
+      font-size: 12px;
+      color: var(--ion-color-medium);
+      font-weight: 500;
+      text-align: center;
+    }
+
+    // 選中狀態
+    &.active {
+      transform: translateY(-2px);
+      
+      .icon-circle {
+        background: var(--ion-color-primary);
+        color: white;
+        box-shadow: 0 4px 12px rgba(var(--ion-color-primary-rgb), 0.4);
+      }
+      .category-text {
+        color: var(--ion-color-primary);
+        font-weight: 700;
       }
     }
   }
+
+  .show-more-btn {
+    text-align: center;
+    margin-top: 12px;
+  }
 }
 
-.items-table {
-  .item-actions {
+// 設定區列表優化
+ion-list.settings-list, ion-list.items-list {
+  border-radius: 16px;
+  margin: 0 16px 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
+  
+  ion-item {
+    --padding-start: 16px;
+    --inner-padding-end: 16px;
+    --min-height: 56px;
+    
+    ion-icon[slot="start"] {
+      margin-right: 12px;
+      font-size: 22px;
+    }
+    
+    ion-select {
+      width: 100%;
+      justify-content: space-between;
+    }
+  }
+}
+
+// 購物明細輸入框樣式
+.add-item-form {
+  background: #fafafa;
+  border-top: 1px solid #f0f0f5;
+  
+  .item-input {
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    --padding-start: 12px;
+    margin-bottom: 8px;
+  }
+  
+  .item-row {
     display: flex;
     gap: 8px;
     
-    ion-button {
-      --padding-start: 4px;
-      --padding-end: 4px;
-    }
-  }
-  
-  .items-total {
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid var(--ion-color-medium);
-    text-align: right;
-    
-    .total-warning {
-      color: var(--ion-color-danger);
-      margin-left: 8px;
+    .half {
+      flex: 1;
     }
   }
 }
 
-// Ensure proper spacing on all devices
-@media (max-width: 375px) {
-  ion-select {
-    font-size: 12px;
-    max-width: 70px;
-  }
-  
-  .category-button {
-    font-size: 12px;
-    padding: 8px 4px;
-    
-    ion-icon {
-      font-size: 20px;
-    }
-  }
-  
-  .quantity-price-row {
-    flex-direction: column;
-    gap: 4px;
-  }
+.total-row {
+  background: #f8f9fa;
+  --background: #f8f9fa;
+  border-top: 1px solid #eee;
 }
