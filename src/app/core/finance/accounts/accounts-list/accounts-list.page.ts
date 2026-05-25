@@ -114,4 +114,5 @@ export class AccountsListPage implements OnInit {
     });
     await alert.present();
   }
+   
 }

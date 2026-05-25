@@ -52,25 +52,23 @@
     </div>
   </div>
 
-  <div class="transactions-list">
-    <div *ngFor="let dayGroup of groupedData.days" class="day-group">
-      <h4 class="day-header">{{ formatDate(dayGroup.date) }}</h4>
-      <ion-list inset="true" class="modern-account-list">
-        <app-transaction-item 
-          *ngFor="let transaction of dayGroup.txns" 
-          [transaction]="transaction" 
-          context="account"
-          [contextId]="accountId"
-          (editTransaction)="editTransaction($event)"
-          (deleteTransaction)="confirmDelete($event)">
-        </app-transaction-item>
-      </ion-list>
+ <div class="transactions-list">
+  <div *ngFor="let dayGroup of groupedData.days" class="day-group modern-account-list">
+    <h4 class="day-header">{{ formatDate(dayGroup.date) }}</h4>
+    <app-transaction-item 
+      *ngFor="let transaction of dayGroup.txns" 
+      [transaction]="transaction" 
+      context="account"
+      [contextId]="accountId"
+      (editTransaction)="editTransaction($event)"
+      (deleteTransaction)="confirmDelete($event)">
+    </app-transaction-item>
     </div>
-    
-    <div *ngIf="groupedData.days.length === 0" class="group-empty-state">
-      此月無紀錄
-    </div>
+  
+  <div *ngIf="groupedData.days.length === 0" class="group-empty-state">
+    此月無紀錄
   </div>
+</div>
 </ion-content>
 
 <ion-fab vertical="bottom" horizontal="end" slot="fixed">
