@@ -33,7 +33,7 @@ export class FundDetailPage implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.fundId = this.route.snapshot.paramMap.get('id')!;
+    this.fundId = '' //this.route.snapshot.paramMap.get('id')!;
     this.viewedMonth = moment().format('YYYY-MM');
     this.today = this.financeService.getToday();
     this.updateCurrencyInfo();

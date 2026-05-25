@@ -54,11 +54,11 @@ export class AccountsListPage implements OnInit {
   }
 
   viewAccountDetail(accountId: string) {
-    this.navCtrl.navigateForward(`/tabs/accounts/account-detail/${accountId}`);
+     this.router.navigate(['/tabs/accounts/account-detail']);
   }
 
   viewFundDetail(fundId: string) {
-    this.navCtrl.navigateForward(`/tabs/accounts/fund-detail/${fundId}`);
+     this.router.navigate(['/tabs/accounts/fund-detail']);
   }
 
   async openEditAccountModal() {
