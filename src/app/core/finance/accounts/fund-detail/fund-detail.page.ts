@@ -132,13 +132,15 @@ export class FundDetailPage implements OnInit {
   changeMonth(offset: number) {
     const newDate = moment(this.viewedMonth + '-01').add(offset, 'months');
     const today = moment();
-    
-    if (newDate.isAfter(today, 'month')) {
+
+    // 1. 如果是往後切換（下一月），必須檢查是否超過今天
+    if (offset > 0 && newDate.isAfter(today, 'month')) {
       return;
     }
-    
+
+    // 2. 如果是往前切換（上一月），則不限制（或者你可以設定一個起始年份限制）
     this.viewedMonth = newDate.format('YYYY-MM');
-    this.renderFundDetail();
+    this.renderFundDetail(); // 或 renderHome()
   }
 
   getFund() {

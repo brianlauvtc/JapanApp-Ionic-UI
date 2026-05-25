@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ModalController } from '@ionic/angular';
+import { AlertController, ModalController } from '@ionic/angular';
 import { FinanceVarService } from '../../service/finance-var.service';
 import { FinanceService } from '../../service/finance.service';
 import { ApexOptions } from 'ng-apexcharts';
@@ -8,6 +8,7 @@ import moment from 'moment';
 import { currencies } from '../../environment/environment';
 import { AddTransactionPagePage } from '../../add-transaction/add-transaction-page/add-transaction-page.page';
 import { EditAccountModalPage } from '../edit-account-modal/edit-account-modal.page';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-account-detail',
@@ -21,11 +22,14 @@ export class AccountDetailPage implements OnInit {
   chartOptions: ApexOptions = {};
   chartSeries: any[] = [];
   today: string = '';
-
+  private appDataSubscription!: Subscription;
+  groupedData: any = { days: [] };
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private modalController: ModalController,
+    private alertController: AlertController,
+    private modalCtrl: ModalController,
     private financeVar: FinanceVarService,
     private financeService: FinanceService
   ) {}
@@ -35,10 +39,21 @@ export class AccountDetailPage implements OnInit {
     this.viewedMonth = moment().format('YYYY-MM');
     this.today = this.financeService.getToday();
     this.renderAccountDetail();
+    this.appDataSubscription = this.financeVar.appData$.subscribe(() => {
+      // 收到通知後，僅執行讀取與渲染，不執行任何修改
+    this.renderAccountDetail();
+    });
   }
 
+  ngOnDestroy() {
+    // 記得銷毀，否則頁面切換後會出現記憶體洩漏或重複觸發的問題
+    if (this.appDataSubscription) {
+      this.appDataSubscription.unsubscribe();
+    }
+  }
   renderAccountDetail() {
-    const data = this.financeService.calculateDailyGroupedData(this.viewedMonth, 'account', this.accountId);
+    this.groupedData = this.financeService.calculateDailyGroupedData(this.viewedMonth, 'account', this.accountId);
+    const data = this.groupedData;
     const account = this.financeVar.getAppData().accounts.find(a => a.id === this.accountId);
     
     if (!account) {
@@ -120,17 +135,20 @@ export class AccountDetailPage implements OnInit {
     }];
   }
 
-  changeMonth(offset: number) {
-    const newDate = moment(this.viewedMonth + '-01').add(offset, 'months');
-    const today = moment();
-    
-    if (newDate.isAfter(today, 'month')) {
-      return;
-    }
-    
-    this.viewedMonth = newDate.format('YYYY-MM');
-    this.renderAccountDetail();
+
+ changeMonth(offset: number) {
+  const newDate = moment(this.viewedMonth + '-01').add(offset, 'months');
+  const today = moment();
+
+  // 1. 如果是往後切換（下一月），必須檢查是否超過今天
+  if (offset > 0 && newDate.isAfter(today, 'month')) {
+    return;
   }
+
+  // 2. 如果是往前切換（上一月），則不限制（或者你可以設定一個起始年份限制）
+  this.viewedMonth = newDate.format('YYYY-MM');
+  this.renderAccountDetail(); // 或 renderHome()
+}
 
   getAccount() {
     return this.financeVar.getAppData().accounts.find(a => a.id === this.accountId);
@@ -217,5 +235,26 @@ export class AccountDetailPage implements OnInit {
 
   formatDate(dateStr: string): string {
     return dateStr.replace(/-/g, '/');
+  }
+ 
+
+  async confirmDelete(id: string) {
+    console.log('Request to delete transaction with id:', id);
+    const alert = await this.alertController.create({
+      header: '確認刪除',
+      message: '此交易紀錄將會被移除，確定嗎？',
+      buttons: [
+        { text: '取消', role: 'cancel' },
+        { 
+          text: '刪除', 
+          role: 'destructive',
+          handler: () => {
+            this.financeVar.deleteTransaction(id);
+            this.renderAccountDetail();
+          }
+        }
+      ]
+    });
+    await alert.present();
   }
 }

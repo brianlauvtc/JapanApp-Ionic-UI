@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ModalController, NavController } from '@ionic/angular';
+import { AlertController, ModalController, NavController } from '@ionic/angular';
 import { FinanceVarService } from '../../service/finance-var.service';
 import { FinanceService } from '../../service/finance.service';
 import { currencies, CurrencyCode } from '../../environment/environment';
@@ -23,6 +23,8 @@ export class AccountsListPage implements OnInit {
     private financeService: FinanceService,
     private router: Router,
     private modalController: ModalController,
+    private alertController: AlertController,
+    private modalCtrl: ModalController,
   ) {}
 
   ngOnInit() {
@@ -94,5 +96,22 @@ export class AccountsListPage implements OnInit {
 
   getCurrencySymbol(currency: string): string {
     return this.currencies[currency as keyof typeof this.currencies]?.symbol || '$';
+  }
+
+  async deleteAccount(id: string) {
+    const alert = await this.alertController.create({
+      header: '警告',
+      message: '確定要移除此帳戶嗎？此動作無法復原。',
+      buttons: [
+        { text: '取消', role: 'cancel' },
+        { 
+          text: '刪除', 
+          handler: () => {
+            this.financeVar.deleteAccount(id); 
+          } 
+        }
+      ]
+    });
+    await alert.present();
   }
 }

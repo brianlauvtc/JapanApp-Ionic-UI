@@ -14,11 +14,11 @@
 
 <ion-content class="account-detail-content">
   <div class="month-selector">
-    <ion-button fill="clear" (click)="changeMonth(-1)" [disabled]="viewedMonth === today.substring(0, 7)">
+    <ion-button fill="clear" (click)="changeMonth(-1)">
       <ion-icon name="chevron-back"></ion-icon>
     </ion-button>
     <h2 class="month-title">{{ formatMonthView() }}</h2>
-    <ion-button fill="clear" (click)="changeMonth(1)" [disabled]="viewedMonth >= today.substring(0, 7)">
+    <ion-button fill="clear" (click)="changeMonth(1)">
       <ion-icon name="chevron-forward"></ion-icon>
     </ion-button>
   </div>
@@ -53,7 +53,7 @@
   </div>
 
   <div class="transactions-list">
-    <div *ngFor="let dayGroup of calculateDailyGroupedData().days" class="day-group">
+    <div *ngFor="let dayGroup of groupedData.days" class="day-group">
       <h4 class="day-header">{{ formatDate(dayGroup.date) }}</h4>
       <ion-list inset="true" class="modern-account-list">
         <app-transaction-item 
@@ -61,12 +61,13 @@
           [transaction]="transaction" 
           context="account"
           [contextId]="accountId"
-          (editTransaction)="editTransaction($event)">
+          (editTransaction)="editTransaction($event)"
+          (deleteTransaction)="confirmDelete($event)">
         </app-transaction-item>
       </ion-list>
     </div>
     
-    <div *ngIf="calculateDailyGroupedData().days.length === 0" class="group-empty-state">
+    <div *ngIf="groupedData.days.length === 0" class="group-empty-state">
       此月無紀錄
     </div>
   </div>

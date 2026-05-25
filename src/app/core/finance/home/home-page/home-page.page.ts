@@ -38,6 +38,8 @@ export class HomePagePage implements OnInit, OnDestroy {
   ngOnInit() {
     this.viewedMonth = moment().format('YYYY-MM');
     this.today = this.financeService.getToday();
+    console.log(this.viewedMonth, this.today.substring(0, 7))
+    
     this.updateCurrencyInfo();
     this.appDataSubscription = this.financeVar.appData$.subscribe(() => {
       this.updateCurrencyInfo();
@@ -141,17 +143,20 @@ export class HomePagePage implements OnInit, OnDestroy {
     }, 200); // 200 毫秒的延遲讓畫面有喘息空間
   }
 
+ 
   changeMonth(offset: number) {
-    const newDate = moment(this.viewedMonth + '-01').add(offset, 'months');
-    const today = moment();
-    
-    if (newDate.isAfter(today, 'month')) {
-      return; // Don't allow future months
-    }
-    
-    this.viewedMonth = newDate.format('YYYY-MM');
-    this.renderHome();
-  }
+     const newDate = moment(this.viewedMonth + '-01').add(offset, 'months');
+     const today = moment();
+ 
+     // 1. 如果是往後切換（下一月），必須檢查是否超過今天
+     if (offset > 0 && newDate.isAfter(today, 'month')) {
+       return;
+     }
+ 
+     // 2. 如果是往前切換（上一月），則不限制（或者你可以設定一個起始年份限制）
+     this.viewedMonth = newDate.format('YYYY-MM');
+     this.renderHome(); // 或 renderHome()
+   }
 
   getNetWorth() {
     return this.financeService.getNetWorth();

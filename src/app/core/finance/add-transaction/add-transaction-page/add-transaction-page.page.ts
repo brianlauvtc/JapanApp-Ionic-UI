@@ -51,7 +51,16 @@ export class AddTransactionPagePage implements OnInit {
   ngOnInit() {
     this.initForm();
     this.loadContextFromRoute();
-    // Ensure categories are set for initial transaction type
+    
+    // 新增這段邏輯來處理編輯模式
+    const transactionId = this.navParams.get('transactionId');
+    if (transactionId) {
+      const transaction = this.financeVar.getTransactions().find(t => t.id === transactionId);
+      if (transaction) {
+        this.transactionForm.patchValue(transaction); // 將資料填入表單
+      }
+    }
+
     this.categories = this.getCategories();
     this.setupFormListeners();
   }

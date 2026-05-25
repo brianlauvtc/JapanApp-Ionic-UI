@@ -1,9 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { ModalController, NavParams } from '@ionic/angular';
+import { AlertController, ModalController, NavParams } from '@ionic/angular';
 import { FinanceVarService } from '../../service/finance-var.service';
-import { Account } from '../../model/finance.model';
+import { Account, Transaction } from '../../model/finance.model';
 import { currencies } from '../../environment/environment';
+import moment from 'moment';
+import { FinanceService } from '../../service/finance.service';
 
 @Component({
   selector: 'app-edit-account-modal',
@@ -25,6 +27,8 @@ export class EditAccountModalPage implements OnInit {
   constructor(
     private fb: FormBuilder,
     private financeVar: FinanceVarService,
+    private financeService: FinanceService,
+    private alertController: AlertController,
     private modalCtrl: ModalController,
     private navParams: NavParams
   ) {}
@@ -58,30 +62,76 @@ export class EditAccountModalPage implements OnInit {
         });
       }
     }
-  }
+  } 
 
-  async saveAccount() {
-    if (this.accountForm.invalid) {
-      return;
-    }
+ async saveAccount() {
+  if (this.accountForm.invalid) return;
 
-    const formValue = this.accountForm.value;
-    const account: Account = {
-      id: this.isEditMode ? this.editAccountId! : `acc_${Date.now()}`,
+  console.log('1')
+  const formValue = this.accountForm.value;
+  const newBalanceInput = parseFloat(formValue.initBalance); // 這是使用者在輸入框填的總額
+  
+  const oldAccount = this.financeVar.getAccounts().find(a => a.id === this.editAccountId);
+  
+  console.log('2', oldAccount)
+
+
+  if (this.isEditMode && oldAccount) {
+    // 1. 計算差額：目標餘額 - (舊開戶餘額 + 至今所有交易累計)
+    // 但簡單做法是：直接算出 (新目標餘額 - 當前實際餘額) 的差值作為調整
+    const currentActualBalance = this.financeService.getAccBalance(this.editAccountId!);
+    const diff = newBalanceInput - currentActualBalance;
+    
+    console.log('3', Math.abs(diff))
+    // 2. 如果有差額，才新增交易
+
+    const updatedAccount: Account = {
+      ...oldAccount, // 保留所有舊屬性
       name: formValue.name,
       type: formValue.type,
       currency: formValue.currency,
-      initBalance: parseFloat(formValue.initBalance)
+      initBalance: oldAccount.initBalance // <--- 強制鎖定，確保不會改到 initBalance
     };
 
-    if (this.isEditMode) {
-      this.financeVar.updateAccount(this.editAccountId!, account);
-    } else {
-      this.financeVar.addAccount(account);
-    }
+    const adjustmentTxn: Transaction = {
+      id: `adj_${Date.now()}`,
+      type: diff > 0 ? 'income' : 'expense',
+      amount: Math.abs(diff),
+      currency: oldAccount.currency,
+      exRate: 1,
+      accDeduction: Math.abs(diff),
+      accountId: this.editAccountId!,
+      date: moment().format('YYYY-MM-DD'),
+      note: '帳戶餘額手動調整'
+    };
 
-    await this.modalCtrl.dismiss({ success: true });
+    
+    console.log('4')
+    // 3. 儲存時，關鍵在這：initBalance 保持不變
+   
+    console.log('5')
+    setTimeout(() => {
+      if (Math.abs(diff) > 0.01) {
+        this.financeVar.addTransaction(adjustmentTxn);
+      }
+      this.financeVar.updateAccount(this.editAccountId!, updatedAccount);
+  }, 0);
+    console.log('6')
+  } else {
+    // 新增帳戶邏輯保持不變...
+    const newAccount: Account = {
+      id: `acc_${Date.now()}`,
+      name: formValue.name,
+      type: formValue.type,
+      currency: formValue.currency,
+      initBalance: newBalanceInput
+    };
+
+    this.financeVar.addAccount(newAccount);
   }
+
+  await this.modalCtrl.dismiss({ success: true });
+}
 
   async cancel() {
     await this.modalCtrl.dismiss({ success: false });
@@ -90,4 +140,23 @@ export class EditAccountModalPage implements OnInit {
   getCurrencySymbol(currency: string): string {
     return this.currencies[currency as keyof typeof this.currencies]?.symbol || '$';
   }
+
+  async confirmDelete() {
+  const alert = await this.alertController.create({
+    header: '確認刪除',
+    message: '此帳戶的所有交易紀錄將會被移除，確定嗎？',
+    buttons: [
+      { text: '取消', role: 'cancel' },
+      { 
+        text: '刪除', 
+        role: 'destructive',
+        handler: () => {
+          this.financeVar.deleteAccount(this.editAccountId!);
+          this.modalCtrl.dismiss({ success: true, deleted: true });
+        }
+      }
+    ]
+  });
+  await alert.present();
+}
 }
