@@ -123,14 +123,14 @@
             <div class="account-icon-avatar fund">🎯</div>
             <ion-label>
               <h2 class="account-name">{{ fund.name }}</h2>
-              <p class="fund-budget-text">總預算: {{ baseCurrencySymbol }}{{ fund.initAmount | number:'1.0-0' }}</p>
+              <p class="fund-budget-text">總預算: {{ getCurrencySymbol(fund.currency || 'HKD') }}{{ fund.initAmount | number:'1.0-0' }}</p>
               
               <p class="fund-budget-text" *ngIf="fund.hasDaily" style="color: var(--ion-color-tertiary); font-weight: 500; margin-top: 2px;">
-                今日可用: {{ baseCurrencySymbol }}{{ getFundUnspentToday(fund.id) | number:'1.0-0' }} / {{ baseCurrencySymbol }}{{ getFundDailyLimit(fund.id) | number:'1.0-0' }}
+                今日可用: {{ getCurrencySymbol(fund.currency || 'HKD')  }}{{ getFundUnspentToday(fund.id) | number:'1.0-0' }} / {{ getCurrencySymbol(fund.currency || 'HKD')  }}{{ getFundDailyLimit(fund.id) | number:'1.0-0' }}
               </p>
             </ion-label>
             <ion-note slot="end" class="account-balance text-tertiary" [class.text-danger]="getFundBalance(fund.id) < 0">
-              {{ baseCurrencySymbol }}{{ getFundBalance(fund.id) | number:'1.0-0' }}
+              {{ getCurrencySymbol(fund.currency || 'HKD')  }}{{ getFundBalance(fund.id) | number:'1.0-0' }}
             </ion-note>
           </ion-item>
           <ion-item-options side="end">

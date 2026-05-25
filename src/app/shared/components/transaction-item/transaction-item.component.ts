@@ -114,6 +114,7 @@ export class TransactionItemComponent {
     }
   }
 
+ 
   onDelete(slidingItem?: IonItemSliding) {
     if (!this.transaction.type.startsWith('sys_')) {
       // 觸發事件，將交易 ID 傳給父組件

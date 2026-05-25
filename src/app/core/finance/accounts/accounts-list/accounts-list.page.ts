@@ -95,7 +95,11 @@ export class AccountsListPage implements OnInit {
   }
 
   getCurrencySymbol(currency: string): string {
-    return this.currencies[currency as keyof typeof this.currencies]?.symbol || '$';
+    const currenciesObj = {
+      HKD: { symbol: '$', rate: 1, name: 'HKD' },
+      JPY: { symbol: '¥', rate: 0.05, name: 'JPY' }
+    };
+    return currenciesObj[currency as keyof typeof currenciesObj]?.symbol || '$';
   }
 
   async deleteAccount(id: string) {

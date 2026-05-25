@@ -497,7 +497,6 @@ export class AddTransactionPagePage implements OnInit {
       return;
     }
     
-    // Disable the save button to prevent multiple clicks
     const saveButton = document.querySelector('.save-transaction-btn');
     if (saveButton) {
       saveButton.setAttribute('disabled', 'true');
@@ -507,7 +506,26 @@ export class AddTransactionPagePage implements OnInit {
       const formValue = this.transactionForm.value;
       const amount = parseFloat(formValue.amount);
       const exchangeRate = parseFloat(formValue.exchangeRate) || 1;
+      
+      // Deduction for the source account
       const accDeduction = this.txnType === 'income' ? -(amount * exchangeRate) : (amount * exchangeRate);
+      
+      // Calculate specific deduction for target account if it's a transfer
+      let toAccDeduction = undefined;
+      if (this.txnType === 'transfer' && formValue.accountToId) {
+        const toAccount = this.financeVar.getAccounts().find(a => a.id === formValue.accountToId);
+        if (toAccount) {
+          const currenciesObj = {
+            HKD: { symbol: '$', rate: 1, name: 'HKD' },
+            JPY: { symbol: '¥', rate: 0.05, name: 'JPY' }
+          };
+          const fromRate = currenciesObj[formValue.currency as keyof typeof currenciesObj].rate;
+          const toRate = currenciesObj[toAccount.currency as keyof typeof currenciesObj].rate;
+          
+          // Convert the raw amount to the target account's currency
+          toAccDeduction = -((amount * fromRate) / toRate);
+        }
+      }
       
       const transaction: Transaction = {
         id: this.isEditMode ? this.editTransactionId! : `t_${Date.now()}`,
@@ -516,9 +534,9 @@ export class AddTransactionPagePage implements OnInit {
         currency: formValue.currency,
         exRate: exchangeRate,
         accDeduction: accDeduction,
-        accountId: formValue.accountId,
         toAccountId: this.txnType === 'transfer' ? formValue.accountToId : undefined,
-        toAccDeduction: this.txnType === 'transfer' ? -accDeduction : undefined,
+        toAccDeduction: toAccDeduction, // Fixed: Now uses the properly converted amount
+        accountId: formValue.accountId,
         category: this.selectedCategory?.name || formValue.category,
         icon: this.selectedCategory?.icon || '💰',
         note: formValue.note,
@@ -527,7 +545,6 @@ export class AddTransactionPagePage implements OnInit {
         _warnLimit: false
       };
       
-      // Add items if they exist and it's an expense
       if (this.txnType === 'expense' && this.items.length > 0) {
         transaction.items = [...this.items];
       }
@@ -538,18 +555,11 @@ export class AddTransactionPagePage implements OnInit {
         this.financeVar.addTransaction(transaction);
       }
       
-      // Save last used account for this transaction type
       this.saveLastAccount(formValue.accountId);
-      
-      // Handle income allocation if applicable
-      if (this.txnType === 'income' && formValue.allocations?.length > 0) {
-        // This would be implemented with allocation logic
-      }
       
       await this.goBack();
     } catch (error) {
       console.error('Error saving transaction:', error);
-      // Re-enable the save button on error
       if (saveButton) {
         saveButton.removeAttribute('disabled');
       }

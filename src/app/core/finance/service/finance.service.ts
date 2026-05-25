@@ -281,6 +281,17 @@ export class FinanceService {
     const groupedDays: { [key: string]: any } = {};
     let totalInc = 0, totalExp = 0;
     
+    // ========================================================
+    // 【新增】當在 Home 頁面時，用來獨立追蹤各個帳戶餘額變化的暫存器
+    // ========================================================
+    const homeAccountBals: { [accountId: string]: number } = {};
+    if (context === 'home') {
+      appData.accounts.forEach(a => {
+        homeAccountBals[a.id] = this.getAccBalanceUpTo(a.id, firstDayOfMonth);
+      });
+    }
+    // ========================================================
+    
     // Process each transaction
     txns.forEach(t => {
       if (!groupedDays[t.date]) {
@@ -292,15 +303,13 @@ export class FinanceService {
       if (context === 'home') {
         if (t.type === 'expense') impact = -(t.amount * this.getRateToBase(t.currency));
         if (t.type === 'income') impact = t.amount * this.getRateToBase(t.currency);
-        } else if (context === 'account' && contextId) {
+      } else if (context === 'account' && contextId) {
           const acc = appData.accounts.find(a => a.id === contextId);
           if (acc && t.accountId === contextId) {
             impact = -t.accDeduction;
           }
           if (t.type === 'transfer' && t.toAccountId === contextId) {
-            const currenciesObj = currencies as any;
-            const baseVal = t.amount * currenciesObj[t.currency].rate;
-            impact = baseVal / currenciesObj[acc!.currency].rate;
+            impact = Math.abs(t.toAccDeduction || t.accDeduction);
           }
       } else if (context === 'fund' && contextId) {
         if (t.type === 'expense' && t.fundId === contextId) impact = -(t.amount * this.getRateToBase(t.currency));
@@ -311,7 +320,26 @@ export class FinanceService {
       }
       
       currentBal += impact;
-      t._runningBal = currentBal;
+      
+      // ========================================================
+      // 【修改】依據不同的 context 決定寫入交易紀錄的餘額數值
+      // ========================================================
+      if (context === 'home') {
+        // 更新主要付款/收款帳戶的個別餘額
+        if (t.accountId) {
+          homeAccountBals[t.accountId] -= t.accDeduction;
+        }
+        // 如果是轉帳，同時也要更新目標接收帳戶的個別餘額
+        if (t.type === 'transfer' && t.toAccountId) {
+          homeAccountBals[t.toAccountId] += Math.abs(t.toAccDeduction || t.accDeduction);
+        }
+        
+        // 讓該交易紀錄的餘額，對應到它主要帳戶扣款後的餘額
+        t._runningBal = homeAccountBals[t.accountId];
+      } else {
+        t._runningBal = currentBal;
+      }
+      // ========================================================
       
       // Track total income/expenses
       if (!t.type.startsWith('sys_') && t.type !== 'transfer') {

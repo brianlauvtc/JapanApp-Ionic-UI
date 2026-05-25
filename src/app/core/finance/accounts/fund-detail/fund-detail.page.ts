@@ -269,4 +269,11 @@ export class FundDetailPage implements OnInit {
     const spent = this.financeService.getFundSpentOnDate(this.fundId, this.today);
     return limit - spent;
   }
+  getCurrencySymbol(currency: string): string {
+    const currenciesObj = {
+      HKD: { symbol: '$', rate: 1, name: 'HKD' },
+      JPY: { symbol: '¥', rate: 0.05, name: 'JPY' }
+    };
+    return currenciesObj[currency as keyof typeof currenciesObj]?.symbol || '$';
+  }
 }
