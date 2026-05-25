@@ -173,9 +173,10 @@ export class AccountDetailPage implements OnInit {
 
   async editAccount() {
     const modal = await this.modalController.create({
-      component: 'app-edit-account-modal',
+      component: EditAccountModalPage,
       componentProps: {
-        accountId: this.accountId
+        accountId: this.accountId,
+        isEditMode: true
       }
     });
     await modal.present();

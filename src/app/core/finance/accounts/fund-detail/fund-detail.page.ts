@@ -182,9 +182,10 @@ export class FundDetailPage implements OnInit {
 
   async editFund() {
     const modal = await this.modalController.create({
-      component: 'app-edit-fund-modal',
+      component: EditFundModalPage,
       componentProps: {
-        fundId: this.fundId
+        fundId: this.fundId,
+        isEditMode: true
       }
     });
     await modal.present();

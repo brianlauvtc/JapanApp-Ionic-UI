@@ -1,9 +1,9 @@
-<ion-header>
+<ion-header class="ion-no-border">
   <ion-toolbar>
     <ion-buttons slot="start">
-      <ion-back-button defaultHref="/accounts"></ion-back-button>
+      <ion-back-button defaultHref="/tabs/accounts" color="medium"></ion-back-button>
     </ion-buttons>
-    <ion-title>{{ getAccount()?.name || '帳戶明細' }}</ion-title>
+    <ion-title mode="ios">{{ getAccount()?.name || '帳戶明細' }}</ion-title>
     <ion-buttons slot="end">
       <ion-button (click)="editAccount()">
         <ion-icon name="create-outline"></ion-icon>
@@ -25,17 +25,16 @@
 
   <div class="account-balance-card">
     <div class="balance-header">
-      <div>
-        <p class="balance-label">目前餘額 ({{ getAccount()?.currency }})</p>
-        <div class="balance-amount">
-          <span class="currency-symbol">{{ currencies[getAccount()?.currency || 'HKD'].symbol }}</span>
-          <span [class.negative]="getAccBalance() < 0">{{ getAccBalance() | number:'1.0-0' }}</span>
-        </div>
+      <p class="balance-label">目前餘額</p>
+      <div class="balance-amount">
+        <span class="currency-symbol">{{ currencies[getAccount()?.currency || 'HKD'].symbol }}</span>
+        <span [class.text-danger]="getAccBalance() < 0">{{ getAccBalance() | number:'1.0-0' }}</span>
       </div>
-      <div class="balance-details">
-        <div>月頭: {{ calculateDailyGroupedData().openBal | number:'1.0-0' }}</div>
-        <div>月尾: {{ calculateDailyGroupedData().closeBal | number:'1.0-0' }}</div>
-      </div>
+    </div>
+    <div class="dashboard-divider"></div>
+    <div class="balance-details">
+      <div>月頭: {{ calculateDailyGroupedData().openBal | number:'1.0-0' }}</div>
+      <div>月尾: {{ calculateDailyGroupedData().closeBal | number:'1.0-0' }}</div>
     </div>
     <div class="chart-container">
       <apx-chart
@@ -56,16 +55,18 @@
   <div class="transactions-list">
     <div *ngFor="let dayGroup of calculateDailyGroupedData().days" class="day-group">
       <h4 class="day-header">{{ formatDate(dayGroup.date) }}</h4>
-      <app-transaction-item 
-        *ngFor="let transaction of dayGroup.txns" 
-        [transaction]="transaction" 
-        context="account"
-        [contextId]="accountId"
-        (editTransaction)="editTransaction($event)">
-      </app-transaction-item>
+      <ion-list inset="true" class="modern-account-list">
+        <app-transaction-item 
+          *ngFor="let transaction of dayGroup.txns" 
+          [transaction]="transaction" 
+          context="account"
+          [contextId]="accountId"
+          (editTransaction)="editTransaction($event)">
+        </app-transaction-item>
+      </ion-list>
     </div>
     
-    <div *ngIf="calculateDailyGroupedData().days.length === 0" class="no-transactions">
+    <div *ngIf="calculateDailyGroupedData().days.length === 0" class="group-empty-state">
       此月無紀錄
     </div>
   </div>
