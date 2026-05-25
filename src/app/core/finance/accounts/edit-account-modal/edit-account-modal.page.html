@@ -67,4 +67,7 @@
     </ion-list>
 
   </form>
+  <ion-button expand="block" color="danger" (click)="confirmDelete()" *ngIf="isEditMode" class="ion-margin-top">
+    刪除帳戶
+  </ion-button>
 </ion-content>

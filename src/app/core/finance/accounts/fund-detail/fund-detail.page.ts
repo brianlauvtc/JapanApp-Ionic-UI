@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ModalController } from '@ionic/angular';
+import { AlertController, ModalController } from '@ionic/angular';
 import { FinanceVarService } from '../../service/finance-var.service';
 import { FinanceService } from '../../service/finance.service';
 import { ApexOptions } from 'ng-apexcharts';
@@ -23,11 +23,13 @@ export class FundDetailPage implements OnInit {
   today: string = '';
   baseCurrency: string = 'HKD';
   baseCurrencySymbol: string = '$';
+  groupedData: any = { days: [] };
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private modalController: ModalController,
+    private alertController: AlertController,
     private financeVar: FinanceVarService,
     private financeService: FinanceService
   ) {}
@@ -48,7 +50,8 @@ export class FundDetailPage implements OnInit {
   }
 
   renderFundDetail() {
-    const data = this.financeService.calculateDailyGroupedData(this.viewedMonth, 'fund', this.fundId);
+    this.groupedData = this.financeService.calculateDailyGroupedData(this.viewedMonth, 'fund', this.fundId);
+    const data = this.groupedData;
     const fund = this.financeVar.getAppData().funds.find(f => f.id === this.fundId);
     
     if (!fund) {
@@ -180,6 +183,26 @@ export class FundDetailPage implements OnInit {
     } catch (error) {
       console.error('Error opening add transaction modal:', error);
     }
+  }
+
+  async confirmDelete(id: string) {
+    console.log('Request to delete transaction with id:', id);
+    const alert = await this.alertController.create({
+      header: '確認刪除',
+      message: '此交易紀錄將會被移除，確定嗎？',
+      buttons: [
+        { text: '取消', role: 'cancel' },
+        { 
+          text: '刪除', 
+          role: 'destructive',
+          handler: () => {
+            this.financeVar.deleteTransaction(id);
+            this.renderFundDetail();
+          }
+        }
+      ]
+    });
+    await alert.present();
   }
 
   async editFund() {

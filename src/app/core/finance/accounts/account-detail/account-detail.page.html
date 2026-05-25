@@ -33,8 +33,8 @@
     </div>
     <div class="dashboard-divider"></div>
     <div class="balance-details">
-      <div>月頭: {{ calculateDailyGroupedData().openBal | number:'1.0-0' }}</div>
-      <div>月尾: {{ calculateDailyGroupedData().closeBal | number:'1.0-0' }}</div>
+      <div>月頭: {{ groupedData.openBal | number:'1.0-0' }}</div>
+      <div>月尾: {{ groupedData.closeBal | number:'1.0-0' }}</div>
     </div>
     <div class="chart-container">
       <apx-chart

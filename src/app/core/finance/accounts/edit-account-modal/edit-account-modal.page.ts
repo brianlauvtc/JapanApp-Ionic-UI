@@ -142,21 +142,21 @@ export class EditAccountModalPage implements OnInit {
   }
 
   async confirmDelete() {
-  const alert = await this.alertController.create({
-    header: '確認刪除',
-    message: '此帳戶的所有交易紀錄將會被移除，確定嗎？',
-    buttons: [
-      { text: '取消', role: 'cancel' },
-      { 
-        text: '刪除', 
-        role: 'destructive',
-        handler: () => {
-          this.financeVar.deleteAccount(this.editAccountId!);
-          this.modalCtrl.dismiss({ success: true, deleted: true });
+    const alert = await this.alertController.create({
+      header: '確認刪除',
+      message: '此帳戶的所有交易紀錄將會被移除，確定嗎？',
+      buttons: [
+        { text: '取消', role: 'cancel' },
+        { 
+          text: '刪除', 
+          role: 'destructive',
+          handler: () => {
+            this.financeVar.deleteAccount(this.editAccountId!);
+            this.modalCtrl.dismiss({ success: true, deleted: true });
+          }
         }
-      }
-    ]
-  });
-  await alert.present();
-}
+      ]
+    });
+    await alert.present();
+  }
 }

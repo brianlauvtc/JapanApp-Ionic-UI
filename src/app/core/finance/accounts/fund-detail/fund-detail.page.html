@@ -34,8 +34,8 @@
     <p class="target-amount">總目標: {{ getFund()?.initAmount | number:'1.0-0' }}</p>
     <div class="dashboard-divider"></div>
     <div class="balance-details">
-      <div>月頭: {{ calculateDailyGroupedData().openBal | number:'1.0-0' }}</div>
-      <div>月尾: {{ calculateDailyGroupedData().closeBal | number:'1.0-0' }}</div>
+      <div>月頭: {{ groupedData.openBal | number:'1.0-0' }}</div>
+      <div>月尾: {{ groupedData.closeBal | number:'1.0-0' }}</div>
     </div>
     <div class="chart-container">
       <apx-chart
@@ -54,7 +54,7 @@
   </div>
 
   <div class="transactions-list">
-    <div *ngFor="let dayGroup of calculateDailyGroupedData().days" class="day-group">
+    <div *ngFor="let dayGroup of groupedData.days" class="day-group">
       <h4 class="day-header">{{ formatDate(dayGroup.date) }}</h4>
       <ion-list inset="true" class="modern-account-list">
         <app-transaction-item 
@@ -62,12 +62,13 @@
           [transaction]="transaction" 
           context="fund"
           [contextId]="fundId"
-          (editTransaction)="editTransaction($event)">
+          (editTransaction)="editTransaction($event)"
+          (deleteTransaction)="confirmDelete($event)">
         </app-transaction-item>
       </ion-list>
     </div>
     
-    <div *ngIf="calculateDailyGroupedData().days.length === 0" class="group-empty-state">
+    <div *ngIf="groupedData.days.length === 0" class="group-empty-state">
       此月無紀錄
     </div>
   </div>

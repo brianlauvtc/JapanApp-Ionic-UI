@@ -4,7 +4,7 @@ import { FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
 import { FinanceVarService } from '../../service/finance-var.service';
 import { FinanceService } from '../../service/finance.service';
 import { Transaction, Account, Fund } from '../../model/finance.model';
-import { ModalController, NavParams } from '@ionic/angular';
+import { AlertController, ModalController, NavParams } from '@ionic/angular';
 import  moment from 'moment';
 
 @Component({
@@ -43,7 +43,8 @@ export class AddTransactionPagePage implements OnInit {
     private financeVar: FinanceVarService,
     private financeService: FinanceService,
     private modalCtrl: ModalController,
-     private navParams: NavParams
+    private alertController: AlertController,
+    private navParams: NavParams
   ) {
     this.isModal = !!this.navParams && !!this.navParams.data;
   }
@@ -299,13 +300,20 @@ export class AddTransactionPagePage implements OnInit {
     return true;
   }
 
-  deleteTransaction() {
-    if (this.editTransactionId) {
-      this.financeVar.deleteTransaction(this.editTransactionId);
-      this.goBack();
-    }
+  async deleteTransaction() {
+    const alert = await this.alertController.create({
+        header: '確認刪除',
+        message: '確定要移除這筆交易嗎？',
+        buttons: [
+            { text: '取消', role: 'cancel' },
+            { text: '刪除', role: 'destructive', handler: () => {
+                this.financeVar.deleteTransaction(this.editTransactionId!);
+                this.modalCtrl.dismiss({ success: true, deleted: true });
+            }}
+        ]
+    });
+    await alert.present();
   }
-
   async goBack() {
     if (this.isModal && this.modalCtrl) {
       await this.modalCtrl.dismiss();
@@ -547,4 +555,6 @@ export class AddTransactionPagePage implements OnInit {
       }
     }
   }
+
+  
 }
