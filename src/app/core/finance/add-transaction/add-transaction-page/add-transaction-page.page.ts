@@ -51,16 +51,7 @@ export class AddTransactionPagePage implements OnInit {
 
   ngOnInit() {
     this.initForm();
-    this.loadContextFromRoute();
-    
-    // 新增這段邏輯來處理編輯模式
-    const transactionId = this.navParams.get('transactionId');
-    if (transactionId) {
-      const transaction = this.financeVar.getTransactions().find(t => t.id === transactionId);
-      if (transaction) {
-        this.transactionForm.patchValue(transaction); // 將資料填入表單
-      }
-    }
+    this.loadContextFromRoute();      
 
     this.categories = this.getCategories();
     this.setupFormListeners();
@@ -89,7 +80,7 @@ export class AddTransactionPagePage implements OnInit {
     let id = null;
     
     if (this.isModal) {
-      id = this.navParams?.get('id');
+      id = this.navParams?.get('id') || this.navParams?.get('transactionId');
       this.contextAccountId = this.navParams?.get('accountId');
       this.contextFundId = this.navParams?.get('fundId');
       this.contextType = this.navParams?.get('context');

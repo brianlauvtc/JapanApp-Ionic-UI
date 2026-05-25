@@ -27,7 +27,7 @@
   <div [formGroup]="transactionForm">
     
     <div class="segment-container">
-      <ion-segment [(ngModel)]="txnType" [ngModelOptions]="{standalone: true}" (ionChange)="setTxnType(txnType)" mode="ios">
+      <ion-segment [(ngModel)]="txnType" [ngModelOptions]="{standalone: true}" (ionChange)="setTxnType(txnType)" mode="ios" [disabled]="isEditMode">
         <ion-segment-button value="expense"><ion-label>支出</ion-label></ion-segment-button>
         <ion-segment-button value="income"><ion-label>收入</ion-label></ion-segment-button>
         <ion-segment-button value="transfer"><ion-label>轉帳</ion-label></ion-segment-button>

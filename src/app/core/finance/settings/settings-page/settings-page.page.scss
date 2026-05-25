@@ -1,97 +1,86 @@
-.settings-content {
-  --background: #f9fafb;
-  --padding-top: 16px;
-  --padding-end: 16px;
-  --padding-bottom: 80px;
-  --padding-start: 16px;
+ion-content {
+  --background: #f2f2f6; 
 }
 
-ion-card {
-  margin: 0 0 24px 0;
-  border-radius: 16px;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  border: 1px solid #f3f4f6;
-  --background: #ffffff;
+ion-list-header {
+  padding-bottom: 4px;
+  min-height: 30px;
+  ion-label {
+    font-size: 13px;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
 }
 
-ion-card-header {
-  padding: 16px 16px 8px 16px;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-ion-card-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: #1f2937;
-}
-
-.danger-title {
-  color: #dc2626;
-}
-
-ion-card-content {
-  padding: 16px;
-}
-
-ion-item {
-  --inner-padding-end: 0;
-  --background: transparent;
-  --border-color: #e5e7eb;
-  font-size: 14px;
-
-  ion-label[position="stacked"] {
+/* ✅ 新增：匯率項目排版美化 */
+.rate-item {
+  --padding-top: 10px;
+  --padding-bottom: 10px;
+  
+  h3 {
     font-size: 14px;
-    color: #4b5563;
-    margin-bottom: 8px;
-  }
-
-  ion-input, ion-select {
+    font-weight: 500;
     color: #1f2937;
-    --placeholder-color: #9ca3af;
+    margin: 0 0 4px 0;
   }
-}
-
-ion-note {
-  font-size: 12px;
-  color: #9ca3af;
-  margin-top: 4px;
-  display: block;
-}
-
-.danger-zone {
-  border: 1px solid #fecaca;
-  --background: #fff5f5;
-
-  ion-card-header {
-    border-bottom: 1px solid #fecaca;
+  
+  .rate-text {
+    font-size: 15px;
+    color: #374151;
+    line-height: 1.5;
+    margin: 0;
+    
+    strong {
+      color: #3b82f6; /* 使用強調藍色顯示日圓點數 */
+      font-size: 17px;
+      font-weight: 700;
+    }
   }
-
-  ion-button {
-    --background: #fef2f2;
-    --background-hover: #fee2e2;
-    --color: #dc2626;
-    --border-color: #fecaca;
-    --border-style: solid;
-    --border-width: 1px;
-    --box-shadow: none;
-    font-weight: 700;
+  
+  .sub-rate {
+    font-size: 12px;
+    color: var(--ion-color-medium);
   }
-}
-
-ion-footer {
-  ion-toolbar {
-    --background: #f9fafb;
-    --padding-top: 8px;
-    --padding-bottom: env(safe-area-inset-bottom, 8px);
-    --border-width: 0;
+  
+  .rate-error {
+    font-size: 13px;
+    color: var(--ion-color-danger);
+    margin: 0;
   }
   
   ion-button {
-    --border-radius: 8px;
-    font-weight: 700;
-    text-transform: none;
-    height: 40px;
-    margin: 0 16px;
-    --background: #4f46e5;
+    --color: var(--ion-color-medium);
+    margin: 0;
+  }
+}
+
+.field-note {
+  padding: 4px 20px 12px 52px;
+  font-size: 12px;
+  color: var(--ion-color-medium);
+  background: white;
+}
+
+.danger-list {
+  margin-top: 32px;
+  ion-item {
+    text-align: center;
+    --background-activated: var(--ion-color-danger-tint);
+  }
+}
+
+ion-footer ion-toolbar {
+  --background: #f2f2f6;
+}
+
+.footer-btn-container {
+  padding: 10px 20px 24px 20px;
+  
+  .save-btn {
+    margin: 0;
+    height: 48px;
+    font-weight: bold;
+    font-size: 16px;
   }
 }
