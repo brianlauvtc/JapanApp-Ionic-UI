@@ -30,7 +30,7 @@ export class AddTransactionPagePage implements OnInit {
   
   // Items form and data
   items: { name: string; quantity: number; price: number }[] = [];
-  itemForm = { name: '', quantity: 1, price: 0 };
+  itemForm = { name: '', quantity: null, price: null };
   editingIndex: number | null = null;
   
   // Category display state

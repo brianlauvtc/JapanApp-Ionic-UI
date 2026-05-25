@@ -124,13 +124,17 @@
             <ion-label>
               <h2 class="account-name">{{ fund.name }}</h2>
               <p class="fund-budget-text">總預算: {{ baseCurrencySymbol }}{{ fund.initAmount | number:'1.0-0' }}</p>
+              
+              <p class="fund-budget-text" *ngIf="fund.hasDaily" style="color: var(--ion-color-tertiary); font-weight: 500; margin-top: 2px;">
+                今日可用: {{ baseCurrencySymbol }}{{ getFundUnspentToday(fund.id) | number:'1.0-0' }} / {{ baseCurrencySymbol }}{{ getFundDailyLimit(fund.id) | number:'1.0-0' }}
+              </p>
             </ion-label>
             <ion-note slot="end" class="account-balance text-tertiary" [class.text-danger]="getFundBalance(fund.id) < 0">
               {{ baseCurrencySymbol }}{{ getFundBalance(fund.id) | number:'1.0-0' }}
             </ion-note>
           </ion-item>
           <ion-item-options side="end">
-            <ion-item-option color="danger" (click)="deleteAccount(fund.id)">
+            <ion-item-option color="danger" (click)="deleteFundPrompt(fund.id)">
               <ion-icon name="trash" slot="icon-only"></ion-icon>
             </ion-item-option>
           </ion-item-options>

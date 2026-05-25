@@ -20,8 +20,7 @@
   background: white;
   border-radius: 20px;
   padding: 20px;
-  margin: 0 16px 16px;
-  border-left: 5px solid var(--ion-color-tertiary);
+  margin: 0 16px 16px; 
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.03);
 
   .balance-label { font-size: 13px; color: var(--ion-color-medium); margin-bottom: 4px; }
@@ -39,4 +38,49 @@
 .group-empty-state {
   margin: 20px 16px; padding: 20px; background: rgba(0,0,0,0.01); 
   border: 1px dashed #e0e0e6; border-radius: 12px; text-align: center; color: var(--ion-color-medium);
+}
+
+.modern-account-list{
+  margin: 0 16px 16px;
+}
+
+.daily-limit-container {
+  margin: 12px 0;
+  padding-top: 12px;
+  border-top: 1px dashed rgba(150, 150, 150, 0.3); /* 淡淡的虛線分隔 */
+
+  .limit-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: var(--ion-color-medium, #92949c); /* 預設文字顏色 */
+
+    .limit-label {
+      font-weight: 500;
+    }
+
+    .limit-value {
+      strong {
+        font-size: 16px;
+        color: var(--ion-color-dark, #222428); /* 數字顏色，如果是深色背景請改 #fff */
+        
+        &.text-danger {
+          color: var(--ion-color-danger);
+        }
+      }
+
+      .limit-total {
+        font-size: 12px;
+        opacity: 0.7;
+      }
+    }
+  }
+
+  .limit-progress {
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(150, 150, 150, 0.2); /* 進度條底色 */
+  }
 }

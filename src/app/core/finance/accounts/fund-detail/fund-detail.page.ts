@@ -252,4 +252,21 @@ export class FundDetailPage implements OnInit {
   formatDate(dateStr: string): string {
     return dateStr.replace(/-/g, '/');
   }
+
+  getDailyLimit(): number | null {
+    const fund = this.getFund();
+    if (!fund || !fund.hasDaily) return null;
+    
+    return this.financeService.getFundDailyLimitForDate(this.fundId, this.today);
+  }
+  getUnspentToday(): number | null {
+    const fund = this.getFund();
+    if (!fund || !fund.hasDaily) return null;
+
+    const limit = this.getDailyLimit();
+    if (limit === null) return null;
+    
+    const spent = this.financeService.getFundSpentOnDate(this.fundId, this.today);
+    return limit - spent;
+  }
 }

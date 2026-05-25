@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { ModalController, NavParams } from '@ionic/angular';
+import { AlertController, ModalController, NavParams } from '@ionic/angular';
 import { FinanceVarService } from '../../service/finance-var.service';
 import { Fund } from '../../model/finance.model';
 import { currencies } from '../../environment/environment';
@@ -27,6 +27,7 @@ export class EditFundModalPage implements OnInit {
     private fb: FormBuilder,
     private financeVar: FinanceVarService,
     private modalCtrl: ModalController,
+    private alertController: AlertController,
     private navParams: NavParams
   ) {}
 
@@ -121,5 +122,24 @@ export class EditFundModalPage implements OnInit {
 
   getTransferTargetFunds() {
     return this.financeVar.getFunds().filter(f => f.id !== this.editFundId);
+  }
+
+  async confirmDelete() {
+    const alert = await this.alertController.create({
+      header: '確認刪除',
+      message: '此帳戶的所有交易紀錄將會被移除，確定嗎？',
+      buttons: [
+        { text: '取消', role: 'cancel' },
+        { 
+          text: '刪除', 
+          role: 'destructive',
+          handler: () => {
+            this.financeVar.deleteFund(this.editFundId!);
+            this.modalCtrl.dismiss({ success: true, deleted: true });
+          }
+        }
+      ]
+    });
+    await alert.present();
   }
 }

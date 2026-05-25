@@ -122,10 +122,28 @@ export class FinanceVarService {
   }
 
   deleteFund(id: string) {
+    // 1. 移除基金本身
     const funds = this.getFunds().filter(f => f.id !== id);
-    const transactions = this.getTransactions().filter(t => 
-      t.fundId !== id && t.toFundId !== id
-    );
+    
+    // 2. 更新交易紀錄：取消與該基金的連結，而不是刪除交易
+    const transactions = this.getTransactions().map(t => {
+      // 複製一份 transaction 物件
+      const updatedTxn = { ...t };
+      
+      // 如果這筆交易的 fundId 是我們要刪除的基金，就取消連結
+      if (updatedTxn.fundId === id) {
+        delete updatedTxn.fundId; 
+      }
+      
+      // 如果這筆交易的 toFundId 是我們要刪除的基金，就取消連結
+      if (updatedTxn.toFundId === id) {
+        delete updatedTxn.toFundId;
+      }
+      
+      return updatedTxn;
+    });
+
+    // 3. 更新資料
     this.updateAppData({ funds, transactions });
   }
 

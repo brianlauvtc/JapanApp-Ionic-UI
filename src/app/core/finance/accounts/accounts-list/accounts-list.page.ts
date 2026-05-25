@@ -115,4 +115,33 @@ export class AccountsListPage implements OnInit {
     await alert.present();
   }
    
+  async deleteFundPrompt(id: string) {
+    const alert = await this.alertController.create({
+      header: '警告',
+      message: '確定要移除此基金嗎？\n移除後相關交易紀錄將會保留，但會解除與此基金的連結。此動作無法復原。',
+      buttons: [
+        { text: '取消', role: 'cancel' },
+        { 
+          text: '刪除', 
+          handler: () => {
+            // 呼叫 Service 的 deleteFund
+            this.financeVar.deleteFund(id); 
+          } 
+        }
+      ]
+    });
+    await alert.present();
+  }
+  getFundDailyLimit(fundId: string): number | null {
+    const today = this.financeService.getToday();
+    return this.financeService.getFundDailyLimitForDate(fundId, today);
+  }
+
+  getFundUnspentToday(fundId: string): number | null {
+    const limit = this.getFundDailyLimit(fundId);
+    if (limit === null) return null; // 沒有設定每日上限
+    const today = this.financeService.getToday();
+    const spent = this.financeService.getFundSpentOnDate(fundId, today);
+    return limit - spent;
+  }
 }

@@ -1,7 +1,7 @@
 <ion-header class="ion-no-border">
   <ion-toolbar>
     <ion-buttons slot="start">
-      <ion-back-button defaultHref="/accounts" color="medium"></ion-back-button>
+      <ion-back-button defaultHref="/tabs/accounts" color="medium"></ion-back-button>
     </ion-buttons>
     <ion-title mode="ios">{{ getFund()?.name || '基金明細' }}</ion-title>
     <ion-buttons slot="end">
@@ -30,8 +30,48 @@
         <span class="currency-symbol">{{ baseCurrencySymbol }}</span>
         <span [class.text-danger]="getFundBalance() < 0">{{ getFundBalance() | number:'1.0-0' }}</span>
       </div>
+
+        <div class="daily-limit-container" *ngIf="fund?.hasDaily">
+        <div class="limit-info">
+          <span class="limit-label">今日可用額度</span>
+          <span class="limit-value">
+            <strong [class.text-danger]="getUnspentToday() <= 0">
+              {{ baseCurrencySymbol }}{{ getUnspentToday() | number:'1.0-0' }}
+            </strong> 
+            <span class="limit-total">/ {{ baseCurrencySymbol }}{{ getDailyLimit() | number:'1.0-0' }}</span>
+          </span>
+        </div>
+        <ion-progress-bar 
+          class="limit-progress"
+          [value]="getUnspentToday() / getDailyLimit()" 
+          [color]="(getUnspentToday() / getDailyLimit()) > 0.2 ? 'tertiary' : 'danger'">
+        </ion-progress-bar>
+      </div>
+    </div>
+
+     <div *ngIf="fund?.hasDaily" style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(255,255,255,0.3);">
+      <div style="display: flex; justify-content: space-between; font-size: 14px;">
+        <span>今日可用額度</span>
+        <strong>{{ baseCurrencySymbol }}{{ getUnspentToday() | number:'1.0-0' }} / {{ baseCurrencySymbol }}{{ getDailyLimit() | number:'1.0-0' }}</strong>
+      </div>
     </div>
     <p class="target-amount">總目標: {{ getFund()?.initAmount | number:'1.0-0' }}</p>
+    <div class="daily-limit-container" *ngIf="getFund()?.hasDaily">
+      <div class="limit-info">
+        <span class="limit-label">今日可用</span>
+        <span class="limit-value">
+          <strong [class.text-danger]="(getUnspentToday() || 0) <= 0">
+            {{ baseCurrencySymbol }}{{ getUnspentToday() | number:'1.0-0' }}
+          </strong> 
+          <span class="limit-total">/ {{ baseCurrencySymbol }}{{ getDailyLimit() | number:'1.0-0' }}</span>
+        </span>
+      </div>
+      <ion-progress-bar 
+        class="limit-progress"
+        [value]="(getUnspentToday() || 0) / (getDailyLimit() || 1)" 
+        [color]="((getUnspentToday() || 0) / (getDailyLimit() || 1)) > 0.2 ? 'tertiary' : 'danger'">
+      </ion-progress-bar>
+    </div>
     <div class="dashboard-divider"></div>
     <div class="balance-details">
       <div>月頭: {{ groupedData.openBal | number:'1.0-0' }}</div>
@@ -51,12 +91,13 @@
         [colors]="chartOptions.colors">
       </apx-chart>
     </div>
+   
   </div>
 
   <div class="transactions-list">
-    <div *ngFor="let dayGroup of groupedData.days" class="day-group">
+    <div *ngFor="let dayGroup of groupedData.days" class="day-group modern-account-list">
       <h4 class="day-header">{{ formatDate(dayGroup.date) }}</h4>
-      <ion-list inset="true" class="modern-account-list">
+      
         <app-transaction-item 
           *ngFor="let transaction of dayGroup.txns" 
           [transaction]="transaction" 
@@ -65,7 +106,7 @@
           (editTransaction)="editTransaction($event)"
           (deleteTransaction)="confirmDelete($event)">
         </app-transaction-item>
-      </ion-list>
+      
     </div>
     
     <div *ngIf="groupedData.days.length === 0" class="group-empty-state">
