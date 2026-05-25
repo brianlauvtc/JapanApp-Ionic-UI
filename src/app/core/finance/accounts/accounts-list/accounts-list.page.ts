@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ModalController, NavController } from '@ionic/angular';
 import { FinanceVarService } from '../../service/finance-var.service';
 import { FinanceService } from '../../service/finance.service';
@@ -23,7 +23,6 @@ export class AccountsListPage implements OnInit {
     private financeService: FinanceService,
     private router: Router,
     private modalController: ModalController,
-    private navCtrl: NavController
   ) {}
 
   ngOnInit() {
@@ -54,11 +53,11 @@ export class AccountsListPage implements OnInit {
   }
 
   viewAccountDetail(accountId: string) {
-     this.router.navigate(['/tabs/accounts/account-detail']);
+    this.router.navigate(['/tabs/accounts/account-detail', accountId]);
   }
 
   viewFundDetail(fundId: string) {
-     this.router.navigate(['/tabs/accounts/fund-detail']);
+    this.router.navigate(['/tabs/accounts/fund-detail', fundId]);
   }
 
   async openEditAccountModal() {

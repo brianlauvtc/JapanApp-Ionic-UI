@@ -31,10 +31,10 @@ export class AccountDetailPage implements OnInit {
   ) {}
 
   ngOnInit() {
-    //this.accountId = '' //this.route.snapshot.paramMap.get('id')!;
-    //this.viewedMonth = moment().format('YYYY-MM');
-    //this.today = this.financeService.getToday();
-    //this.renderAccountDetail();
+    this.accountId = this.route.snapshot.paramMap.get('id')!;
+    this.viewedMonth = moment().format('YYYY-MM');
+    this.today = this.financeService.getToday();
+    this.renderAccountDetail();
   }
 
   renderAccountDetail() {
@@ -113,6 +113,7 @@ export class AccountDetailPage implements OnInit {
       colors: ['#4f46e5']
     };
     
+    console.log(values)
     this.chartSeries = [{
       name: '餘額',
       data: values
