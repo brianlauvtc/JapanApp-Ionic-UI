@@ -113,17 +113,6 @@ export class FinanceService {
     return moment().add(offset, 'days').format('YYYY-MM-DD');
   }
 
-  getEndOfMonth(yyyyMM: string): string {
-    const today = moment();
-    const monthDate = moment(yyyyMM, 'YYYY-MM');
-    
-    if (monthDate.isSame(today, 'month')) {
-      return this.getToday();
-    } else {
-      return monthDate.endOf('month').format('YYYY-MM-DD');
-    }
-  }
-
   formatMonthView(yyyyMM: string): string {
     const date = moment(yyyyMM, 'YYYY-MM');
     return `${date.year()}年 ${date.month() + 1}月`;

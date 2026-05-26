@@ -19,8 +19,3 @@ export const categories = [
   { id: 'o1', name: '其他', icon: '📝' }
 ];
 
-export const transactionTypes = {
-  EXPENSE: 'expense',
-  INCOME: 'income',
-  TRANSFER: 'transfer'
-};
