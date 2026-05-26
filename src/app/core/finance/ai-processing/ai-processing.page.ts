@@ -50,11 +50,11 @@ export class AIProcessingPage implements OnInit {
     await this.processImageAtIndex(this.currentImageIndex);
   }
 
-  /*async processImageAtIndex(index: number) {
+  async processImageAtIndex(index: number) {
     if (index >= this.processingImages.length) {
       // All items parsed! Route back directly to add-transaction with results data
       this.router.navigate(['/add-transaction'], {
-        state: { aiExtractedData: this.extractedTransactions },
+        state: { aiTransactions    : this.extractedTransactions },
         replaceUrl: true
       });
       return;
@@ -86,10 +86,10 @@ export class AIProcessingPage implements OnInit {
 
     this.currentImageIndex++;
     await this.processImageAtIndex(this.currentImageIndex);
-  }*/
+  }
 
 
-  async processImageAtIndex(index: number) {
+  /*async processImageAtIndex(index: number) {
     if (index >= this.processingImages.length) {
       // Send the structured mock array back to add-transaction
       this.router.navigate(['/add-transaction'], {
@@ -121,7 +121,7 @@ export class AIProcessingPage implements OnInit {
 
     this.currentImageIndex++;
     await this.processImageAtIndex(this.currentImageIndex);
-  }
+  }/*/
   
   private generateMockReceiptData(index: number) {
     const merchants = ['AEON Supermarket', '7-Eleven', '松屋 (Matsuya)', 'Muji', 'JR East Ticket Counter'];
