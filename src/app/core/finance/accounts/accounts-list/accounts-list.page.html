@@ -1,16 +1,15 @@
 <ion-header class="ion-no-border">
   <ion-toolbar>
-    <ion-title mode="ios">我的資產</ion-title>
-    <ion-buttons slot="end">
-      <ion-button (click)="openEditAccountModal()" color="primary" style="font-weight: 600;">
-        <ion-icon name="add-outline" slot="start"></ion-icon>新增帳戶
-      </ion-button>
-    </ion-buttons>
+    <ion-title mode="ios">我的資產</ion-title>   
   </ion-toolbar>
 </ion-header>
 
 <ion-content class="accounts-list-content">
-  
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab-button (click)="presentAddActionSheet()">
+      <ion-icon name="add"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
   <div class="assets-dashboard-hero">
     <div class="dashboard-card">
       <div class="card-header-label">實體總淨資產</div>
@@ -111,10 +110,7 @@
 
     <div class="group-section">
       <div class="group-title-row">
-        <div class="group-title">虛擬基金 (獨立預算)</div>
-        <ion-button fill="clear" color="tertiary" size="small" (click)="openEditFundModal()" class="add-fund-inline-btn">
-          <ion-icon name="add-outline" slot="start"></ion-icon>新增基金
-        </ion-button>
+        <div class="group-title">虛擬基金 (獨立預算)</div>       
       </div>
       
       <ion-list inset="true" class="modern-account-list" *ngIf="getFunds().length > 0">

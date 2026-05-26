@@ -84,3 +84,41 @@ ion-footer ion-toolbar {
     font-size: 16px;
   }
 }
+
+/* AI 區塊專用樣式 */
+.ai-settings-list {
+  --background: transparent; // 讓 list 本身透明，靠內部的 card 呈現
+  margin-top: 24px;
+}
+
+.ai-module-card {
+  background: white;
+  border-radius: 16px;
+  padding: 8px 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+
+  .transparent-item {
+    --background: transparent;
+  }
+
+  .ai-helper-text {
+    padding: 0 16px 12px 52px; // 留出對齊左側 icon 的空間
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    
+    ion-icon {
+      font-size: 14px;
+      color: var(--ion-color-warning);
+      margin-top: 2px;
+    }
+    
+    p {
+      margin: 0;
+      font-size: 12px;
+      color: var(--ion-color-medium);
+      line-height: 1.4;
+    }
+  }
+}

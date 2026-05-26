@@ -6,6 +6,7 @@ import { FinanceService } from '../../service/finance.service';
 import { currencies, CurrencyCode } from '../../environment/environment';
 import { EditAccountModalPage } from '../edit-account-modal/edit-account-modal.page';
 import { EditFundModalPage } from '../edit-fund-modal/edit-fund-modal.page';
+import { ActionSheetController } from '@ionic/angular';
 
 @Component({
   selector: 'app-accounts-list',
@@ -24,6 +25,7 @@ export class AccountsListPage implements OnInit {
     private router: Router,
     private modalController: ModalController,
     private alertController: AlertController,
+    private actionSheetCtrl: ActionSheetController,
     private modalCtrl: ModalController,
   ) {}
 
@@ -147,5 +149,34 @@ export class AccountsListPage implements OnInit {
     const today = this.financeService.getToday();
     const spent = this.financeService.getFundSpentOnDate(fundId, today);
     return limit - spent;
+  }
+
+  async presentAddActionSheet() {
+    const actionSheet = await this.actionSheetCtrl.create({
+      header: '新增項目',
+      mode: 'ios', // Gives it that native premium feel
+      buttons: [
+        {
+          text: '新增帳戶',
+          icon: 'wallet-outline',
+          handler: () => {
+            this.openEditAccountModal(); // Your existing function
+          }
+        },
+        {
+          text: '新增基金',
+          icon: 'pie-chart-outline',
+          handler: () => {
+            this.openEditFundModal(); // Your existing function
+          }
+        },
+        {
+          text: '取消',
+          icon: 'close-outline',
+          role: 'cancel'
+        }
+      ]
+    });
+    await actionSheet.present();
   }
 }

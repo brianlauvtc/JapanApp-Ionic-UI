@@ -13,13 +13,6 @@ export class SettingsPagePage implements OnInit {
   jpyToHkd: number | null = null;
   isRateLoading = false;
 
-  aiFrequencyOptions = [
-    { value: 'manual', label: '⏸️ 關閉自動 (僅手動點擊)' },
-    { value: '1_day', label: '📅 每天 1 次' },
-    { value: '7_days', label: '🗓️ 每 7 天 1 次' },
-    { value: '30_days', label: '📆 每個月 1 次' }
-  ];
-
   constructor(
     private fb: FormBuilder,
     private financeVar: FinanceVarService,
@@ -36,9 +29,7 @@ export class SettingsPagePage implements OnInit {
     const settings = this.financeVar.getAppData().settings;
     this.settingsForm = this.fb.group({
       apiKey: [settings.apiKey],
-      baseCurrency: [settings.baseCurrency, Validators.required],
-      aiFrequency: [settings.aiFrequency, Validators.required],
-      enableAIHistory: [settings.enableAIHistory]
+      baseCurrency: [settings.baseCurrency, Validators.required]
     });
   }
 

@@ -41,43 +41,25 @@
       </ion-item>
     </ion-list>
 
-    <ion-list inset="true">
+    <ion-list inset="true" class="ai-settings-list">
       <ion-list-header>
         <ion-label color="medium">AI 助理設定</ion-label>
       </ion-list-header>
 
-      <ion-item lines="full">
-        <ion-icon name="key-outline" slot="start" color="warning"></ion-icon>
-        <ion-input 
-          formControlName="apiKey" 
-          type="password" 
-          label="Gemini API Key" 
-          label-placement="stacked"
-          placeholder="輸入金鑰解鎖 AI 功能"
-          clear-input="true">
-        </ion-input>
-      </ion-item>
-
-      <ion-item lines="full">
-        <ion-icon name="time-outline" slot="start" color="primary"></ion-icon>
-        <ion-select formControlName="aiFrequency" interface="popover" label="自動分析頻率" label-placement="stacked">
-          <ion-select-option *ngFor="let option of aiFrequencyOptions" [value]="option.value">
-            {{ option.label }}
-          </ion-select-option>
-        </ion-select>
-      </ion-item>
-      
-      <div class="field-note">
-        控制 AI 讀取資料的頻率，以節省 API 配額。
+      <div class="ai-module-card">
+        <ion-item lines="none" class="transparent-item">
+          <ion-icon name="key-outline" slot="start" color="warning"></ion-icon>
+          <ion-input 
+            formControlName="apiKey" 
+            type="password" 
+            label="Gemini API Key" 
+            label-placement="stacked"
+            placeholder="輸入金鑰解鎖 AI 功能"
+            clear-input="true">
+          </ion-input>
+        </ion-item>
+               
       </div>
-
-      <ion-item lines="none">
-        <ion-icon name="chatbubbles-outline" slot="start" color="tertiary"></ion-icon>
-        <ion-toggle formControlName="enableAIHistory" justify="space-between">
-          讀取過往建議
-          <p style="font-size: 12px; color: var(--ion-color-medium); margin: 0;">加強對話連貫性</p>
-        </ion-toggle>
-      </ion-item>
     </ion-list>
 
     <ion-list inset="true" class="danger-list">
