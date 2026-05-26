@@ -1,8 +1,10 @@
-.bg-radial-dark {
-  --background: linear-gradient(135deg, #1f1c2c 0%, #928dab 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+ion-content {
+  --background: #f4f5f8;
+  --overflow: hidden;
+}
+
+ion-toolbar {
+  --background: #f4f5f8;
 }
 
 .analysis-wrapper {
@@ -12,32 +14,33 @@
   justify-content: center;
   height: 100%;
   padding: 24px;
+  max-height: 100vh;
 }
 
-/* Modern Glowing Scanner Animation Interface */
+/* Light Mode Scanner Animation */
 .scanner-container {
   position: relative;
   width: 110px;
   height: 110px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 2px solid rgba(255, 255, 255, 0.1);
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.03);
   border-radius: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 32px;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+  box-shadow: 0 12px 32px rgba(var(--ion-color-primary-rgb), 0.1);
   overflow: hidden;
 
   .cube-container {
     width: 54px;
     height: 54px;
-    background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+    background: linear-gradient(135deg, var(--ion-color-primary) 0%, var(--ion-color-tertiary, #8a2be2) 100%);
     border-radius: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 0 20px rgba(79, 172, 254, 0.6);
+    box-shadow: 0 8px 20px rgba(var(--ion-color-primary-rgb), 0.4);
     
     .sparkle-core {
       font-size: 26px;
@@ -50,47 +53,51 @@
     position: absolute;
     left: 0;
     width: 100%;
-    height: 4px;
-    background: #00f2fe;
-    box-shadow: 0 0 12px #00f2fe, 0 0 4px #00f2fe;
+    height: 3px;
+    background: var(--ion-color-primary);
+    box-shadow: 0 0 12px var(--ion-color-primary), 0 0 4px var(--ion-color-primary);
     animation: laserScan 2.5s infinite linear;
   }
 }
 
 /* Status Cards & Typography Configuration */
 .status-box {
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.02);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.03);
   border-radius: 24px;
   width: 100%;
   max-width: 320px;
+  padding: 24px;
+  text-align: center;
   
   h2 {
-    color: white;
-    font-size: 19px;
-    margin-bottom: 12px;
+    color: var(--ion-color-dark);
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0 0 12px;
   }
   p {
-    color: #b0b3b8;
+    color: var(--ion-color-medium);
     font-size: 13px;
     line-height: 1.5;
+    margin: 0 0 20px;
   }
 }
 
 .counter-badge {
   display: inline-block;
-  background: rgba(0, 0, 0, 0.25);
-  color: #e4e6eb;
-  padding: 6px 16px;
+  background: rgba(var(--ion-color-primary-rgb), 0.08);
+  color: var(--ion-color-dark);
+  padding: 8px 16px;
   border-radius: 20px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
-  border: 1px solid rgba(255,255,255,0.05);
+  margin-bottom: 20px;
 
   .highlight {
-    color: #00f2fe;
-    font-weight: bold;
+    color: var(--ion-color-primary);
+    font-weight: 800;
   }
 }
 
@@ -98,7 +105,7 @@
   .custom-progress {
     height: 6px;
     border-radius: 3px;
-    --background: rgba(255,255,255,0.1);
+    --background: #f0f0f5;
   }
 }
 
@@ -106,11 +113,13 @@
 .logger-box {
   width: 100%;
   max-width: 320px;
-  margin-top: 20px;
-  background: rgba(0, 0, 0, 0.15);
+  margin-top: 24px;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
   border-radius: 16px;
-  font-family: monospace;
   font-size: 12px;
+  padding: 16px;
 
   .log-line {
     display: flex;
@@ -119,22 +128,82 @@
     margin: 8px 0;
     
     &.current {
-      color: #00f2fe;
+      color: var(--ion-color-primary);
+      font-weight: 600;
+    }
+    &.text-muted {
+      color: var(--ion-color-medium);
     }
     ion-icon {
-      font-size: 14px;
+      font-size: 16px;
     }
   }
 }
 
 /* Keyframe Animations */
 @keyframes laserScan {
-  0% { top: 0%; }
-  50% { top: 100%; }
-  100% { top: 0%; }
+  0% { top: 0%; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
 }
 
 @keyframes pulseScale {
   0%, 100% { transform: scale(1); opacity: 0.9; }
-  50% { transform: scale(1.15); opacity: 1; }
+  50% { transform: scale(1.15); opacity: 1; box-shadow: 0 0 15px rgba(255,255,255,0.5); }
+}
+
+/* Modern Step Indicator */
+.modern-step-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 16px;
+  padding: 16px;
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.03);
+
+  .step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+
+    .step-num {
+      width: 28px;
+      height: 28px;
+      line-height: 28px;
+      border-radius: 50%;
+      background: #f0f0f5;
+      color: var(--ion-color-medium);
+      font-size: 13px;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 6px;
+      transition: all 0.3s ease;
+    }
+    .step-text { font-size: 12px; color: var(--ion-color-medium); font-weight: 600; }
+
+    &.active {
+      .step-num {
+        background: var(--ion-color-primary);
+        color: white;
+        box-shadow: 0 4px 12px rgba(var(--ion-color-primary-rgb), 0.3);
+      }
+      .step-text { color: var(--ion-color-primary); }
+    }
+  }
+  .step-line { 
+    height: 3px; 
+    background: #f0f0f5; 
+    width: 40px; 
+    border-radius: 2px; 
+    margin-bottom: 20px; 
+    transition: background 0.3s ease;
+    
+    &.active {
+      background: var(--ion-color-primary);
+    }
+  }
 }

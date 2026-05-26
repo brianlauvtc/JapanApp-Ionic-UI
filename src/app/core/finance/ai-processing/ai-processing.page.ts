@@ -16,6 +16,8 @@ export class AIProcessingPage implements OnInit {
   currentImageIndex: number = 0;
   totalImages: number = 0;
   private apiKey: string = '';
+  isProcessing: boolean = false;
+
 
   constructor(
     private router: Router,
@@ -60,6 +62,7 @@ export class AIProcessingPage implements OnInit {
       return;
     }
 
+    this.isProcessing = true;
     try {
       const activePhoto = this.processingImages[index];
       const base64Data = await this.convertPhotoToBase64(activePhoto);
@@ -91,6 +94,7 @@ export class AIProcessingPage implements OnInit {
           'There was a problem analyzing your receipt. The process has been canceled. Please try again later.'
         );
       //this.pushFallbackRecord();
+      this.isProcessing = false;
     }
 
     this.currentImageIndex++;
@@ -214,7 +218,7 @@ export class AIProcessingPage implements OnInit {
   }
 
   private async callGeminiVisionAPI(base64Image: string): Promise<any[] | null> {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${this.apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${this.apiKey}`;
     
     // Prompt structure referencing the schema guidelines outlined above
     const promptText = `You are an expert financial ledger accountant. Analyze the provided expense receipt image carefully.

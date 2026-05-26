@@ -1,48 +1,50 @@
 <ion-header class="ion-no-border">
-  <ion-toolbar color="primary">
+  <ion-toolbar>
     <ion-buttons slot="start">
-      <ion-back-button defaultHref="/add-transaction" text=""></ion-back-button>
+      <ion-back-button defaultHref="/add-transaction" text="" color="dark"></ion-back-button>
     </ion-buttons>
-    <ion-title class="ion-text-center">Scan Receipts</ion-title>
+    <ion-title class="ion-text-center" mode="ios">掃描收據</ion-title>
     <ion-buttons slot="end">
-      <ion-badge color="light" class="ion-margin-end" *ngIf="selectedImages.length > 0">
+      <ion-badge color="primary" class="ion-margin-end" *ngIf="selectedImages.length > 0" mode="ios">
         {{ selectedImages.length }} Selected
       </ion-badge>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding bg-light">
-  <div class="step-indicator ion-margin-bottom">
-    <div class="step active"><span class="step-num">1</span><span class="step-text">Upload</span></div>
-    <div class="step-line"></div>
-    <div class="step"><span class="step-num">2</span><span class="step-text">Analyze</span></div>
-    <div class="step-line"></div>
-    <div class="step"><span class="step-num">3</span><span class="step-text">Verify</span></div>
-  </div>
-
-  <ion-card color="danger" class="ion-no-margin ion-margin-bottom glass-card" *ngIf="!hasApiKey">
-    <ion-card-content class="ion-flex ion-align-items-center">
-      <ion-icon name="key-outline" size="large" class="ion-margin-end"></ion-icon>
-      <div>
-        <h3 class="font-weight-bold">Gemini API Key Required</h3>
-        <p>Please navigate to Settings and configure your API key to access automated transcription features.</p>
-      </div>
-    </ion-card-content>
-  </ion-card>
-
-  <div class="header-prompt ion-text-center ion-padding-vertical" *ngIf="selectedImages.length === 0">
-    <div class="icon-circle ion-margin-bottom">
-      <ion-icon name="document-text-outline" color="primary"></ion-icon>
+<ion-content>
+  <div class="warning-banner" *ngIf="!hasApiKey">
+    <div class="icon-wrapper">
+      <ion-icon name="key-outline"></ion-icon>
     </div>
-    <h2 class="font-weight-bold">Smart Receipt Scanner</h2>
-    <p class="text-muted">Take photos or choose receipts from your gallery. Gemini AI will automatically read items, amounts, categories, and currencies.</p>
+    <div class="text-wrapper">
+      <h4>需要 Gemini API Key</h4>
+      <p>請前往設定頁面輸入 API Key 以啟用智能辨識功能。</p>
+    </div>
   </div>
 
-  <div class="receipt-grid ion-margin-vertical">
+  <div class="modern-step-indicator">
+    <div class="step active"><span class="step-num">1</span><span class="step-text">上傳</span></div>
+    <div class="step-line"></div>
+    <div class="step"><span class="step-num">2</span><span class="step-text">分析</span></div>
+    <div class="step-line"></div>
+    <div class="step"><span class="step-num">3</span><span class="step-text">確認</span></div>
+  </div>
+
+  <div class="header-prompt" *ngIf="selectedImages.length === 0">
+    <div class="icon-circle">
+      <ion-icon name="scan-outline"></ion-icon>
+    </div>
+    <h2>智能收據掃描</h2>
+    <p>拍攝或從相簿選擇收據，AI 將自動為您提取金額、分類與購物明細。</p>
+  </div>
+
+  <div class="receipt-grid">
     <div class="upload-trigger-card" (click)="selectImageSource()" [class.disabled]="!hasApiKey">
-      <ion-icon name="camera-outline" color="primary" size="large"></ion-icon>
-      <span>Add Receipt</span>
+      <div class="trigger-content">
+        <ion-icon name="camera-outline"></ion-icon>
+        <span>新增收據</span>
+      </div>
     </div>
 
     <div class="receipt-preview-card" *ngFor="let image of selectedImages; let i = index">
@@ -55,16 +57,17 @@
   </div>
 </ion-content>
 
-<ion-footer class="ion-no-border ion-padding">
-  <ion-button 
-    expand="block" 
-    shape="round"
-    size="large"
-    color="primary"
-    class="action-btn-shadow"
-    (click)="processImages()" 
-    [disabled]="selectedImages.length === 0 || !hasApiKey">
-    <ion-icon name="sparkles-outline" slot="start"></ion-icon>
-    Analyze {{ selectedImages.length }} {{ selectedImages.length === 1 ? 'Receipt' : 'Receipts' }}
-  </ion-button>
+<ion-footer class="ion-no-border">
+  <div class="footer-safe-area">
+    <ion-button 
+      expand="block" 
+      shape="round"
+      color="primary"
+      class="analyze-btn"
+      (click)="processImages()" 
+      [disabled]="selectedImages.length === 0 || !hasApiKey">
+      <ion-icon name="sparkles-outline" slot="start"></ion-icon>
+      分析 {{ selectedImages.length }} 張收據
+    </ion-button>
+  </div>
 </ion-footer>

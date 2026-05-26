@@ -1,11 +1,20 @@
 <ion-header class="ion-no-border">
-  <ion-toolbar color="primary">
-    <ion-title>AI Analysis Engine</ion-title>
+  <ion-toolbar>
+    <ion-title mode="ios">AI 分析中</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding ion-text-center bg-radial-dark">
+<ion-content>
+
+  <div class="modern-step-indicator">
+    <div class="step active"><span class="step-num">✓</span><span class="step-text">上傳</span></div>
+    <div class="step-line active"></div>
+    <div class="step active"><span class="step-num">2</span><span class="step-text">分析</span></div>
+    <div class="step-line"></div>
+    <div class="step"><span class="step-num">3</span><span class="step-text">確認</span></div>
+  </div>
   <div class="analysis-wrapper">
+    
     <div class="scanner-container">
       <div class="scanning-laser"></div>
       <div class="cube-container">
@@ -13,34 +22,34 @@
       </div>
     </div>
 
-    <div class="status-box ion-padding">
-      <h2 class="font-weight-bold tracking-wide">Analyzing Documents</h2>
-      <p class="text-muted text-sm ion-margin-bottom">
-        Gemini 2.5 Flash is extracting itemizations, calculating cross-currency metrics, and selecting financial categories.
-      </p>
+    <div class="status-box">
+      <h2>正在解析收據內容</h2>
+      <p>Gemini AI 正在為您提取購物明細、轉換匯率並進行智能分類。</p>
 
-      <div class="counter-badge ion-margin-vertical" *ngIf="totalImages > 0">
-        Receipt <span class="highlight">{{ currentImageIndex + 1 }}</span> of <span>{{ totalImages }}</span>
+      <div class="counter-badge" *ngIf="totalImages > 0">
+        正在處理第 <span class="highlight">{{ currentImageIndex + 1 }}</span> 張 / 共 {{ totalImages }} 張
       </div>
 
       <div class="progress-bar-container ion-margin-top">
         <ion-progress-bar 
-          [value]="(currentImageIndex) / totalImages" 
-          color="secondary" 
+          [type]="isProcessing ? 'indeterminate' : 'determinate'"
+          [value]="(currentImageIndex) / totalImages"
+          color="primary" 
           class="custom-progress">
         </ion-progress-bar>
       </div>
     </div>
 
-    <div class="logger-box ion-text-left ion-padding">
-      <div class="log-line current">
-        <ion-spinner name="dots" color="secondary"></ion-spinner>
-        <span>Running optical character matching...</span>
+    <div class="logger-box">
+      <div class="log-line" [class.current]="isProcessing">
+        <ion-spinner name="dots" [color]="isProcessing ? 'primary' : 'medium'"></ion-spinner>
+        <span>{{ isProcessing ? 'Gemini 正在分析收據...' : '準備下一張...' }}</span>
       </div>
-      <div class="log-line text-muted">
+      <div class="log-line" [class.text-muted]="!isProcessing">
         <ion-icon name="checkmark-circle" color="success"></ion-icon>
-        <span>Secure runtime API pipeline connected.</span>
+        <span>安全 API 通道已連接。</span>
       </div>
     </div>
+    
   </div>
 </ion-content>

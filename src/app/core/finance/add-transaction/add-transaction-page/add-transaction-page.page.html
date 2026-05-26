@@ -24,7 +24,13 @@
 </ion-header>
 
 <ion-content class="add-transaction-content ion-padding-bottom">
-
+  <div class="modern-step-indicator" *ngIf="isAIScanningMode">
+    <div class="step active"><span class="step-num">✓</span><span class="step-text">上傳</span></div>
+    <div class="step-line active"></div>
+    <div class="step active"><span class="step-num">✓</span><span class="step-text">分析</span></div>
+    <div class="step-line active"></div>
+    <div class="step active"><span class="step-num">3</span><span class="step-text">確認</span></div>
+  </div>
   
   <!-- AI Scanning Navigation -->
   <div class="ai-navigation-section" *ngIf="isAIScanningMode && aiTransactions.length > 1">
@@ -76,7 +82,7 @@
       </div>
       <ion-icon name="chevron-forward-outline" class="arrow-icon"></ion-icon>
     </div>
-    
+
     <div class="amount-card-container">
       <div class="modern-amount-box" [ngClass]="txnType">
         <div class="input-main-zone">
