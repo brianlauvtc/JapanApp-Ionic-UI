@@ -35,8 +35,16 @@
     <div class="button-container">
       <ion-button 
         expand="block" 
+        (click)="selectImageSource()" 
+        [disabled]="!hasApiKey">
+        Add More Images
+      </ion-button>
+      <ion-button 
+        expand="block" 
         (click)="processImages()" 
-        [disabled]="selectedImages.length === 0 || !hasApiKey">
+        [disabled]="selectedImages.length === 0 || !hasApiKey"
+        color="primary"
+        fill="solid">
         Process {{selectedImages.length}} {{selectedImages.length === 1 ? 'Receipt' : 'Receipts'}}
       </ion-button>
     </div>

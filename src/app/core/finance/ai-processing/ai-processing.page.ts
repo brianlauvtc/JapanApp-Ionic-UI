@@ -5,15 +5,6 @@ import { Camera, Photo } from '@capacitor/camera';
 import { AIService } from '../service/ai.service';
 import { FinanceVarService } from '../service/finance-var.service';
 
-interface ExtractedTransaction {
-  amount: number;
-  currency: string;
-  category: string;
-  date: string;
-  note: string;
-  items?: Array<{ name: string; quantity: number; price: number }>;
-}
-
 @Component({
   selector: 'app-ai-processing',
   templateUrl: './ai-processing.page.html',
@@ -21,7 +12,7 @@ interface ExtractedTransaction {
 })
 export class AIProcessingPage implements OnInit {
   processingImages: Photo[] = [];
-  extractedTransactions: ExtractedTransaction[] = [];
+  extractedTransactions: any[] = []; // Will contain AI-extracted transaction data
   currentImageIndex: number = 0;
   totalImages: number = 0;
   hasApiKey: boolean = false;
@@ -75,12 +66,15 @@ export class AIProcessingPage implements OnInit {
         this.extractedTransactions.push(extractedData);
       } else {
         // Handle case where extraction failed
-        const fallbackTransaction: ExtractedTransaction = {
+        const fallbackTransaction = {
+          type: 'expense',
           amount: 0,
           currency: 'HKD',
-          category: 'Other',
+          category: '其他',
           date: new Date().toISOString().split('T')[0],
-          note: 'Failed to extract data - please edit manually'
+          note: 'Failed to extract data - please edit manually',
+          accountId: null,
+          items: null
         };
         this.extractedTransactions.push(fallbackTransaction);
       }
@@ -96,25 +90,35 @@ export class AIProcessingPage implements OnInit {
     }
   }
 
-  async extractTransactionFromImage(photo: Photo): Promise<ExtractedTransaction | null> {
+  async extractTransactionFromImage(photo: Photo): Promise<any> {
     try {
       // For now, we'll simulate the AI response since actual image processing 
       // with Gemini would require base64 encoding and proper API setup
-      // In a real implementation, you'd convert the image to base64 and send to Gemini
+      // In a real implementation, you would convert the image to base64 and send to Gemini
       
-      // Simulate AI extraction with mock data
-      const mockResponse: ExtractedTransaction = {
+      // Get expense categories that match the add-transaction page
+      const expenseCategories = [
+        '飲食', '日用', '交通', '社交', '住房物業', '禮物', '服飾', '通信',
+        '娛樂', '美容', '醫療', '稅金', '教育', '寶寶', '寵物', '旅行', '家用',
+        '儲蓄保險', '信用卡還款', '買野飲', '零食', '遊戲', '其他', 'on9野', '欠債還款'
+      ];
+      
+      // Generate mock AI response in the format expected by add-transaction page
+      const mockResponse = {
+        type: 'expense', // AI only handles expenses for receipts
         amount: Math.floor(Math.random() * 1000) + 10,
         currency: Math.random() > 0.5 ? 'HKD' : 'JPY',
-        category: ['Food', 'Transport', 'Shopping', 'Entertainment'][Math.floor(Math.random() * 4)],
+        category: expenseCategories[Math.floor(Math.random() * expenseCategories.length)],
         date: new Date(Date.now() - Math.floor(Math.random() * 7) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        note: `Receipt from ${['Restaurant', 'Store', 'Taxi', 'Online Shop'][Math.floor(Math.random() * 4)]}`
+        note: `Receipt from ${['Restaurant', 'Store', 'Taxi', 'Online Shop'][Math.floor(Math.random() * 4)]}`,
+        accountId: null, // Will be set by add-transaction page based on available accounts
+        items: null // Optional items array
       };
       
       // In real implementation, you would:
       // 1. Convert photo to base64
-      // 2. Send to Gemini API with appropriate prompt
-      // 3. Parse JSON response
+      // 2. Send to Gemini API with appropriate prompt requesting JSON in this exact format
+      // 3. Parse JSON response and validate structure
       
       return mockResponse;
       
@@ -130,9 +134,13 @@ export class AIProcessingPage implements OnInit {
       return;
     }
 
-    // Navigate to confirmation page with extracted transactions
-    this.router.navigate(['/receipt-confirmation'], {
-      state: { transactions: this.extractedTransactions }
+    // Navigate back to add-transaction page with extracted transactions
+    // Pass the first transaction as initial data and all transactions for scrolling
+    this.router.navigate(['/add-transaction'], {
+      state: { 
+        aiTransactions: this.extractedTransactions,
+        currentTransactionIndex: 0
+      }
     });
   }
 

@@ -38,6 +38,15 @@ export class AddTransactionPagePage implements OnInit {
   
   // Auto upload feature
   hasApiKey = false;
+  
+  // AI auto-fill feature
+  aiTransactions: any[] = [];
+  currentTransactionIndex: number = 0;
+  isAIScanningMode: boolean = false;
+  
+  // Dirty state tracking
+  private initialFormValues: any = null;
+  private isFormDirty: boolean = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -59,8 +68,29 @@ export class AddTransactionPagePage implements OnInit {
     this.categories = this.getCategories();
     this.setupFormListeners();
     
+    // Capture initial form values for dirty checking
+    this.captureInitialFormValues();
+    
     // Check if Gemini API key is available for auto-upload feature
     this.hasApiKey = !!this.financeVar.getAppData().settings.apiKey;
+    
+    // Check if we have AI pre-filled data
+    const navigation = this.router.getCurrentNavigation();
+    const state = navigation?.extras?.state as { aiTransactions: any[]; currentTransactionIndex: number };
+    
+    if (state && state.aiTransactions) {
+      this.isAIScanningMode = true;
+      this.aiTransactions = state.aiTransactions;
+      this.currentTransactionIndex = state.currentTransactionIndex || 0;
+      
+      // Force expense type for AI scanning mode
+      this.txnType = 'expense';
+      this.categories = this.getCategories();
+      
+      this.prefillFormFromAITransaction(this.aiTransactions[this.currentTransactionIndex]);
+      // Ensure we're not in modal mode when in AI scanning mode
+      this.isModal = false;
+    }
   }
 
   getToday(offset: number = 0): string {
@@ -129,15 +159,37 @@ export class AddTransactionPagePage implements OnInit {
   setupFormListeners() {
     this.transactionForm.get('currency')?.valueChanges.subscribe(() => {
       this.calculateExchangeRate();
+      this.checkFormDirty();
     });
     
     this.transactionForm.get('accountId')?.valueChanges.subscribe(() => {
       this.calculateExchangeRate();
+      this.checkFormDirty();
     });
     
     this.transactionForm.get('amount')?.valueChanges.subscribe(() => {
       this.updateCalculatedAmount();
+      this.checkFormDirty();
     });
+    
+    // Add listeners for other form controls
+    this.transactionForm.valueChanges.subscribe(() => {
+      this.checkFormDirty();
+    });
+  }
+
+  private captureInitialFormValues() {
+    setTimeout(() => {
+      this.initialFormValues = this.transactionForm.getRawValue();
+      this.isFormDirty = false;
+    }, 0);
+  }
+
+  private checkFormDirty() {
+    if (!this.initialFormValues) return;
+    
+    const currentValues = this.transactionForm.getRawValue();
+    this.isFormDirty = JSON.stringify(currentValues) !== JSON.stringify(this.initialFormValues);
   }
 
   calculateExchangeRate() {
@@ -275,6 +327,10 @@ export class AddTransactionPagePage implements OnInit {
     });
   }
 
+  get accounts() {
+    return this.financeVar.getAccounts();
+  }
+  
   getAccounts() {
     return this.financeVar.getAccounts();
   }
@@ -312,11 +368,73 @@ export class AddTransactionPagePage implements OnInit {
     await alert.present();
   }
   async goBack() {
+    // Handle AI scanning mode - show confirmation before going back
+    if (this.isAIScanningMode) {
+      const alert = await this.alertController.create({
+        header: '取消新增交易',
+        message: '確定要取消新增這筆交易嗎？已輸入的資料將會遺失。',
+        buttons: [
+          {
+            text: '繼續掃描',
+            role: 'cancel',
+            cssClass: 'secondary'
+          },
+          {
+            text: '取消全部',
+            role: 'destructive',
+            handler: () => {
+              // Navigate back based on context
+              if (this.contextType === 'account' && this.contextAccountId) {
+                this.router.navigate(['/account-detail', this.contextAccountId]);
+              } else if (this.contextType === 'fund' && this.contextFundId) {
+                this.router.navigate(['/fund-detail', this.contextFundId]);
+              } else {
+                this.router.navigate(['/tabs/home']);
+              }
+            }
+          }
+        ]
+      });
+      await alert.present();
+      return;
+    }
+    
+    // Handle regular mode with dirty form confirmation
+    if (this.isFormDirty && !this.isEditMode) {
+      const alert = await this.alertController.create({
+        header: '取消新增交易',
+        message: '確定要取消新增這筆交易嗎？已輸入的資料將會遺失。',
+        buttons: [
+          {
+            text: '繼續編輯',
+            role: 'cancel',
+            cssClass: 'secondary'
+          },
+          {
+            text: '取消',
+            role: 'destructive',
+            handler: () => {
+              this.performGoBack();
+            }
+          }
+        ]
+      });
+      await alert.present();
+      return;
+    }
+    
+    // Handle edit mode or clean form - go back directly
+    this.performGoBack();
+  }
+  
+  private async performGoBack() {
+    // Handle modal mode
     if (this.isModal && this.modalCtrl) {
       await this.modalCtrl.dismiss();
       return;
     }
     
+    // Handle regular navigation
     if (this.contextType === 'account' && this.contextAccountId) {
       this.router.navigate(['/account-detail', this.contextAccountId]);
     } else if (this.contextType === 'fund' && this.contextFundId) {
@@ -442,7 +560,7 @@ export class AddTransactionPagePage implements OnInit {
     return this.items.reduce((total, item) => total + (item.quantity * item.price), 0);
   }
 
-  // Override loadTransactionForEdit to handle items
+  // Override loadTransactionForEdit to handle items and capture initial state
   loadTransactionForEdit(id: string) {
     const transaction = this.financeVar.getTransactions().find(t => t.id === id);
     if (!transaction) {
@@ -474,6 +592,9 @@ export class AddTransactionPagePage implements OnInit {
     this.categories = this.getCategories();
     
     this.calculateExchangeRate();
+    
+    // Capture initial form values after loading edit data
+    this.captureInitialFormValues();
   }
 
   // Save last used account for this transaction type
@@ -489,6 +610,123 @@ export class AddTransactionPagePage implements OnInit {
   }
 
   // Override saveTransaction to include items and save last account
+  async goToAutoUpload() {
+    if (!this.hasApiKey) {
+      // Show alert that API key is required
+      const alert = await this.alertController.create({
+        header: 'Gemini API Key Required',
+        message: 'Please set your Gemini API key in Settings to use this feature.',
+        buttons: ['OK']
+      });
+      await alert.present();
+      return;
+    }
+    
+    if (this.isModal && this.modalCtrl) {
+      // If we're in modal mode, dismiss the modal first, then navigate
+      await this.modalCtrl.dismiss({ navigateToAutoUpload: true });
+      // The parent component should handle the navigation
+    } else {
+      // Regular navigation
+      this.router.navigate(['/auto-upload-receipt']);
+    }
+  }
+  
+  prefillFormFromAITransaction(transaction: any) {
+    if (!transaction) return;
+    
+    // AI mode only supports expense transactions
+    this.txnType = 'expense';
+    
+    // Get expense categories for proper matching
+    const expenseCategories = [
+      { id: 'food', name: '飲食', icon: '🍜' },
+      { id: 'daily', name: '日用', icon: '🧼' },
+      { id: 'transport', name: '交通', icon: '🚗' },
+      { id: 'social', name: '社交', icon: '🎉' },
+      { id: 'housing', name: '住房物業', icon: '🏢' },
+      { id: 'gift', name: '禮物', icon: '🎁' },
+      { id: 'clothing', name: '服飾', icon: '👗' },
+      { id: 'communication', name: '通信', icon: '📞' },
+      { id: 'entertainment', name: '娛樂', icon: '🎬' },
+      { id: 'beauty', name: '美容', icon: '💅' },
+      { id: 'medical', name: '醫療', icon: '💊' },
+      { id: 'tax', name: '稅金', icon: '🏛️' },
+      { id: 'education', name: '教育', icon: '🎓' },
+      { id: 'baby', name: '寶寶', icon: '🍼' },
+      { id: 'pet', name: '寵物', icon: '🐱' },
+      { id: 'travel', name: '旅行', icon: '🌴' },
+      { id: 'household', name: '家用', icon: '🧹' },
+      { id: 'savings_insurance', name: '儲蓄保險', icon: '🏦' },
+      { id: 'credit_payment', name: '信用卡還款', icon: '💳' },
+      { id: 'shopping_dining', name: '買野飲', icon: '🛍️' },
+      { id: 'snacks', name: '零食', icon: '🍬' },
+      { id: 'gaming', name: '遊戲', icon: '🕹️' },
+      { id: 'other_expense', name: '其他', icon: '⭐' },
+      { id: 'on9_stuff', name: 'on9野', icon: '🤪' },
+      { id: 'debt_repayment', name: '欠債還款', icon: '📤' }
+    ];
+    
+    // Find exact matching category or default to '其他'
+    let selectedCategory = expenseCategories.find(cat => cat.name === transaction.category);
+    if (!selectedCategory) {
+      // Try to find a close match by checking if AI category contains any expense category name
+      for (const cat of expenseCategories) {
+        if (transaction.category.includes(cat.name) || cat.name.includes(transaction.category)) {
+          selectedCategory = cat;
+          break;
+        }
+      }
+      // If still no match, use '其他'
+      if (!selectedCategory) {
+        selectedCategory = expenseCategories.find(cat => cat.name === '其他') || expenseCategories[0];
+      }
+    }
+    
+    this.selectedCategory = selectedCategory;
+    
+    // Get default account if none specified
+    const defaultAccountId = this.accounts.length > 0 ? this.accounts[0].id : '';
+    const accountId = transaction.accountId || defaultAccountId;
+    
+    // Patch form values
+    this.transactionForm.patchValue({
+      amount: transaction.amount || 0,
+      currency: transaction.currency || 'HKD',
+      accountId: accountId,
+      date: transaction.date || this.getToday(),
+      note: transaction.note || '',
+      category: selectedCategory.name
+    });
+    
+    // Handle items if present
+    if (transaction.items && transaction.items.length > 0) {
+      this.items = [...transaction.items];
+    }
+    
+    // Recalculate exchange rate after setting currency and account
+    this.calculateExchangeRate();
+    
+    // Mark form as dirty since AI has populated it with user data
+    this.isFormDirty = true;
+  }
+  
+  // Navigation methods for multiple AI transactions
+  nextAITransaction() {
+    if (this.currentTransactionIndex < this.aiTransactions.length - 1) {
+      this.currentTransactionIndex++;
+      this.prefillFormFromAITransaction(this.aiTransactions[this.currentTransactionIndex]);
+    }
+  }
+  
+  previousAITransaction() {
+    if (this.currentTransactionIndex > 0) {
+      this.currentTransactionIndex--;
+      this.prefillFormFromAITransaction(this.aiTransactions[this.currentTransactionIndex]);
+    }
+  }
+  
+  // Override saveTransaction to handle AI mode navigation
   async saveTransaction() {
     if (!this.validateForm()) {
       return;
@@ -532,7 +770,7 @@ export class AddTransactionPagePage implements OnInit {
         exRate: exchangeRate,
         accDeduction: accDeduction,
         toAccountId: this.txnType === 'transfer' ? formValue.accountToId : undefined,
-        toAccDeduction: toAccDeduction, // Fixed: Now uses the properly converted amount
+        toAccDeduction: toAccDeduction,
         accountId: formValue.accountId,
         category: this.selectedCategory?.name || formValue.category,
         icon: this.selectedCategory?.icon || '💰',
@@ -554,25 +792,25 @@ export class AddTransactionPagePage implements OnInit {
       
       this.saveLastAccount(formValue.accountId);
       
+      // Handle AI scanning mode navigation
+      if (this.isAIScanningMode) {
+        if (this.currentTransactionIndex < this.aiTransactions.length - 1) {
+          // Move to next AI transaction
+          this.nextAITransaction();
+          // Re-enable save button for next transaction
+          if (saveButton) {
+            saveButton.removeAttribute('disabled');
+          }
+          return;
+        }
+      }
+      
       await this.goBack();
     } catch (error) {
       console.error('Error saving transaction:', error);
       if (saveButton) {
         saveButton.removeAttribute('disabled');
       }
-    }
-  }
-  
-  goToAutoUpload() {
-    if (this.hasApiKey) {
-      this.router.navigate(['/auto-upload-receipt']);
-    } else {
-      // Show alert that API key is required
-      this.alertController.create({
-        header: 'Gemini API Key Required',
-        message: 'Please set your Gemini API key in Settings to use this feature.',
-        buttons: ['OK']
-      }).then(alert => alert.present());
     }
   }
   

@@ -61,6 +61,14 @@ export class AutoUploadReceiptPage implements OnInit {
           }
         },
         {
+          text: 'Done Adding Images',
+          icon: 'checkmark-done',
+          handler: () => {
+            // Process all selected images
+            this.processImages();
+          }
+        },
+        {
           text: 'Cancel',
           icon: 'close',
           role: 'cancel'

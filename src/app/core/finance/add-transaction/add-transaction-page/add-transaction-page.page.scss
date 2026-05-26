@@ -280,3 +280,33 @@ ion-list.settings-list, ion-list.items-list {
     }
   }
 }
+
+// AI scanning navigation
+.ai-navigation-section {
+  padding: 0 16px 16px;
+  
+  .progress-indicator {
+    text-align: center;
+    margin-bottom: 12px;
+    
+    p {
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: var(--ion-color-primary);
+      font-size: 14px;
+    }
+  }
+  
+  .navigation-buttons {
+    display: flex;
+    justify-content: space-between;
+    
+    ion-button {
+      --border-radius: 8px;
+      --padding-start: 12px;
+      --padding-end: 12px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+  }
+}

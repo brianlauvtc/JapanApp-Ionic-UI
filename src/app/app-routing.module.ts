@@ -22,10 +22,6 @@ const routes: Routes = [
   {
     path: 'ai-processing',
     loadChildren: () => import('./core/finance/ai-processing/ai-processing.module').then(m => m.AIProcessingPageModule)
-  },
-  {
-    path: 'receipt-confirmation',
-    loadChildren: () => import('./core/finance/receipt-confirmation/receipt-confirmation.module').then(m => m.ReceiptConfirmationPageModule)
   }
 ];
 

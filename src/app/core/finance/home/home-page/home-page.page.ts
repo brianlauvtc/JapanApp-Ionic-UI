@@ -185,9 +185,14 @@ export class HomePagePage implements OnInit, OnDestroy {
       
       const { data, role } = await modal.onWillDismiss();
       if (data) {
-        console.log('Transaction saved:', data);
-        // Refresh the data
-        this.renderHome();
+        if (data.navigateToAutoUpload) {
+          // Navigate to auto upload page
+          this.router.navigate(['/auto-upload-receipt']);
+        } else {
+          console.log('Transaction saved:', data);
+          // Refresh the data
+          this.renderHome();
+        }
       }
     } catch (error) {
       console.error('Error opening add transaction modal:', error);
@@ -208,9 +213,14 @@ export class HomePagePage implements OnInit, OnDestroy {
       
       const { data, role } = await modal.onWillDismiss();
       if (data) {
-        console.log('Transaction updated:', data);
-        // Refresh the data
-        this.renderHome();
+        if (data.navigateToAutoUpload) {
+          // Navigate to auto upload page
+          this.router.navigate(['/auto-upload-receipt']);
+        } else {
+          console.log('Transaction updated:', data);
+          // Refresh the data
+          this.renderHome();
+        }
       }
     } catch (error) {
       console.error('Error opening edit transaction modal:', error);

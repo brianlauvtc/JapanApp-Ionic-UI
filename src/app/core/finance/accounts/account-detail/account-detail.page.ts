@@ -181,8 +181,13 @@ export class AccountDetailPage implements OnInit {
       
       const { data } = await modal.onWillDismiss();
       if (data) {
-        console.log('Transaction saved:', data);
-        this.renderAccountDetail();
+        if (data.navigateToAutoUpload) {
+          // Navigate to auto upload page
+          this.router.navigate(['/auto-upload-receipt']);
+        } else {
+          console.log('Transaction saved:', data);
+          this.renderAccountDetail();
+        }
       }
     } catch (error) {
       console.error('Error opening add transaction modal:', error);
@@ -225,8 +230,13 @@ export class AccountDetailPage implements OnInit {
       
       const { data } = await modal.onWillDismiss();
       if (data) {
-        console.log('Transaction updated:', data);
-        this.renderAccountDetail();
+        if (data.navigateToAutoUpload) {
+          // Navigate to auto upload page
+          this.router.navigate(['/auto-upload-receipt']);
+        } else {
+          console.log('Transaction updated:', data);
+          this.renderAccountDetail();
+        }
       }
     } catch (error) {
       console.error('Error opening edit transaction modal:', error);
