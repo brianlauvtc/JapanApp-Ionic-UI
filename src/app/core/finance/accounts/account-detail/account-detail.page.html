@@ -1,12 +1,12 @@
 <ion-header class="ion-no-border">
   <ion-toolbar>
     <ion-buttons slot="start">
-      <ion-back-button defaultHref="/tabs/accounts" color="medium"></ion-back-button>
+      <ion-back-button defaultHref="/tabs/accounts" text="" icon="chevron-back-outline"></ion-back-button>
     </ion-buttons>
     <ion-title mode="ios">{{ getAccount()?.name || '帳戶明細' }}</ion-title>
     <ion-buttons slot="end">
       <ion-button (click)="editAccount()">
-        <ion-icon name="create-outline"></ion-icon>
+        <ion-icon name="pencil-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>

@@ -85,3 +85,22 @@ ion-card, .net-worth-card {
 ion-fab-button {
   --box-shadow: 0 10px 20px rgba(var(--ion-color-primary-rgb), 0.4);
 }
+
+
+// Make headers feel like part of the page
+ion-header {
+  
+  ion-toolbar {
+    --background: rgba(244, 245, 248, 0.85); // Matches your page bg with transparency
+    --border-style: none;
+    backdrop-filter: blur(12px); // The "Glass" effect
+    -webkit-backdrop-filter: blur(12px);
+    
+    ion-title {
+      font-weight: 700;
+      font-size: 17px;
+      color: var(--ion-color-dark);
+      letter-spacing: -0.3px;
+    }
+  }
+}

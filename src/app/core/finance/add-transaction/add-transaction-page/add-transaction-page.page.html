@@ -1,23 +1,15 @@
 <ion-header class="ion-no-border">
   <ion-toolbar>
     <ion-buttons slot="start">
-      <ion-button (click)="goBack()" color="medium">
-        <ion-icon name="close-outline" size="large"></ion-icon>
-      </ion-button>
+      <ion-button (click)="goBack()">
+        <ion-icon name="close-outline" size="large"></ion-icon> </ion-button>
     </ion-buttons>
-    <ion-title mode="ios">{{ isEditMode ? '編輯紀錄' : '新增紀錄' }}</ion-title>
+    
+    <ion-title mode="ios">{{ isEditMode ? '編輯' : '新增紀錄' }}</ion-title>
+    
     <ion-buttons slot="end">
-      <ion-button (click)="deleteTransaction()" color="danger" *ngIf="isEditMode" fill="clear">
-        刪除
-      </ion-button>
-      <ion-button 
-        (click)="saveTransaction()" 
-        [disabled]="!validateForm() || (isAIScanningMode && !hasViewedLastReceipt)"
-        color="primary"
-        fill="clear"
-        class="save-transaction-btn"
-        style="font-weight: 600;">
-        {{ isEditMode ? '更新' : '儲存' }}
+      <ion-button (click)="saveTransaction()" [disabled]="!validateForm()" color="primary" fill="clear">
+        <strong style="font-size: 15px;">{{ isEditMode ? '更新' : '儲存' }}</strong>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
