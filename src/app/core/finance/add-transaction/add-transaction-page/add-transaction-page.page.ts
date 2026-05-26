@@ -35,6 +35,9 @@ export class AddTransactionPagePage implements OnInit {
   
   // Category display state
   showAllCategories = false;
+  
+  // Auto upload feature
+  hasApiKey = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -55,6 +58,9 @@ export class AddTransactionPagePage implements OnInit {
 
     this.categories = this.getCategories();
     this.setupFormListeners();
+    
+    // Check if Gemini API key is available for auto-upload feature
+    this.hasApiKey = !!this.financeVar.getAppData().settings.apiKey;
   }
 
   getToday(offset: number = 0): string {
@@ -556,6 +562,18 @@ export class AddTransactionPagePage implements OnInit {
       }
     }
   }
-
+  
+  goToAutoUpload() {
+    if (this.hasApiKey) {
+      this.router.navigate(['/auto-upload-receipt']);
+    } else {
+      // Show alert that API key is required
+      this.alertController.create({
+        header: 'Gemini API Key Required',
+        message: 'Please set your Gemini API key in Settings to use this feature.',
+        buttons: ['OK']
+      }).then(alert => alert.present());
+    }
+  }
   
 }

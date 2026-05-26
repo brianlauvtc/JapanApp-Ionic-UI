@@ -24,6 +24,12 @@
 </ion-header>
 
 <ion-content class="add-transaction-content ion-padding-bottom">
+  <div class="auto-upload-section" *ngIf="!isEditMode && hasApiKey">
+    <ion-button expand="block" (click)="goToAutoUpload()" color="success" fill="outline" class="auto-upload-btn">
+      <ion-icon name="cloud-upload-outline" slot="start"></ion-icon>
+      Auto Upload Receipt
+    </ion-button>
+  </div>
   <div [formGroup]="transactionForm">
     
     <div class="segment-container">

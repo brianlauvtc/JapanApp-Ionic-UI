@@ -1,0 +1,92 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/ai-processing"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Confirm Transactions</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="saveAllTransactions()" *ngIf="transactions.length > 1">
+        <ion-icon name="save-outline"></ion-icon>
+        Save All
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <div class="confirmation-container">
+    <div class="progress-indicator" *ngIf="transactions.length > 1">
+      <p>Receipt {{currentTransactionIndex + 1}} of {{transactions.length}}</p>
+      <ion-progress-bar 
+        [value]="(currentTransactionIndex + 1) / transactions.length" 
+        [color]="'primary'">
+      </ion-progress-bar>
+    </div>
+    
+    <form [formGroup]="getCurrentForm()" *ngIf="transactions.length > 0">
+      <ion-item>
+        <ion-label position="stacked">Amount *</ion-label>
+        <ion-input formControlName="amount" type="number" placeholder="Enter amount"></ion-input>
+      </ion-item>
+      
+      <ion-item>
+        <ion-label position="stacked">Currency *</ion-label>
+        <ion-select formControlName="currency" interface="action-sheet">
+          <ion-select-option value="HKD">HKD ($)</ion-select-option>
+          <ion-select-option value="JPY">JPY (¥)</ion-select-option>
+        </ion-select>
+      </ion-item>
+      
+      <ion-item>
+        <ion-label position="stacked">Account *</ion-label>
+        <ion-select formControlName="accountId" interface="action-sheet">
+          <ion-select-option *ngFor="let account of accounts" [value]="account.id">
+            {{account.name}} ({{account.currency}})
+          </ion-select-option>
+        </ion-select>
+      </ion-item>
+      
+      <ion-item>
+        <ion-label position="stacked">Category *</ion-label>
+        <ion-select formControlName="category" interface="action-sheet">
+          <ion-select-option *ngFor="let category of categories" [value]="category">
+            {{category}}
+          </ion-select-option>
+        </ion-select>
+      </ion-item>
+      
+      <ion-item>
+        <ion-label position="stacked">Date *</ion-label>
+        <ion-datetime formControlName="date" display-format="YYYY-MM-DD"></ion-datetime>
+      </ion-item>
+      
+      <ion-item>
+        <ion-label position="stacked">Note</ion-label>
+        <ion-textarea formControlName="note" rows="3" placeholder="Additional notes"></ion-textarea>
+      </ion-item>
+    </form>
+    
+    <div class="navigation-buttons" *ngIf="transactions.length > 1">
+      <ion-button 
+        fill="outline" 
+        (click)="previousTransaction()" 
+        [disabled]="currentTransactionIndex === 0">
+        Previous
+      </ion-button>
+      <ion-button 
+        (click)="nextTransaction()" 
+        [disabled]="currentTransactionIndex === transactions.length - 1">
+        Next
+      </ion-button>
+    </div>
+    
+    <div class="save-button">
+      <ion-button 
+        expand="block" 
+        (click)="saveCurrentTransaction()" 
+        [disabled]="!getCurrentForm()?.valid">
+        {{transactions.length > 1 ? 'Save & Next' : 'Save Transaction'}}
+      </ion-button>
+    </div>
+  </div>
+</ion-content>

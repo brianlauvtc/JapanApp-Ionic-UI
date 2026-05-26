@@ -1,0 +1,100 @@
+.upload-container {
+  text-align: center;
+  
+  h2 {
+    margin-bottom: 16px;
+    color: var(--ion-color-primary);
+  }
+  
+  p {
+    margin-bottom: 24px;
+    color: var(--ion-color-medium);
+  }
+}
+
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.add-image-card {
+  border: 2px dashed var(--ion-color-primary);
+  border-radius: 12px;
+  padding: 24px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  ion-icon {
+    font-size: 32px;
+    color: var(--ion-color-primary);
+    margin-bottom: 8px;
+  }
+  
+  p {
+    margin: 0;
+    color: var(--ion-color-primary);
+    font-size: 14px;
+  }
+  
+  &:hover {
+    background-color: var(--ion-color-primary-tint);
+  }
+  
+  &.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    
+    ion-icon, p {
+      color: var(--ion-color-medium);
+    }
+  }
+}
+
+.image-preview {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  aspect-ratio: 3/4;
+  
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .remove-overlay {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 50%;
+    padding: 4px;
+    
+    ion-icon {
+      color: white;
+      font-size: 16px;
+    }
+  }
+}
+
+.button-container {
+  margin-top: 24px;
+}
+
+.note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 12px;
+  background-color: var(--ion-color-warning-tint);
+  border-radius: 8px;
+  color: var(--ion-color-warning);
+  
+  ion-icon {
+    font-size: 20px;
+  }
+}

@@ -10,8 +10,23 @@ const routes: Routes = [
   {
     path: 'tabs',
     loadChildren: () => import('./tabs/tabs.module').then(m => m.TabsPageModule)
+  },
+  {
+    path: 'add-transaction',
+    loadChildren: () => import('./core/finance/add-transaction/add-transaction.module').then(m => m.AddTransactionModule)
+  },
+  {
+    path: 'auto-upload-receipt',
+    loadChildren: () => import('./core/finance/auto-upload-receipt/auto-upload-receipt.module').then(m => m.AutoUploadReceiptPageModule)
+  },
+  {
+    path: 'ai-processing',
+    loadChildren: () => import('./core/finance/ai-processing/ai-processing.module').then(m => m.AIProcessingPageModule)
+  },
+  {
+    path: 'receipt-confirmation',
+    loadChildren: () => import('./core/finance/receipt-confirmation/receipt-confirmation.module').then(m => m.ReceiptConfirmationPageModule)
   }
- 
 ];
 
 @NgModule({

@@ -264,3 +264,19 @@ ion-list.settings-list, ion-list.items-list {
   --background: #f8f9fa;
   border-top: 1px solid #eee;
 }
+
+// Auto upload section
+.auto-upload-section {
+  padding: 0 16px 16px;
+  
+  .auto-upload-btn {
+    --border-radius: 12px;
+    --padding-top: 12px;
+    --padding-bottom: 12px;
+    font-weight: 600;
+    
+    ion-icon {
+      font-size: 20px;
+    }
+  }
+}

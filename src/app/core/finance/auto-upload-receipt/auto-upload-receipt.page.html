@@ -1,0 +1,49 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/add-transaction"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Auto Upload Receipt</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <div class="upload-container">
+    <h2>Upload Receipt Images</h2>
+    <p>Select or take photos of your expense receipts. Each receipt will be analyzed and converted into a transaction.</p>
+    
+    <div class="image-grid">
+      <div 
+        class="add-image-card" 
+        (click)="selectImageSource()"
+        [class.disabled]="!hasApiKey">
+        <ion-icon name="add-outline"></ion-icon>
+        <p>Add Image</p>
+      </div>
+      
+      <div 
+        class="image-preview" 
+        *ngFor="let image of selectedImages; let i = index"
+        (click)="removeImage(i)">
+        <img [src]="image.webPath || image.path" alt="Receipt {{i + 1}}">
+        <div class="remove-overlay">
+          <ion-icon name="close-circle"></ion-icon>
+        </div>
+      </div>
+    </div>
+    
+    <div class="button-container">
+      <ion-button 
+        expand="block" 
+        (click)="processImages()" 
+        [disabled]="selectedImages.length === 0 || !hasApiKey">
+        Process {{selectedImages.length}} {{selectedImages.length === 1 ? 'Receipt' : 'Receipts'}}
+      </ion-button>
+    </div>
+    
+    <div class="note" *ngIf="!hasApiKey">
+      <ion-icon name="alert-circle"></ion-icon>
+      <p>Gemini API key required. Set it in Settings to enable this feature.</p>
+    </div>
+  </div>
+</ion-content>

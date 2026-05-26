@@ -1,0 +1,32 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/auto-upload-receipt"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Processing Receipts</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <div class="processing-container">
+    <div class="spinner-container">
+      <ion-spinner name="circular"></ion-spinner>
+    </div>
+    
+    <h2>AI Analysis in Progress</h2>
+    <p>Your receipt images are being analyzed by Gemini AI to extract transaction details.</p>
+    
+    <div class="progress-info" *ngIf="totalImages > 0">
+      <p>Processing {{currentImageIndex}} of {{totalImages}} receipts</p>
+      <ion-progress-bar 
+        [value]="currentImageIndex / totalImages" 
+        [color]="'primary'">
+      </ion-progress-bar>
+    </div>
+    
+    <div class="note">
+      <ion-icon name="information-circle"></ion-icon>
+      <p>This may take a few moments depending on the number of receipts and image quality.</p>
+    </div>
+  </div>
+</ion-content>
