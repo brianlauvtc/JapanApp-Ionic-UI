@@ -12,7 +12,7 @@
       </ion-button>
       <ion-button 
         (click)="saveTransaction()" 
-        [disabled]="!validateForm()"
+        [disabled]="!validateForm() || (isAIScanningMode && !hasViewedLastReceipt)"
         color="primary"
         fill="clear"
         class="save-transaction-btn"
@@ -24,6 +24,7 @@
 </ion-header>
 
 <ion-content class="add-transaction-content ion-padding-bottom">
+ 
   <div class="auto-upload-section" *ngIf="!isEditMode && hasApiKey && !isAIScanningMode">
     <ion-button expand="block" (click)="goToAutoUpload()" color="success" fill="outline" class="auto-upload-btn">
       <ion-icon name="cloud-upload-outline" slot="start"></ion-icon>

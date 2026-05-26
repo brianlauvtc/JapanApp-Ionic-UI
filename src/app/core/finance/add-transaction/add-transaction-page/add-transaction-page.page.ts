@@ -1,11 +1,12 @@
 import { Component, OnInit, Optional } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
 import { FinanceVarService } from '../../service/finance-var.service';
 import { FinanceService } from '../../service/finance.service';
 import { Transaction, Account, Fund } from '../../model/finance.model';
 import { AlertController, ModalController, NavParams } from '@ionic/angular';
 import  moment from 'moment';
+import { filter } from 'rxjs';
 
 @Component({
   selector: 'app-add-transaction-page',
@@ -43,7 +44,8 @@ export class AddTransactionPagePage implements OnInit {
   aiTransactions: any[] = [];
   currentTransactionIndex: number = 0;
   isAIScanningMode: boolean = false;
-  
+  hasViewedLastReceipt: boolean = false;
+
   // Dirty state tracking
   private initialFormValues: any = null;
   private isFormDirty: boolean = false;
@@ -75,24 +77,80 @@ export class AddTransactionPagePage implements OnInit {
     this.hasApiKey = !!this.financeVar.getAppData().settings.apiKey;
     
     // Check if we have AI pre-filled data
-    const navigation = this.router.getCurrentNavigation();
-    const state = navigation?.extras?.state as { aiTransactions: any[]; currentTransactionIndex: number };
-    
-    if (state && state.aiTransactions) {
+    this.checkForAiData(history.state);
+
+  // 2. Listen to router events for when the view is returned to from the cache
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe(() => {
+      const state = this.router.getCurrentNavigation()?.extras?.state || history.state;
+      this.checkForAiData(state);
+    });
+  }
+
+  private checkForAiData(state: any) {
+    if (state && state.aiTransactions && state.aiTransactions.length > 0) {
       this.isAIScanningMode = true;
       this.aiTransactions = state.aiTransactions;
       this.currentTransactionIndex = state.currentTransactionIndex || 0;
       
-      // Force expense type for AI scanning mode
+      // LOGIC: If there is only 1 transaction, allow saving immediately. 
+      // Otherwise, require them to reach the end.
+      this.hasViewedLastReceipt = this.aiTransactions.length <= 1;
+      
       this.txnType = 'expense';
       this.categories = this.getCategories();
-      
       this.prefillFormFromAITransaction(this.aiTransactions[this.currentTransactionIndex]);
-      // Ensure we're not in modal mode when in AI scanning mode
       this.isModal = false;
+  
+      history.replaceState(null, '');
     }
   }
 
+  private syncFormToAITransaction() {
+    if (!this.isAIScanningMode || !this.aiTransactions[this.currentTransactionIndex]) return;
+    
+    const formValue = this.transactionForm.value;
+    this.aiTransactions[this.currentTransactionIndex].amount = parseFloat(formValue.amount) || 0;
+    this.aiTransactions[this.currentTransactionIndex].currency = formValue.currency;
+    this.aiTransactions[this.currentTransactionIndex].accountId = formValue.accountId;
+    this.aiTransactions[this.currentTransactionIndex].date = formValue.date;
+    this.aiTransactions[this.currentTransactionIndex].note = formValue.note;
+    this.aiTransactions[this.currentTransactionIndex].category = this.selectedCategory?.name || formValue.category;
+    this.aiTransactions[this.currentTransactionIndex].items = [...this.items];
+  }
+  fillFormWithAiData(data: any) {
+    if (!data) return;
+  
+    // Find category object matching the name string from your system list
+    const matchedCat = this.categories.find(c => c.name === data.category) || 
+                       this.categories.find(c => c.id === 'other_expense') || { name: data.category, icon: '💰' };
+  
+    this.selectedCategory = matchedCat;
+  
+    // Patch standard field forms 
+    this.transactionForm.patchValue({
+      amount: data.amount || '',
+      currency: data.currency || 'HKD',
+      date: data.date || this.getToday(),
+      note: data.note || '',
+      category: matchedCat.name
+    });
+  
+    // Map individual receipt lines cleanly into your application items display array
+    if (data.items && data.items.length > 0) {
+      this.items = data.items.map((item: any) => ({
+        name: item.name || '',
+        quantity: item.quantity || 1,
+        price: item.price || 0
+      }));
+    } else {
+      this.items = [];
+    }
+  
+    // Fire calculations for active rate profiles
+    this.calculateExchangeRate();
+  }
   getToday(offset: number = 0): string {
     return this.financeService.getToday(offset);
   }
@@ -708,25 +766,40 @@ export class AddTransactionPagePage implements OnInit {
     this.calculateExchangeRate();
     
     // Mark form as dirty since AI has populated it with user data
-    this.isFormDirty = true;
+    setTimeout(() => {
+      this.initialFormValues = this.transactionForm.getRawValue();
+      this.isFormDirty = false;
+    }, 0);
   }
   
   // Navigation methods for multiple AI transactions
   nextAITransaction() {
+    if (!this.validateForm()) {
+      this.alertController.create({ header: '資料不完整', message: '請填寫所有必填欄位後再進入下一張', buttons: ['確定'] }).then(a => a.present());
+      return;
+    }
+  
     if (this.currentTransactionIndex < this.aiTransactions.length - 1) {
+      this.syncFormToAITransaction(); // Save their current edits to the array
       this.currentTransactionIndex++;
+      
+      // Unlock the Save button if they reached the last receipt
+      if (this.currentTransactionIndex === this.aiTransactions.length - 1) {
+        this.hasViewedLastReceipt = true;
+      }
+      
       this.prefillFormFromAITransaction(this.aiTransactions[this.currentTransactionIndex]);
     }
   }
   
   previousAITransaction() {
     if (this.currentTransactionIndex > 0) {
+      this.syncFormToAITransaction(); // Save their current edits to the array
       this.currentTransactionIndex--;
       this.prefillFormFromAITransaction(this.aiTransactions[this.currentTransactionIndex]);
     }
   }
   
-  // Override saveTransaction to handle AI mode navigation
   async saveTransaction() {
     if (!this.validateForm()) {
       return;
@@ -738,74 +811,132 @@ export class AddTransactionPagePage implements OnInit {
     }
     
     try {
-      const formValue = this.transactionForm.value;
-      const amount = parseFloat(formValue.amount);
-      const exchangeRate = parseFloat(formValue.exchangeRate) || 1;
-      
-      // Deduction for the source account
-      const accDeduction = this.txnType === 'income' ? -(amount * exchangeRate) : (amount * exchangeRate);
-      
-      // Calculate specific deduction for target account if it's a transfer
-      let toAccDeduction = undefined;
-      if (this.txnType === 'transfer' && formValue.accountToId) {
-        const toAccount = this.financeVar.getAccounts().find(a => a.id === formValue.accountToId);
-        if (toAccount) {
-          const currenciesObj = {
-            HKD: { symbol: '$', rate: 1, name: 'HKD' },
-            JPY: { symbol: '¥', rate: 0.05, name: 'JPY' }
-          };
-          const fromRate = currenciesObj[formValue.currency as keyof typeof currenciesObj].rate;
-          const toRate = currenciesObj[toAccount.currency as keyof typeof currenciesObj].rate;
-          
-          // Convert the raw amount to the target account's currency
-          toAccDeduction = -((amount * fromRate) / toRate);
-        }
-      }
-      
-      const transaction: Transaction = {
-        id: this.isEditMode ? this.editTransactionId! : `t_${Date.now()}`,
-        type: this.txnType,
-        amount: amount,
-        currency: formValue.currency,
-        exRate: exchangeRate,
-        accDeduction: accDeduction,
-        toAccountId: this.txnType === 'transfer' ? formValue.accountToId : undefined,
-        toAccDeduction: toAccDeduction,
-        accountId: formValue.accountId,
-        category: this.selectedCategory?.name || formValue.category,
-        icon: this.selectedCategory?.icon || '💰',
-        note: formValue.note,
-        date: formValue.date,
-        fundId: this.txnType === 'expense' ? formValue.fundId || undefined : undefined,
-        _warnLimit: false
-      };
-      
-      if (this.txnType === 'expense' && this.items.length > 0) {
-        transaction.items = [...this.items];
-      }
-      
-      if (this.isEditMode) {
-        this.financeVar.updateTransaction(this.editTransactionId!, transaction);
-      } else {
-        this.financeVar.addTransaction(transaction);
-      }
-      
-      this.saveLastAccount(formValue.accountId);
-      
-      // Handle AI scanning mode navigation
       if (this.isAIScanningMode) {
-        if (this.currentTransactionIndex < this.aiTransactions.length - 1) {
-          // Move to next AI transaction
-          this.nextAITransaction();
-          // Re-enable save button for next transaction
-          if (saveButton) {
-            saveButton.removeAttribute('disabled');
+        // ==========================================
+        // AI BATCH SAVE LOGIC ("SAVE ALL")
+        // ==========================================
+        
+        // 1. Sync the form state of the receipt they are currently looking at to the array
+        this.syncFormToAITransaction();
+        
+        // 2. Loop through and save ALL transactions in the queue at once
+        for (let i = 0; i < this.aiTransactions.length; i++) {
+          const aiTxn = this.aiTransactions[i];
+          const amount = parseFloat(aiTxn.amount) || 0;
+          
+          // Calculate exchange rate for each individual transaction
+          let exchangeRate = 1;
+          const account = this.financeVar.getAccounts().find(a => a.id === aiTxn.accountId);
+          if (account && aiTxn.currency !== account.currency) {
+            const currencies = { HKD: { rate: 1 }, JPY: { rate: 0.05 } };
+            const fromRate = currencies[aiTxn.currency as keyof typeof currencies]?.rate || 1;
+            const toRate = currencies[account.currency as keyof typeof currencies]?.rate || 1;
+            exchangeRate = fromRate / toRate;
           }
-          return;
+          
+          const transaction: Transaction = {
+            id: `t_${Date.now()}_${i}`, // Ensure unique IDs for the batch
+            type: 'expense',
+            amount: amount,
+            currency: aiTxn.currency,
+            exRate: exchangeRate,
+            accDeduction: amount * exchangeRate,
+            accountId: aiTxn.accountId,
+            category: aiTxn.category,
+            icon: this.categories.find(c => c.name === aiTxn.category)?.icon || '💰',
+            note: aiTxn.note,
+            date: aiTxn.date,
+            items: aiTxn.items ? [...aiTxn.items] : [],
+            _warnLimit: false
+          };
+          
+          this.financeVar.addTransaction(transaction);
         }
+        
+        // 3. Force form to clean state to avoid "Cancel" alerts
+        this.transactionForm.markAsPristine();
+        this.transactionForm.markAsUntouched();
+        this.isFormDirty = false;
+        this.initialFormValues = this.transactionForm.getRawValue();
+        
+        // 4. Clear out the AI states completely
+        this.aiTransactions = [];
+        this.isAIScanningMode = false;
+        this.currentTransactionIndex = 0;
+        
+        // 5. Alert user of success and go back
+        const alert = await this.alertController.create({
+          header: '全部儲存成功',
+          message: '已成功儲存所有掃描收據！',
+          buttons: ['確定']
+        });
+        await alert.present();
+        await this.goBack();
+
+      } else {
+        // ==========================================
+        // NORMAL MANUAL / EDIT SAVE LOGIC
+        // ==========================================
+        
+        const formValue = this.transactionForm.value;
+        const amount = parseFloat(formValue.amount);
+        const exchangeRate = parseFloat(formValue.exchangeRate) || 1;
+        
+        const accDeduction = this.txnType === 'income' ? -(amount * exchangeRate) : (amount * exchangeRate);
+        
+        let toAccDeduction = undefined;
+        if (this.txnType === 'transfer' && formValue.accountToId) {
+          const toAccount = this.financeVar.getAccounts().find(a => a.id === formValue.accountToId);
+          if (toAccount) {
+            const currenciesObj = {
+              HKD: { symbol: '$', rate: 1, name: 'HKD' },
+              JPY: { symbol: '¥', rate: 0.05, name: 'JPY' }
+            };
+            const fromRate = currenciesObj[formValue.currency as keyof typeof currenciesObj].rate;
+            const toRate = currenciesObj[toAccount.currency as keyof typeof currenciesObj].rate;
+            toAccDeduction = -((amount * fromRate) / toRate);
+          }
+        }
+        
+        const transaction: Transaction = {
+          id: this.isEditMode ? this.editTransactionId! : `t_${Date.now()}`,
+          type: this.txnType,
+          amount: amount,
+          currency: formValue.currency,
+          exRate: exchangeRate,
+          accDeduction: accDeduction,
+          toAccountId: this.txnType === 'transfer' ? formValue.accountToId : undefined,
+          toAccDeduction: toAccDeduction, 
+          accountId: formValue.accountId,
+          category: this.selectedCategory?.name || formValue.category,
+          icon: this.selectedCategory?.icon || '💰',
+          note: formValue.note,
+          date: formValue.date,
+          fundId: this.txnType === 'expense' ? formValue.fundId || undefined : undefined,
+          _warnLimit: false
+        };
+        
+        if (this.txnType === 'expense' && this.items.length > 0) {
+          transaction.items = [...this.items];
+        }
+        
+        if (this.isEditMode) {
+          this.financeVar.updateTransaction(this.editTransactionId!, transaction);
+        } else {
+          this.financeVar.addTransaction(transaction);
+        }
+        
+        this.saveLastAccount(formValue.accountId);
+
+        // Force form to clean state to avoid "Cancel" alerts
+        this.transactionForm.markAsPristine();
+        this.transactionForm.markAsUntouched();
+        this.isFormDirty = false;
+        this.initialFormValues = this.transactionForm.getRawValue();
+
+        await this.goBack();
       }
       
-      await this.goBack();
     } catch (error) {
       console.error('Error saving transaction:', error);
       if (saveButton) {
@@ -813,5 +944,5 @@ export class AddTransactionPagePage implements OnInit {
       }
     }
   }
-  
+
 }

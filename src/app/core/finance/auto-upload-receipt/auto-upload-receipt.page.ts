@@ -22,54 +22,39 @@ export class AutoUploadReceiptPage implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.hasApiKey = !!this.financeVar.getAppData().settings.apiKey;
-    if (!this.hasApiKey) {
-      this.showNoApiKeyAlert();
-    }
+    this.checkApiKeyValidity();
   }
 
-  async showNoApiKeyAlert() {
-    const alert = await this.alertCtrl.create({
-      header: 'Gemini API Key Required',
-      message: 'Please set your Gemini API key in Settings to use this feature.',
-      buttons: ['OK']
-    });
-    await alert.present();
+  ionViewWillEnter() {
+    this.checkApiKeyValidity();
+  }
+
+  private checkApiKeyValidity() {
+    this.hasApiKey = !!this.financeVar.getAppData()?.settings?.apiKey;
   }
 
   async selectImageSource() {
     if (!this.hasApiKey) {
-      await this.showNoApiKeyAlert();
+      this.showNoApiKeyAlert();
       return;
     }
 
     const actionSheet = await this.actionSheetCtrl.create({
-      header: 'Select Image Source',
+      header: 'Capture or Choose Expense Receipt',
+      cssClass: 'custom-action-sheet',
       buttons: [
         {
-          text: 'Take Photo',
+          text: 'Snap Photo',
           icon: 'camera',
-          handler: () => {
-            this.takePhoto();
-          }
+          handler: () => { this.capturePhoto(CameraSource.Camera); }
         },
         {
-          text: 'Choose from Gallery',
+          text: 'Browse Photo Gallery',
           icon: 'images',
-          handler: () => {
-            this.pickImages();
-          }
+          handler: () => { this.capturePhoto(CameraSource.Photos); }
         },
         {
-          text: 'Done Adding Images',
-          icon: 'checkmark-done',
-          handler: () => {
-            // Process all selected images
-            this.processImages();
-          }
-        },
-        {
-          text: 'Cancel',
+          text: 'Dismiss',
           icon: 'close',
           role: 'cancel'
         }
@@ -78,47 +63,24 @@ export class AutoUploadReceiptPage implements OnInit {
     await actionSheet.present();
   }
 
-  async takePhoto() {
+  async capturePhoto(sourceType: CameraSource) {
     try {
       const photo = await Camera.getPhoto({
         resultType: CameraResultType.Uri,
-        source: CameraSource.Camera,
-        quality: 90
-      });
-      
-      if (photo) {
-        this.selectedImages.push(photo);
-      }
-    } catch (error) {
-      console.error('Error taking photo:', error);
-      const alert = await this.alertCtrl.create({
-        header: 'Camera Error',
-        message: 'Failed to take photo. Please try again.',
-        buttons: ['OK']
-      });
-      await alert.present();
-    }
-  }
-
-  async pickImages() {
-    try {
-      // Note: Capacitor Camera plugin doesn't support multiple selection natively
-      // We'll implement single selection for now, user can add multiple images one by one
-      const photo = await Camera.getPhoto({
-        resultType: CameraResultType.Uri,
-        source: CameraSource.Photos,
-        quality: 90
+        source: sourceType,
+        quality: 85,
+        allowEditing: false
       });
       
       if (photo) {
         this.selectedImages.push(photo);
       }
     } catch (error: any) {
-      console.error('Error picking image:', error);
-      if (error.message !== 'User cancelled photos app') {
+      console.error('Image capture source execution issue:', error);
+      if (error?.message !== 'User cancelled photos app') {
         const alert = await this.alertCtrl.create({
-          header: 'Gallery Error',
-          message: 'Failed to select image. Please try again.',
+          header: 'Input Source Error',
+          message: 'Unable to safely obtain the chosen asset. Please try again.',
           buttons: ['OK']
         });
         await alert.present();
@@ -131,42 +93,33 @@ export class AutoUploadReceiptPage implements OnInit {
   }
 
   async processImages() {
-    if (this.selectedImages.length === 0) {
-      const alert = await this.alertCtrl.create({
-        header: 'No Images Selected',
-        message: 'Please select at least one receipt image to process.',
-        buttons: ['OK']
-      });
-      await alert.present();
-      return;
-    }
+    if (this.selectedImages.length === 0) return;
 
-    const loading = await this.loadingCtrl.create({
-      message: 'Processing images...',
-      duration: 10000
+    const loader = await this.loadingCtrl.create({
+      message: 'Preparing structural asset streams...',
+      spinner: 'crescent',
+      cssClass: 'custom-loading'
     });
-    await loading.present();
+    await loader.present();
 
     try {
-      // Navigate to AI processing page with selected images
-      // For now, we'll pass the image URIs as state
+      // Direct pass to stateful sequential handling processor
       this.router.navigate(['/ai-processing'], {
         state: { images: this.selectedImages }
       });
-    } catch (error) {
-      console.error('Error navigating to processing:', error);
-      const alert = await this.alertCtrl.create({
-        header: 'Navigation Error',
-        message: 'Failed to start processing. Please try again.',
-        buttons: ['OK']
-      });
-      await alert.present();
+    } catch (err) {
+      console.error('State routing context setup exception:', err);
     } finally {
-      await loading.dismiss();
+      await loader.dismiss();
     }
   }
 
-  goBack() {
-    this.router.navigate(['/add-transaction']);
+  async showNoApiKeyAlert() {
+    const alert = await this.alertCtrl.create({
+      header: 'Gemini Credentials Required',
+      message: 'Feature locked. Provide a runtime Google Generative AI API client token within your standard profile configuration setup.',
+      buttons: ['Understand']
+    });
+    await alert.present();
   }
 }

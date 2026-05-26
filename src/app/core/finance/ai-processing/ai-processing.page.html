@@ -1,32 +1,46 @@
-<ion-header>
-  <ion-toolbar>
-    <ion-buttons slot="start">
-      <ion-back-button defaultHref="/auto-upload-receipt"></ion-back-button>
-    </ion-buttons>
-    <ion-title>Processing Receipts</ion-title>
+<ion-header class="ion-no-border">
+  <ion-toolbar color="primary">
+    <ion-title>AI Analysis Engine</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding">
-  <div class="processing-container">
-    <div class="spinner-container">
-      <ion-spinner name="circular"></ion-spinner>
+<ion-content class="ion-padding ion-text-center bg-radial-dark">
+  <div class="analysis-wrapper">
+    <div class="scanner-container">
+      <div class="scanning-laser"></div>
+      <div class="cube-container">
+        <ion-icon name="sparkles" class="sparkle-core"></ion-icon>
+      </div>
     </div>
-    
-    <h2>AI Analysis in Progress</h2>
-    <p>Your receipt images are being analyzed by Gemini AI to extract transaction details.</p>
-    
-    <div class="progress-info" *ngIf="totalImages > 0">
-      <p>Processing {{currentImageIndex}} of {{totalImages}} receipts</p>
-      <ion-progress-bar 
-        [value]="currentImageIndex / totalImages" 
-        [color]="'primary'">
-      </ion-progress-bar>
+
+    <div class="status-box ion-padding">
+      <h2 class="font-weight-bold tracking-wide">Analyzing Documents</h2>
+      <p class="text-muted text-sm ion-margin-bottom">
+        Gemini 2.5 Flash is extracting itemizations, calculating cross-currency metrics, and selecting financial categories.
+      </p>
+
+      <div class="counter-badge ion-margin-vertical" *ngIf="totalImages > 0">
+        Receipt <span class="highlight">{{ currentImageIndex + 1 }}</span> of <span>{{ totalImages }}</span>
+      </div>
+
+      <div class="progress-bar-container ion-margin-top">
+        <ion-progress-bar 
+          [value]="(currentImageIndex) / totalImages" 
+          color="secondary" 
+          class="custom-progress">
+        </ion-progress-bar>
+      </div>
     </div>
-    
-    <div class="note">
-      <ion-icon name="information-circle"></ion-icon>
-      <p>This may take a few moments depending on the number of receipts and image quality.</p>
+
+    <div class="logger-box ion-text-left ion-padding">
+      <div class="log-line current">
+        <ion-spinner name="dots" color="secondary"></ion-spinner>
+        <span>Running optical character matching...</span>
+      </div>
+      <div class="log-line text-muted">
+        <ion-icon name="checkmark-circle" color="success"></ion-icon>
+        <span>Secure runtime API pipeline connected.</span>
+      </div>
     </div>
   </div>
 </ion-content>
