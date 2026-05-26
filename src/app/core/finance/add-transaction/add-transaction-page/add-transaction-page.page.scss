@@ -264,49 +264,64 @@ ion-list.settings-list, ion-list.items-list {
   --background: #f8f9fa;
   border-top: 1px solid #eee;
 }
+// 🌟 Modern AI Scan Banner 🌟
+.ai-scan-banner {
+  margin: 0 16px 16px;
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  border-radius: 16px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
+  cursor: pointer;
+  transition: all 0.2s ease;
 
-// Auto upload section
-.auto-upload-section {
-  padding: 0 16px 16px;
-  
-  .auto-upload-btn {
-    --border-radius: 12px;
-    --padding-top: 12px;
-    --padding-bottom: 12px;
-    font-weight: 600;
-    
-    ion-icon {
-      font-size: 20px;
-    }
+  &:active {
+    transform: scale(0.98);
+    background: #f8f9fa;
   }
-}
 
-// AI scanning navigation
-.ai-navigation-section {
-  padding: 0 16px 16px;
-  
-  .progress-indicator {
-    text-align: center;
-    margin-bottom: 12px;
-    
-    p {
-      margin-bottom: 8px;
-      font-weight: 500;
-      color: var(--ion-color-primary);
-      font-size: 14px;
-    }
-  }
-  
-  .navigation-buttons {
+  .banner-content {
     display: flex;
-    justify-content: space-between;
-    
-    ion-button {
-      --border-radius: 8px;
-      --padding-start: 12px;
-      --padding-end: 12px;
-      font-size: 12px;
-      font-weight: 500;
+    align-items: center;
+    gap: 14px;
+
+    .icon-wrapper {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: rgba(var(--ion-color-primary-rgb), 0.1);
+      color: var(--ion-color-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
     }
+
+    .text-wrapper {
+      display: flex;
+      flex-direction: column;
+
+      h4 {
+        margin: 0 0 4px;
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--ion-color-dark);
+      }
+
+      p {
+        margin: 0;
+        font-size: 12px;
+        color: var(--ion-color-medium);
+        font-weight: 500;
+      }
+    }
+  }
+
+  .arrow-icon {
+    color: var(--ion-color-medium);
+    font-size: 20px;
   }
 }

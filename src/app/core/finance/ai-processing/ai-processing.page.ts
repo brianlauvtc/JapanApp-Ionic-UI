@@ -77,11 +77,20 @@ export class AIProcessingPage implements OnInit {
           });
         });
       } else {
-        this.pushFallbackRecord();
+        //this.pushFallbackRecord();       
+        await this.showError(
+          'AI Processing Error', 
+          'No valid transactions parsed from the API.'
+        );
+        
       }
     } catch (err) {
       console.error('Operational processing failure at index: ' + index, err);
-      this.pushFallbackRecord();
+      await this.showError(
+          'AI Processing Error', 
+          'There was a problem analyzing your receipt. The process has been canceled. Please try again later.'
+        );
+      //this.pushFallbackRecord();
     }
 
     this.currentImageIndex++;
@@ -258,7 +267,13 @@ export class AIProcessingPage implements OnInit {
 
     try {
       const apiResponse: any = await this.http.post(url, requestPayload).toPromise();
+      if (apiResponse?.error) {
+         throw new Error(apiResponse.error.message);
+      }
       const rawTextResponse = apiResponse?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      if (!rawTextResponse) {
+          throw new Error('Empty response from Gemini API');
+      }
       const cleanTarget = rawTextResponse.replace(/```json/gi, '').replace(/```/g, '').trim();
       const parsedData = JSON.parse(cleanTarget);
       return Array.isArray(parsedData) ? parsedData : [parsedData];

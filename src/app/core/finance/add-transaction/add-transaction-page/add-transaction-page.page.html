@@ -24,13 +24,7 @@
 </ion-header>
 
 <ion-content class="add-transaction-content ion-padding-bottom">
- 
-  <div class="auto-upload-section" *ngIf="!isEditMode && hasApiKey && !isAIScanningMode">
-    <ion-button expand="block" (click)="goToAutoUpload()" color="success" fill="outline" class="auto-upload-btn">
-      <ion-icon name="cloud-upload-outline" slot="start"></ion-icon>
-      Auto Upload Receipt
-    </ion-button>
-  </div>
+
   
   <!-- AI Scanning Navigation -->
   <div class="ai-navigation-section" *ngIf="isAIScanningMode && aiTransactions.length > 1">
@@ -68,6 +62,21 @@
       </ion-segment>
     </div>
 
+    <div class="ai-scan-banner" 
+         *ngIf="!isEditMode && hasApiKey && !isAIScanningMode && txnType === 'expense'" 
+         (click)="goToAutoUpload()">
+      <div class="banner-content">
+        <div class="icon-wrapper">
+          <ion-icon name="scan-outline"></ion-icon>
+        </div>
+        <div class="text-wrapper">
+          <h4>AI 智能掃描收據</h4>
+          <p>自動辨識金額與購物明細</p>
+        </div>
+      </div>
+      <ion-icon name="chevron-forward-outline" class="arrow-icon"></ion-icon>
+    </div>
+    
     <div class="amount-card-container">
       <div class="modern-amount-box" [ngClass]="txnType">
         <div class="input-main-zone">
