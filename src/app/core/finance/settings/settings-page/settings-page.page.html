@@ -62,6 +62,28 @@
       </div>
     </ion-list>
 
+    <ion-list inset="true">
+      <ion-list-header>
+        <ion-label color="medium">數據管理</ion-label>
+      </ion-list-header>
+
+      <ion-item lines="none">
+        <ion-icon name="cloud-download-outline" slot="start" color="primary"></ion-icon>
+        <ion-label>
+          <h3>匯出記帳數據</h3>
+          <p>匯出 JSON 格式備份</p>
+        </ion-label>
+        <ion-label slot="end" color="primary">JSON</ion-label>
+      </ion-item>
+      
+      <ion-item lines="none">
+        <ion-button expand="block" (click)="onExport()" class="ion-margin-horizontal" style="width: 100%;" shape="round" color="primary">
+          <ion-icon name="download-outline" slot="start"></ion-icon>
+          匯出數據 (JSON)
+        </ion-button>
+      </ion-item>
+    </ion-list>
+
     <ion-list inset="true" class="danger-list">
       <ion-item button detail="false" lines="none" (click)="clearAllData()">
         <ion-icon name="trash-outline" slot="start" color="danger"></ion-icon>

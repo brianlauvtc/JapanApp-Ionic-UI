@@ -330,4 +330,19 @@ export class FinanceService {
       totalExp
     };
   }
+
+  exportData(format: 'csv' | 'json'): string {
+    const appData = this.financeVar.getAppData();
+    
+    if (format === 'json') {
+      return JSON.stringify(appData, null, 2);
+    } else {
+      // 簡單的 CSV 生成邏輯
+      const header = ['Date', 'Type', 'Amount', 'Currency', 'Note'];
+      const rows = appData.transactions.map(t => 
+        [t.date, t.type, t.amount, t.currency, t.note].join(',')
+      );
+      return [header.join(','), ...rows].join('\n');
+    }
+  }
 }
