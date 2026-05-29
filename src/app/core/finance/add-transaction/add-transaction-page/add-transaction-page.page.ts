@@ -65,6 +65,7 @@ export class AddTransactionPagePage implements OnInit {
 
   ngOnInit() {
     this.initForm();
+    this.setupTypeSubscription();
     this.loadContextFromRoute();      
 
     this.categories = this.getCategories();
@@ -398,7 +399,7 @@ export class AddTransactionPagePage implements OnInit {
   }
 
   validateForm(): boolean {
-    const amount = this.transactionForm.get('amount')?.value;
+    const amount = parseFloat(this.transactionForm.get('amount')?.value);
     const accountId = this.transactionForm.get('accountId')?.value;
     
     if (!amount || amount <= 0) return false;
@@ -406,8 +407,33 @@ export class AddTransactionPagePage implements OnInit {
     if (this.txnType !== 'transfer' && !this.selectedCategory) return false;
     if (this.txnType === 'transfer' && !this.transactionForm.get('accountToId')?.value) return false;
     
-    // For expense with items, warn but don't block if items total exceeds amount
-    // The user can still save, but they'll see a warning
+    // ===== 交通卡付款安全線校驗 =====
+    if (this.txnType === 'expense') {
+      const account = this.financeVar.getAccounts().find(a => a.id === accountId);
+      if (account && account.type === 'transit') {
+        const exchangeRate = parseFloat(this.transactionForm.get('exchangeRate')?.value) || 1;
+        const txAmount = amount * exchangeRate; // 轉換為交通卡的幣別金額
+        
+        // 【沒有自動轉帳時】必須嚴格檢驗總購買力
+        if (!account.autoTopUp) {
+          const currentBal = this.getAccBalance(account.id);
+          let buyingPower = currentBal;
+          
+          if (account.allowNegative) {
+            if (account.negativeMode === 'once' && currentBal < 0) {
+               buyingPower = 0; // 只能負一次且已負，無法再扣
+            } else {
+               buyingPower = currentBal + (account.negativeLimit || 0); // 餘額 + 可負數額
+            }
+          }
+          
+          // 如果想買的金額 大於 目前剩餘總購買力 => 阻擋儲存 (按鈕反灰)
+          if (txAmount > buyingPower) {
+            return false;
+          }
+        }
+      }
+    }
     return true;
   }
 
@@ -850,7 +876,7 @@ export class AddTransactionPagePage implements OnInit {
             _warnLimit: false
           };
           
-          this.financeVar.addTransaction(transaction);
+          this.financeService.executeAddTransaction(transaction);
         }
         
         // 3. Force form to clean state to avoid "Cancel" alerts
@@ -923,7 +949,7 @@ export class AddTransactionPagePage implements OnInit {
         if (this.isEditMode) {
           this.financeVar.updateTransaction(this.editTransactionId!, transaction);
         } else {
-          this.financeVar.addTransaction(transaction);
+          this.financeService.executeAddTransaction(transaction);
         }
         
         this.saveLastAccount(formValue.accountId);
@@ -945,4 +971,44 @@ export class AddTransactionPagePage implements OnInit {
     }
   }
 
+  get availableAccounts() {
+    const allAccounts = this.financeVar.getAccounts();
+    
+    if (this.txnType === 'expense') {
+      return allAccounts.filter(acc => {
+        if (acc.type === 'loan') return false;
+        if (acc.type === 'transit' && !acc.autoTopUp) {
+          const currentBal = this.getAccBalance(acc.id);
+          let buyingPower = currentBal;
+          if (acc.allowNegative) {
+            // 如果只能負1次且已是負數，購買力就是 0
+            buyingPower = (acc.negativeMode === 'once' && currentBal < 0) ? 0 : currentBal + (acc.negativeLimit || 0);
+          }
+          // 如果購買力已經沒了 (<=0)，連選都不給選
+          if (buyingPower <= 0) return false;
+        }
+        return true;
+      });
+    }
+    
+    if (this.txnType === 'income') {
+      return allAccounts.filter(acc => acc.type !== 'loan');
+    }
+    
+    return allAccounts;
+  }
+
+  setupTypeSubscription() {
+    this.transactionForm.get('type')?.valueChanges.subscribe(type => {
+      if (type === 'expense' || type === 'income') {
+        const currentAccId = this.transactionForm.get('accountId')?.value;
+        const currentAcc = this.financeVar.getAccounts().find(a => a.id === currentAccId);
+        
+        // 如果切換到收入/支出時，發現主帳戶選的是借款帳戶，則清空選擇
+        if (currentAcc && currentAcc.type === 'loan') {
+          this.transactionForm.get('accountId')?.setValue('');
+        }
+      }
+    });
+  }
 }

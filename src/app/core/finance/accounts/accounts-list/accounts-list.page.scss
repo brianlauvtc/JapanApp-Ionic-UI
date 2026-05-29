@@ -153,6 +153,8 @@ ion-list.modern-account-list {
       &.bank { background-color: rgba(var(--ion-color-primary-rgb), 0.1); }
       &.credit { background-color: rgba(var(--ion-color-danger-rgb), 0.1); }
       &.fund { background-color: rgba(var(--ion-color-tertiary-rgb), 0.1); }
+      &.loan { background: #e0f7fa; /* 淺藍色背景 */ }
+      &.transit { background: #f3e5f5; /* 淺紫色，象徵交通/感應 */ }
     }
 
     .account-name {

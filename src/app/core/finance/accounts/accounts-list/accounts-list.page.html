@@ -85,6 +85,40 @@
       </ion-list>
     </div>
 
+    <div class="group-section" *ngIf="getAccountsByType('transit').length > 0">
+      <div class="group-title">交通卡 (八達通 / Suica)</div>
+      <ion-list inset="true" class="modern-account-list">
+        <ion-item-sliding *ngFor="let account of getAccountsByType('transit')">
+          <ion-item button detail="true" (click)="viewAccountDetail(account.id)" lines="full">
+            <div class="account-icon-avatar transit">🚇</div>
+            <ion-label>
+              <h2 class="account-name">{{ account.name }}</h2>
+              <p class="account-currency-badge">{{ account.currency }}</p>
+              
+              <p style="font-size: 12px; color: var(--ion-color-medium); margin-top: 4px;" *ngIf="account.autoTopUp">
+                <ion-icon name="flash" color="warning"></ion-icon> 已開啟自動增值
+              </p>
+              <p style="font-size: 12px; color: var(--ion-color-medium); margin-top: 4px;" *ngIf="!account.autoTopUp && account.allowNegative">
+                <ion-icon name="alert-circle-outline"></ion-icon> 
+                可負數 (下限 -{{ account.negativeLimit || 0 }}) · {{ account.negativeMode === 'once' ? '限 1 次' : '不限次' }}
+              </p>
+            </ion-label>
+
+            <ion-note slot="end" class="account-balance" [ngClass]="getAccBalance(account.id) < 0 ? 'text-danger' : 'text-dark'">
+              {{ getCurrencySymbol(account.currency) }}{{ getAccBalance(account.id) | number:'1.0-0' }}
+            </ion-note>
+          </ion-item>
+
+          <ion-item-options side="end">
+            <ion-item-option color="danger" (click)="deleteAccount(account.id)">
+              <ion-icon name="trash" slot="icon-only"></ion-icon>
+            </ion-item-option>
+          </ion-item-options>
+        </ion-item-sliding>
+      </ion-list>
+    </div>
+
+
     <div class="group-section" *ngIf="getAccountsByType('credit').length > 0">
       <div class="group-title">信用卡 / 應付款項</div>
       <ion-list inset="true" class="modern-account-list">
@@ -142,5 +176,30 @@
       </div>
     </div>
 
+    <div class="group-section" *ngIf="getAccountsByType('loan').length > 0">
+      <div class="group-title">借出 / 借入 (應收/應付)</div>
+      <ion-list inset="true" class="modern-account-list">
+        <ion-item-sliding *ngFor="let account of getAccountsByType('loan')">
+          <ion-item button detail="true" (click)="viewAccountDetail(account.id)" lines="full">
+            <div class="account-icon-avatar loan">🤝</div>
+            <ion-label>
+              <h2 class="account-name">{{ account.name }}</h2>
+              <p class="account-currency-badge">{{ account.currency }}</p>
+              <p style="font-size: 12px; color: var(--ion-color-medium); margin-top: 4px;">
+                {{ getAccBalance(account.id) > 0 ? '別人欠我 (應收)' : (getAccBalance(account.id) < 0 ? '我欠別人 (應付)' : '已結清') }}
+              </p>
+            </ion-label>
+            <ion-note slot="end" class="account-balance" [ngClass]="getAccBalance(account.id) < 0 ? 'text-danger' : 'text-success'">
+              {{ getCurrencySymbol(account.currency) }}{{ getAccBalance(account.id) | number:'1.0-0' }}
+            </ion-note>
+          </ion-item>
+          <ion-item-options side="end">
+            <ion-item-option color="danger" (click)="deleteAccount(account.id)">
+              <ion-icon name="trash" slot="icon-only"></ion-icon>
+            </ion-item-option>
+          </ion-item-options>
+        </ion-item-sliding>
+      </ion-list>
+    </div> 
   </div>
 </ion-content>
