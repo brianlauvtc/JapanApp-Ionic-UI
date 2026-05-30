@@ -438,29 +438,29 @@ export class AddTransactionPagePage implements OnInit {
     if (!amount || amount <= 0) return false;
     if (!accountId) return false;
     if (this.txnType !== 'transfer' && !this.selectedCategory) return false;
-    if (this.txnType === 'transfer' && !this.transactionForm.get('accountToId')?.value) return false;
+    
+    // 🚫 修正問題 1：轉帳模式下，如果未選轉入帳戶，或者轉出與轉入帳戶相同，則不允許儲存
+    if (this.txnType === 'transfer') {
+      const accountToId = this.transactionForm.get('accountToId')?.value;
+      if (!accountToId || accountId === accountToId) {
+        return false;
+      }
+    }
     
     // ===== 交通卡付款安全線校驗 =====
     if (this.txnType === 'expense') {
       const account = this.financeVar.getAccounts().find(a => a.id === accountId);
       if (account && account.type === 'transit') {
         const exchangeRate = parseFloat(this.transactionForm.get('exchangeRate')?.value) || 1;
-        const txAmount = amount * exchangeRate; // 轉換為交通卡的幣別金額
+        const txAmount = amount * exchangeRate;
         
-        // 【沒有自動轉帳時】必須嚴格檢驗總購買力
         if (!account.autoTopUp) {
           const currentBal = this.getAccBalance(account.id);
           let buyingPower = currentBal;
           
           if (account.allowNegative) {
-            if (account.negativeMode === 'once' && currentBal < 0) {
-               buyingPower = 0; // 只能負一次且已負，無法再扣
-            } else {
-               buyingPower = currentBal + (account.negativeLimit || 0); // 餘額 + 可負數額
-            }
+            buyingPower = (account.negativeMode === 'once' && currentBal < 0) ? 0 : currentBal + (account.negativeLimit || 0);
           }
-          
-          // 如果想買的金額 大於 目前剩餘總購買力 => 阻擋儲存 (按鈕反灰)
           if (txAmount > buyingPower) {
             return false;
           }
@@ -468,6 +468,20 @@ export class AddTransactionPagePage implements OnInit {
       }
     }
     return true;
+  }
+
+  swapTransferAccounts() {
+    const fromId = this.transactionForm.get('accountId')?.value;
+    const toId = this.transactionForm.get('accountToId')?.value;
+
+    this.transactionForm.patchValue({
+      accountId: toId,
+      accountToId: fromId
+    }, { emitEvent: false }); // 避免重複觸發多次計算
+
+    // 交換後重新依據新組合計算預設匯率
+    this.calculateExchangeRate();
+    this.checkFormDirty();
   }
 
   async deleteTransaction() {
@@ -764,49 +778,32 @@ export class AddTransactionPagePage implements OnInit {
   prefillFormFromAITransaction(transaction: any) {
     if (!transaction) return;
     
-    // AI mode only supports expense transactions
     this.txnType = 'expense';
     
-    // Get expense categories for proper matching
     const expenseCategories = [
-      { id: 'food', name: '飲食', icon: '🍜' },
-      { id: 'daily', name: '日用', icon: '🧼' },
-      { id: 'transport', name: '交通', icon: '🚗' },
-      { id: 'social', name: '社交', icon: '🎉' },
-      { id: 'housing', name: '住房物業', icon: '🏢' },
-      { id: 'gift', name: '禮物', icon: '🎁' },
-      { id: 'clothing', name: '服飾', icon: '👗' },
-      { id: 'communication', name: '通信', icon: '📞' },
-      { id: 'entertainment', name: '娛樂', icon: '🎬' },
-      { id: 'beauty', name: '美容', icon: '💅' },
-      { id: 'medical', name: '醫療', icon: '💊' },
-      { id: 'tax', name: '稅金', icon: '🏛️' },
-      { id: 'education', name: '教育', icon: '🎓' },
-      { id: 'baby', name: '寶寶', icon: '🍼' },
-      { id: 'pet', name: '寵物', icon: '🐱' },
-      { id: 'travel', name: '旅行', icon: '🌴' },
-      { id: 'household', name: '家用', icon: '🧹' },
-      { id: 'savings_insurance', name: '儲蓄保險', icon: '🏦' },
-      { id: 'credit_payment', name: '信用卡還款', icon: '💳' },
-      { id: 'shopping_dining', name: '買野飲', icon: '🛍️' },
-      { id: 'snacks', name: '零食', icon: '🍬' },
-      { id: 'gaming', name: '遊戲', icon: '🕹️' },
-      { id: 'other_expense', name: '其他', icon: '⭐' },
-      { id: 'on9_stuff', name: 'on9野', icon: '🤪' },
+      { id: 'food', name: '飲食', icon: '🍜' }, { id: 'daily', name: '日用', icon: '🧼' },
+      { id: 'transport', name: '交通', icon: '🚗' }, { id: 'social', name: '社交', icon: '🎉' },
+      { id: 'housing', name: '住房物業', icon: '🏢' }, { id: 'gift', name: '禮物', icon: '🎁' },
+      { id: 'clothing', name: '服飾', icon: '👗' }, { id: 'communication', name: '通信', icon: '📞' },
+      { id: 'entertainment', name: '娛樂', icon: '🎬' }, { id: 'beauty', name: '美容', icon: '💅' },
+      { id: 'medical', name: '醫療', icon: '💊' }, { id: 'tax', name: '稅金', icon: '🏛️' },
+      { id: 'education', name: '教育', icon: '🎓' }, { id: 'baby', name: '寶寶', icon: '🍼' },
+      { id: 'pet', name: '寵物', icon: '🐱' }, { id: 'travel', name: '旅行', icon: '🌴' },
+      { id: 'household', name: '家用', icon: '🧹' }, { id: 'savings_insurance', name: '儲蓄保險', icon: '🏦' },
+      { id: 'credit_payment', name: '信用卡還款', icon: '💳' }, { id: 'shopping_dining', name: '買野飲', icon: '🛍️' },
+      { id: 'snacks', name: '零食', icon: '🍬' }, { id: 'gaming', name: '遊戲', icon: '🕹️' },
+      { id: 'other_expense', name: '其他', icon: '⭐' }, { id: 'on9_stuff', name: 'on9野', icon: '🤪' },
       { id: 'debt_repayment', name: '欠債還款', icon: '📤' }
     ];
     
-    // Find exact matching category or default to '其他'
     let selectedCategory = expenseCategories.find(cat => cat.name === transaction.category);
     if (!selectedCategory) {
-      // Try to find a close match by checking if AI category contains any expense category name
       for (const cat of expenseCategories) {
-        if (transaction.category.includes(cat.name) || cat.name.includes(transaction.category)) {
+        if (transaction.category?.includes(cat.name) || cat.name.includes(transaction.category)) {
           selectedCategory = cat;
           break;
         }
       }
-      // If still no match, use '其他'
       if (!selectedCategory) {
         selectedCategory = expenseCategories.find(cat => cat.name === '其他') || expenseCategories[0];
       }
@@ -814,29 +811,33 @@ export class AddTransactionPagePage implements OnInit {
     
     this.selectedCategory = selectedCategory;
     
-    // Get default account if none specified
     const defaultAccountId = this.accounts.length > 0 ? this.accounts[0].id : '';
     const accountId = transaction.accountId || defaultAccountId;
     
-    // Patch form values
+    // 🔍 檢查 AI 辨識出的結果有沒有包含匯率欄位 (支援 exchangeRate 或 exRate 命名)
+    const aiDetectedRate = transaction.exchangeRate || transaction.exRate;
+    
+    // Patch 表單資料
     this.transactionForm.patchValue({
       amount: transaction.amount || 0,
       currency: transaction.currency || 'HKD',
       accountId: accountId,
       date: transaction.date || this.getToday(),
       note: transaction.note || '',
-      category: selectedCategory.name
+      category: selectedCategory.name,
+      // ✔️ 如果截圖有匯率就直接填入四位小數，沒有的話先預設為 1
+      exchangeRate: aiDetectedRate ? Number(Number(aiDetectedRate).toFixed(4)) : 1 
     });
     
-    // Handle items if present
     if (transaction.items && transaction.items.length > 0) {
       this.items = [...transaction.items];
     }
     
-    // Recalculate exchange rate after setting currency and account
-    this.calculateExchangeRate();
+    // ✔️ 防禦關鍵：如果 AI 從截圖中有辨識到實際匯率，就直接沿用，不再執行市場預設匯率計算
+    if (!aiDetectedRate) {
+      this.calculateExchangeRate();
+    }
     
-    // Mark form as dirty since AI has populated it with user data
     setTimeout(() => {
       this.initialFormValues = this.transactionForm.getRawValue();
       this.isFormDirty = false;
@@ -872,32 +873,47 @@ export class AddTransactionPagePage implements OnInit {
   }
   
   async saveTransaction() {
-    if (!this.validateForm()) return;
+    if (!this.validateForm()) {
+      return;
+    }
     
     const saveButton = document.querySelector('.save-transaction-btn');
-    if (saveButton) saveButton.setAttribute('disabled', 'true');
+    if (saveButton) {
+      saveButton.setAttribute('disabled', 'true');
+    }
     
     try {
       if (this.isAIScanningMode) {
-        // AI 模式維持現有儲存流程，只更新從即時匯率拿到的計算
         this.syncFormToAITransaction();
+        
         for (let i = 0; i < this.aiTransactions.length; i++) {
           const aiTxn = this.aiTransactions[i];
           const amount = parseFloat(aiTxn.amount) || 0;
-          let exchangeRate = 1;
-          const account = this.financeVar.getAccounts().find(a => a.id === aiTxn.accountId);
-          if (account && aiTxn.currency !== account.currency) {
-            const fromRate = this.realExchangeRates[aiTxn.currency] || 1;
-            const toRate = this.realExchangeRates[account.currency] || 1;
-            exchangeRate = toRate / fromRate;
+          
+          // 🔍 批次寫入時同樣優先檢查該張收據/截圖有沒有 AI 辨識到的獨立匯率
+          let finalExchangeRate = aiTxn.exchangeRate || aiTxn.exRate;
+          
+          if (!finalExchangeRate) {
+            // 如果 AI 沒提供，才走市場真實匯率計算
+            finalExchangeRate = 1;
+            const account = this.financeVar.getAppData().accounts.find(a => a.id === aiTxn.accountId);
+            if (account && aiTxn.currency !== account.currency) {
+              const fromRate = this.realExchangeRates[aiTxn.currency] || 1;
+              const toRate = this.realExchangeRates[account.currency] || 1;
+              finalExchangeRate = toRate / fromRate;
+            }
           }
+          
+          // 確保精準度四位小數
+          finalExchangeRate = Number(Number(finalExchangeRate).toFixed(4));
+          
           const transaction: Transaction = {
             id: `t_${Date.now()}_${i}`,
             type: 'expense',
             amount: amount,
             currency: aiTxn.currency,
-            exRate: exchangeRate,
-            accDeduction: amount * exchangeRate,
+            exRate: finalExchangeRate,
+            accDeduction: amount * finalExchangeRate, // 正確扣除本幣金額
             accountId: aiTxn.accountId,
             category: aiTxn.category,
             icon: this.categories.find(c => c.name === aiTxn.category)?.icon || '💰',
@@ -906,9 +922,10 @@ export class AddTransactionPagePage implements OnInit {
             items: aiTxn.items ? [...aiTxn.items] : [],
             _warnLimit: false
           };
+          
           this.financeService.executeAddTransaction(transaction);
         }
-        // 清理並返回
+        
         this.transactionForm.markAsPristine();
         this.transactionForm.markAsUntouched();
         this.isFormDirty = false;
@@ -919,14 +936,14 @@ export class AddTransactionPagePage implements OnInit {
         
         const alert = await this.alertController.create({
           header: '全部儲存成功',
-          message: '已成功儲存所有掃描收據！',
+          message: '已成功儲存所有辨識收據與帳單！',
           buttons: ['確定']
         });
         await alert.present();
         await this.goBack();
 
       } else {
-        // ===== 一般 / 編輯模式儲存：重點使用手動匯率 =====
+        // ... (手動儲存邏輯保持上一次更新完的內容，不需變動) ...
         const formValue = this.transactionForm.value;
         const amount = parseFloat(formValue.amount);
         const manualRate = parseFloat(formValue.exchangeRate) || 1;
@@ -939,13 +956,11 @@ export class AddTransactionPagePage implements OnInit {
             const toAccount = this.financeVar.getAccounts().find(a => a.id === formValue.accountToId);
             
             if (fromAccount && toAccount) {
-                // 若交易貨幣與來源不同，使用手動匯率算扣款
                 if (formValue.currency !== fromAccount.currency) {
                    accDeduction = amount * manualRate;
                 } else {
                    accDeduction = amount;
                 }
-                // 若交易貨幣與目標不同，使用手動匯率算收款
                 if (formValue.currency !== toAccount.currency) {
                    toAccDeduction = -(amount * manualRate);
                 } else {
@@ -966,8 +981,8 @@ export class AddTransactionPagePage implements OnInit {
           type: this.txnType,
           amount: amount,
           currency: formValue.currency,
-          exRate: manualRate,          // ✔️ 將使用者的匯率真正寫入
-          accDeduction: accDeduction,  // ✔️ 將結算好的金額寫入
+          exRate: manualRate,
+          accDeduction: accDeduction,
           toAccountId: this.txnType === 'transfer' ? formValue.accountToId : undefined,
           toAccDeduction: toAccDeduction, 
           accountId: formValue.accountId,
@@ -990,12 +1005,10 @@ export class AddTransactionPagePage implements OnInit {
         }
         
         this.saveLastAccount(formValue.accountId);
-
         this.transactionForm.markAsPristine();
         this.transactionForm.markAsUntouched();
         this.isFormDirty = false;
         this.initialFormValues = this.transactionForm.getRawValue();
-
         await this.goBack();
       }
     } catch (error) {

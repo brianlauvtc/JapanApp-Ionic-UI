@@ -153,6 +153,11 @@
             </ion-select-option>
           </ion-select>
         </ion-item>
+        <div class="transfer-swap-divider">
+          <ion-button fill="clear" size="small" (click)="swapTransferAccounts()">
+            <ion-icon name="swap-vertical-outline" slot="icon-only"></ion-icon>
+          </ion-button>
+        </div>
         <ion-item button detail="false" lines="full">
           <ion-icon name="log-in-outline" slot="start" color="medium"></ion-icon>
           <ion-select formControlName="accountToId" interface="action-sheet" label="轉入帳戶">
