@@ -16,10 +16,12 @@
   <form [formGroup]="accountForm">
     
     <div class="segment-container">
-      <ion-segment formControlName="type" mode="ios">
+      <ion-segment formControlName="type" mode="ios" scrollable="true" [disabled]="isEditMode">
         <ion-segment-button value="cash"><ion-label>現金</ion-label></ion-segment-button>
         <ion-segment-button value="bank"><ion-label>銀行</ion-label></ion-segment-button>
         <ion-segment-button value="credit"><ion-label>信用卡</ion-label></ion-segment-button>
+        <ion-segment-button value="loan"><ion-label>借款</ion-label></ion-segment-button>
+        <ion-segment-button value="transit"><ion-label>交通卡</ion-label></ion-segment-button> 
       </ion-segment>
     </div>
 
@@ -49,7 +51,7 @@
 
       <ion-item lines="none">
         <ion-icon name="wallet-outline" slot="start" color="primary"></ion-icon>
-        <ion-label>初始餘額</ion-label>
+        <ion-label>{{ isEditMode ? '目前餘額' : '初始餘額' }}</ion-label>
         
         <div slot="end" class="balance-input-wrapper">
           <span class="currency-symbol">{{ getCurrencySymbol(accountForm.get('currency')?.value) }}</span>
@@ -64,6 +66,55 @@
         </div>
       </ion-item>
       
+    </ion-list>
+
+    <ion-list inset="true" class="modern-list" *ngIf="accountForm.get('type')?.value === 'transit'">
+      <ion-list-header><ion-label color="medium" style="font-size: 13px; font-weight: 600;">交通卡高級設定</ion-label></ion-list-header>
+      
+      <ion-item lines="full">
+        <ion-label>允許負數餘額</ion-label>
+        <ion-toggle formControlName="allowNegative" mode="ios"></ion-toggle>
+      </ion-item>
+
+      <ion-item lines="full" *ngIf="accountForm.get('allowNegative')?.value">
+        <ion-label>負數下限金額</ion-label>
+        <div slot="end" class="balance-input-wrapper">
+          <span style="color: var(--ion-color-danger); margin-right: 4px;">-</span>
+          <ion-input type="number" formControlName="negativeLimit" placeholder="50" class="balance-input" style="text-align: right;"></ion-input>
+        </div>
+      </ion-item>
+
+      <ion-item lines="full" *ngIf="accountForm.get('allowNegative')?.value">
+        <ion-select formControlName="negativeMode" interface="action-sheet" label="可負數次數" style="width: 100%;">
+          <ion-select-option value="once">僅限 1 次 (負數後必須增值)</ion-select-option>
+          <ion-select-option value="unlimited">不限次數 (直至扣至下限)</ion-select-option>
+        </ion-select>
+      </ion-item>
+
+      <ion-item lines="full">
+        <ion-label>開啟自動轉帳 (自動增值)</ion-label>
+        <ion-toggle formControlName="autoTopUp" mode="ios"></ion-toggle>
+      </ion-item>
+
+      <ion-item lines="full" *ngIf="accountForm.get('autoTopUp')?.value">
+        <ion-select formControlName="topUpSourceAccountId" interface="action-sheet" label="轉帳來源帳戶" placeholder="請選擇付款帳戶" style="width: 100%;">
+          <ion-select-option *ngFor="let acc of getOtherAccounts()" [value]="acc.id">
+            {{ acc.name }} ({{ acc.currency }})
+          </ion-select-option>
+        </ion-select>
+      </ion-item>
+
+      <ion-item lines="full" *ngIf="accountForm.get('autoTopUp')?.value">
+        <ion-label>每次自動增值金額</ion-label>
+        <ion-input slot="end" type="number" formControlName="topUpAmount" placeholder="250" style="text-align: right;"></ion-input>
+      </ion-item>
+
+      <ion-item lines="none" *ngIf="accountForm.get('autoTopUp')?.value">
+        <ion-select formControlName="topUpTrigger" interface="action-sheet" label="自動轉帳觸發條件" style="width: 100%;">
+          <ion-select-option value="instant">因交易導致餘額 <= 0 的當下轉帳</ion-select-option>
+          <ion-select-option value="before_next">餘額 <= 0 後，下次交易發生前轉帳</ion-select-option>
+        </ion-select>
+      </ion-item>
     </ion-list>
 
   </form>

@@ -126,7 +126,7 @@
         <ion-item button detail="false" lines="full">
           <ion-icon name="log-out-outline" slot="start" color="medium"></ion-icon>
           <ion-select formControlName="accountId" interface="action-sheet" [disabled]="!!contextAccountId" label="轉出帳戶">
-            <ion-select-option *ngFor="let account of getAccounts()" [value]="account.id">
+            <ion-select-option *ngFor="let account of availableAccounts" [value]="account.id">
               {{ account.name }} ({{ getCurrencySymbol(account.currency) }}{{ getAccBalance(account.id) | number:'1.0-0' }})
             </ion-select-option>
           </ion-select>
@@ -134,7 +134,7 @@
         <ion-item button detail="false" lines="full">
           <ion-icon name="log-in-outline" slot="start" color="medium"></ion-icon>
           <ion-select formControlName="accountToId" interface="action-sheet" label="轉入帳戶">
-            <ion-select-option *ngFor="let account of getAccounts()" [value]="account.id" [disabled]="account.id === transactionForm.get('accountId')?.value">
+            <ion-select-option *ngFor="let account of availableAccounts" [value]="account.id" [disabled]="account.id === transactionForm.get('accountId')?.value">
               {{ account.name }} ({{ getCurrencySymbol(account.currency) }}{{ getAccBalance(account.id) | number:'1.0-0' }})
             </ion-select-option>
           </ion-select>
@@ -145,7 +145,7 @@
         <ion-item button detail="false" lines="full">
           <ion-icon name="wallet-outline" slot="start" color="primary"></ion-icon>
           <ion-select formControlName="accountId" interface="action-sheet" [disabled]="!!contextAccountId" [label]="getAccountLabel()">
-            <ion-select-option *ngFor="let account of getAccounts()" [value]="account.id">
+            <ion-select-option *ngFor="let account of availableAccounts" [value]="account.id">
               {{ account.name }} ({{ getCurrencySymbol(account.currency) }}{{ getAccBalance(account.id) | number:'1.0-0' }})
             </ion-select-option>
           </ion-select>
