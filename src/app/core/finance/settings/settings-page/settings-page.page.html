@@ -29,7 +29,7 @@
           </p>
           <p *ngIf="!isRateLoading && hkdToJpy" class="rate-text">
             1 HKD = <strong>{{ hkdToJpy | number:'1.2-2' }}</strong> JPY <br>
-            <span class="sub-rate">1 JPY = {{ jpyToHkd | number:'1.4-4' }} HKD</span>
+            <span class="sub-rate">1 JPY = {{ jpyToHkd | number:'1.4-6' }} HKD</span>
           </p>
           <p *ngIf="!isRateLoading && !hkdToJpy" class="rate-error">
             ❌ 無法載入即時匯率，請檢查網路連線。

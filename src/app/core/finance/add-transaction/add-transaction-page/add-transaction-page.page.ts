@@ -7,6 +7,7 @@ import { Transaction, Account, Fund } from '../../model/finance.model';
 import { AlertController, ModalController, NavParams } from '@ionic/angular';
 import  moment from 'moment';
 import { filter } from 'rxjs';
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../../../../../environments/categories';
 
 @Component({
   selector: 'app-add-transaction-page',
@@ -51,6 +52,8 @@ export class AddTransactionPagePage implements OnInit {
   // Dirty state tracking
   private initialFormValues: any = null;
   private isFormDirty: boolean = false;
+
+  currentErrors: string[] = [];
 
   constructor(
     private route: ActivatedRoute,
@@ -253,11 +256,13 @@ export class AddTransactionPagePage implements OnInit {
     });
     
     this.transactionForm.get('amount')?.valueChanges.subscribe(() => {
+      this.updateCalculatedAmount();
       this.checkFormDirty();
     });
 
     this.transactionForm.valueChanges.subscribe(() => {
       this.checkFormDirty();
+      //this.updateValidationErrors();
     });
   }
 
@@ -308,7 +313,7 @@ export class AddTransactionPagePage implements OnInit {
       const toRate = this.realExchangeRates[targetAccount.currency] || 1;
       const rate = toRate / fromRate;
       
-      this.transactionForm.patchValue({ exchangeRate: Number(rate.toFixed(4)) }, { emitEvent: false });
+      this.transactionForm.patchValue({ exchangeRate: Number(rate.toFixed(6)) }, { emitEvent: false });
     }
   }
 
@@ -328,6 +333,7 @@ export class AddTransactionPagePage implements OnInit {
     
     // Refresh categories based on new transaction type
     this.categories = this.getCategories();
+    //this.updateValidationErrors();
   }
 
   selectCategory(category: any) {
@@ -350,50 +356,9 @@ export class AddTransactionPagePage implements OnInit {
     const allTransactions = this.financeVar.getTransactions();
     
     if (this.txnType === 'income') {
-      const incomeCategories = [
-        { id: 'bonus', name: '獎金', icon: '🏆' },
-        { id: 'salary', name: '工資', icon: '💼' },
-        { id: 'investment', name: '理財投資', icon: '📈' },
-        { id: 'parttime', name: '兼職', icon: '🕒' },
-        { id: 'debt_collection', name: '欠債收款', icon: '📥' },
-        { id: 'transport_subsidy', name: '交通補貼', icon: '🚇' },
-        { id: 'other_income', name: '其他', icon: '✨' },
-        { id: 'credit_repayment', name: '信用卡還款', icon: '💳' },
-        { id: 'interest', name: '利息', icon: '📊' },
-        { id: 'insurance', name: '保險', icon: '🛡️' }
-      ];
-      
-      return this.sortCategoriesByFrequency(incomeCategories, allTransactions);
+      return this.sortCategoriesByFrequency(INCOME_CATEGORIES, allTransactions);
     } else if (this.txnType === 'expense') {
-      const expenseCategories = [
-        { id: 'food', name: '飲食', icon: '🍜' },
-        { id: 'daily', name: '日用', icon: '🧼' },
-        { id: 'transport', name: '交通', icon: '🚗' },
-        { id: 'social', name: '社交', icon: '🎉' },
-        { id: 'housing', name: '住房物業', icon: '🏢' },
-        { id: 'gift', name: '禮物', icon: '🎁' },
-        { id: 'clothing', name: '服飾', icon: '👗' },
-        { id: 'communication', name: '通信', icon: '📞' },
-        { id: 'entertainment', name: '娛樂', icon: '🎬' },
-        { id: 'beauty', name: '美容', icon: '💅' },
-        { id: 'medical', name: '醫療', icon: '💊' },
-        { id: 'tax', name: '稅金', icon: '🏛️' },
-        { id: 'education', name: '教育', icon: '🎓' },
-        { id: 'baby', name: '寶寶', icon: '🍼' },
-        { id: 'pet', name: '寵物', icon: '🐱' },
-        { id: 'travel', name: '旅行', icon: '🌴' },
-        { id: 'household', name: '家用', icon: '🧹' },
-        { id: 'savings_insurance', name: '儲蓄保險', icon: '🏦' },
-        { id: 'credit_payment', name: '信用卡還款', icon: '💳' },
-        { id: 'shopping_dining', name: '買野飲', icon: '🛍️' },
-        { id: 'snacks', name: '零食', icon: '🍬' },
-        { id: 'gaming', name: '遊戲', icon: '🕹️' },
-        { id: 'other_expense', name: '其他', icon: '⭐' },
-        { id: 'on9_stuff', name: 'on9野', icon: '🤪' },
-        { id: 'debt_repayment', name: '欠債還款', icon: '📤' }
-      ];
-      
-      return this.sortCategoriesByFrequency(expenseCategories, allTransactions);
+      return this.sortCategoriesByFrequency(EXPENSE_CATEGORIES, allTransactions);
     } else {
       // Transfer - only show transfer category
       return [
@@ -431,7 +396,9 @@ export class AddTransactionPagePage implements OnInit {
     return this.financeVar.getFunds();
   }
 
-  validateForm(): boolean {
+  // 更新：表單校驗邏輯 (新增全面防止負數的檢查)
+
+  /*validateForm(): boolean {
     const amount = parseFloat(this.transactionForm.get('amount')?.value);
     const accountId = this.transactionForm.get('accountId')?.value;
     
@@ -439,7 +406,7 @@ export class AddTransactionPagePage implements OnInit {
     if (!accountId) return false;
     if (this.txnType !== 'transfer' && !this.selectedCategory) return false;
     
-    // 🚫 修正問題 1：轉帳模式下，如果未選轉入帳戶，或者轉出與轉入帳戶相同，則不允許儲存
+    // 轉帳模式下，如果未選轉入帳戶，或者轉出與轉入帳戶相同，則不允許儲存
     if (this.txnType === 'transfer') {
       const accountToId = this.transactionForm.get('accountToId')?.value;
       if (!accountToId || accountId === accountToId) {
@@ -447,27 +414,61 @@ export class AddTransactionPagePage implements OnInit {
       }
     }
     
-    // ===== 交通卡付款安全線校驗 =====
-    if (this.txnType === 'expense') {
+    // ===== 全面餘額防呆校驗 (防止變負數) =====
+    if (this.txnType === 'expense' || this.txnType === 'transfer') {
       const account = this.financeVar.getAccounts().find(a => a.id === accountId);
-      if (account && account.type === 'transit') {
+      
+      if (account) {
         const exchangeRate = parseFloat(this.transactionForm.get('exchangeRate')?.value) || 1;
-        const txAmount = amount * exchangeRate;
+        const txAmount = amount * exchangeRate; // 本次交易實際要從帳戶扣除的基礎貨幣金額
+        let currentBal = this.getAccBalance(account.id);
         
-        if (!account.autoTopUp) {
-          const currentBal = this.getAccBalance(account.id);
-          let buyingPower = currentBal;
-          
-          if (account.allowNegative) {
-            buyingPower = (account.negativeMode === 'once' && currentBal < 0) ? 0 : currentBal + (account.negativeLimit || 0);
+        // 💡 關鍵細節：如果是編輯模式，我們需要先「補回」原本這筆交易扣除的金額，才能算出真正的可用餘額
+        if (this.isEditMode && this.editTransactionId) {
+           const oldTx = this.financeVar.getTransactions().find(t => t.id === this.editTransactionId);
+           // 確保舊交易確實是從同一個帳戶扣款的
+           if (oldTx && oldTx.accountId === account.id) {
+              currentBal += (oldTx.accDeduction || 0);
+           }
+        }
+        
+        if (account.type === 'transit') {
+          // 交通卡專屬邏輯 (如未開啟自動增值，則判斷負數上限)
+          if (!account.autoTopUp) {
+            let actualLimit = currentBal;
+            if (account.allowNegative) {
+              actualLimit = (account.negativeMode === 'once' && currentBal < 0) ? 0 : currentBal + (account.negativeLimit || 0);
+            }
+            if (txAmount > actualLimit) {
+              this.showBalanceError('交通卡餘額不足，且已超出設定的負數限制。');
+              return false;
+            }
           }
-          if (txAmount > buyingPower) {
+        } else if (account.type !== 'credit') {
+          // 除了信用卡 (與上述的交通卡)，其他所有帳戶 (cash, bank, loan 等) 嚴格不允許低於 0
+          if (currentBal - txAmount < 0) {
+            // 使用 toFixed(2) 讓顯示金額比較好看
+            this.showBalanceError(`【${account.name}】餘額不足 (剩餘 ${currentBal.toFixed(2)})，不允許扣至負數。`);
             return false;
           }
         }
       }
     }
+    
     return true;
+  }*/
+
+  validateForm(): boolean {
+    return this.currentErrors.length === 0;
+  }
+
+  async showBalanceError(message: string) {
+    const alert = await this.alertController.create({
+      header: '⚠️ 儲存失敗',
+      message: message,
+      buttons: ['確定']
+    });
+    await alert.present();
   }
 
   swapTransferAccounts() {
@@ -482,6 +483,74 @@ export class AddTransactionPagePage implements OnInit {
     // 交換後重新依據新組合計算預設匯率
     this.calculateExchangeRate();
     this.checkFormDirty();
+    //this.updateValidationErrors();
+  }
+
+  updateValidationErrors() {
+    const errors: string[] = [];
+    const formValue = this.transactionForm.value;
+    const amount = parseFloat(formValue.amount);
+    const accountId = formValue.accountId;
+    const exchangeRate = parseFloat(formValue.exchangeRate) || 1;
+
+    // 1. 基本校驗
+    if (isNaN(amount) || amount <= 0) {
+      errors.push('請輸入大於 0 的金額');
+    }
+    if (!accountId) {
+      errors.push('請選擇轉出/付款帳戶');
+    }
+    if (this.txnType !== 'transfer' && !this.selectedCategory) {
+      errors.push('請選擇交易分類');
+    }
+
+    // 2. 轉帳專屬校驗
+    if (this.txnType === 'transfer') {
+      const accountToId = formValue.accountToId;
+      if (!accountToId) {
+        errors.push('請選擇轉入帳戶');
+      } else if (accountId === accountToId) {
+        errors.push('轉出與轉入帳戶不能相同');
+      }
+    }
+
+    // 3. 餘額防呆校驗 (防止變負數，僅在有輸入金額且選擇帳戶時才檢查)
+    if (amount > 0 && accountId && (this.txnType === 'expense' || this.txnType === 'transfer')) {
+      const account = this.financeVar.getAccounts().find(a => a.id === accountId);
+      
+      if (account) {
+        const txAmount = amount * exchangeRate;
+        let currentBal = this.getAccBalance(account.id);
+        
+        // 如果是編輯模式，需要先補回舊交易的扣款，算出真實可用餘額
+        if (this.isEditMode && this.editTransactionId) {
+           const oldTx = this.financeVar.getTransactions().find(t => t.id === this.editTransactionId);
+           if (oldTx && oldTx.accountId === account.id) {
+              currentBal += (oldTx.accDeduction || 0);
+           }
+        }
+        
+        if (account.type === 'transit') {
+          if (!account.autoTopUp) {
+            let actualLimit = currentBal;
+            if (account.allowNegative) {
+              actualLimit = (account.negativeMode === 'once' && currentBal < 0) ? 0 : currentBal + (account.negativeLimit || 0);
+            }
+            if (txAmount > actualLimit) {
+              errors.push(`【${account.name}】餘額不足，且已超出負數限制`);
+            }
+          }
+        } else if (account.type !== 'credit') {
+          // 一般帳戶嚴格不可為負
+          if (currentBal - txAmount < 0) {
+            errors.push(`【${account.name}】餘額不足 (剩餘 ${currentBal.toFixed(2)})`);
+          }
+        }
+      }
+    }
+
+    // 更新給 HTML 渲染的錯誤陣列
+    this.currentErrors = errors;
   }
 
   async deleteTransaction() {
@@ -780,32 +849,17 @@ export class AddTransactionPagePage implements OnInit {
     
     this.txnType = 'expense';
     
-    const expenseCategories = [
-      { id: 'food', name: '飲食', icon: '🍜' }, { id: 'daily', name: '日用', icon: '🧼' },
-      { id: 'transport', name: '交通', icon: '🚗' }, { id: 'social', name: '社交', icon: '🎉' },
-      { id: 'housing', name: '住房物業', icon: '🏢' }, { id: 'gift', name: '禮物', icon: '🎁' },
-      { id: 'clothing', name: '服飾', icon: '👗' }, { id: 'communication', name: '通信', icon: '📞' },
-      { id: 'entertainment', name: '娛樂', icon: '🎬' }, { id: 'beauty', name: '美容', icon: '💅' },
-      { id: 'medical', name: '醫療', icon: '💊' }, { id: 'tax', name: '稅金', icon: '🏛️' },
-      { id: 'education', name: '教育', icon: '🎓' }, { id: 'baby', name: '寶寶', icon: '🍼' },
-      { id: 'pet', name: '寵物', icon: '🐱' }, { id: 'travel', name: '旅行', icon: '🌴' },
-      { id: 'household', name: '家用', icon: '🧹' }, { id: 'savings_insurance', name: '儲蓄保險', icon: '🏦' },
-      { id: 'credit_payment', name: '信用卡還款', icon: '💳' }, { id: 'shopping_dining', name: '買野飲', icon: '🛍️' },
-      { id: 'snacks', name: '零食', icon: '🍬' }, { id: 'gaming', name: '遊戲', icon: '🕹️' },
-      { id: 'other_expense', name: '其他', icon: '⭐' }, { id: 'on9_stuff', name: 'on9野', icon: '🤪' },
-      { id: 'debt_repayment', name: '欠債還款', icon: '📤' }
-    ];
-    
-    let selectedCategory = expenseCategories.find(cat => cat.name === transaction.category);
+    // 直接使用共用的 EXPENSE_CATEGORIES 進行比對
+    let selectedCategory = EXPENSE_CATEGORIES.find(cat => cat.name === transaction.category);
     if (!selectedCategory) {
-      for (const cat of expenseCategories) {
+      for (const cat of EXPENSE_CATEGORIES) {
         if (transaction.category?.includes(cat.name) || cat.name.includes(transaction.category)) {
           selectedCategory = cat;
           break;
         }
       }
       if (!selectedCategory) {
-        selectedCategory = expenseCategories.find(cat => cat.name === '其他') || expenseCategories[0];
+        selectedCategory = EXPENSE_CATEGORIES.find(cat => cat.name === '其他') || EXPENSE_CATEGORIES[0];
       }
     }
     
@@ -826,7 +880,7 @@ export class AddTransactionPagePage implements OnInit {
       note: transaction.note || '',
       category: selectedCategory.name,
       // ✔️ 如果截圖有匯率就直接填入四位小數，沒有的話先預設為 1
-      exchangeRate: aiDetectedRate ? Number(Number(aiDetectedRate).toFixed(4)) : 1 
+      exchangeRate: aiDetectedRate ? Number(Number(aiDetectedRate).toFixed(6)) : 1 
     });
     
     if (transaction.items && transaction.items.length > 0) {
@@ -873,6 +927,7 @@ export class AddTransactionPagePage implements OnInit {
   }
   
   async saveTransaction() {
+    this.updateValidationErrors();
     if (!this.validateForm()) {
       return;
     }

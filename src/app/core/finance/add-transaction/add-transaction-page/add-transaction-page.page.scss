@@ -427,3 +427,32 @@ ion-list.settings-list, ion-list.items-list {
     }
   }
 }
+
+/* 錯誤提示區塊美化 (適用於上方排版) */
+.validation-errors-container {
+  margin: 16px 16px 12px 16px;
+  border-radius: 12px;
+  background: rgba(var(--ion-color-danger-rgb), 0.08);
+  border: 1px solid rgba(var(--ion-color-danger-rgb), 0.2);
+
+  .error-list {
+    background: transparent;
+    padding: 4px 0;
+
+    ion-item {
+      --background: transparent;
+      --min-height: 32px;
+      font-size: 13px;
+
+      ion-icon {
+        font-size: 16px;
+        margin-right: 8px;
+      }
+      
+      ion-label {
+        margin: 4px 0;
+        font-weight: 500;
+      }
+    }
+  }
+}

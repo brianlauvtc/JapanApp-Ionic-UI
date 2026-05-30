@@ -3,45 +3,96 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { FinanceVarService } from './finance-var.service';
+import { EXPENSE_CATEGORIES } from '../../../../environments/categories';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AIService {
   private readonly GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
-
+  private apiKey: string = '';
   constructor(
     private http: HttpClient,
     private financeVar: FinanceVarService
-  ) {}
+  ) {
 
-  analyzeFinancialData(prompt: string = "分析本月花費是否合理並簡短給出建議"): Observable<string> {
+    this.apiKey = this.financeVar.getAppData()?.settings?.apiKey || '';
+  }
+
+
+  async analyzeReceiptImage(base64Image: string): Promise<any[] | null> {
     const apiKey = this.financeVar.getAppData().settings.apiKey;
     if (!apiKey) {
-      return of('請先設定 Gemini API Key');
+      throw new Error('API Key missing');
     }
 
     const url = `${this.GEMINI_API_URL}?key=${apiKey}`;
-    
-    const requestBody = {
+    const categoryIdsPrompt = EXPENSE_CATEGORIES.map(c => `"${c.id}"`).join(', ');
+    // 🧠 優化的英文 Prompt：省 Token 且精準度更高，強制 category 輸出繁體中文
+    const promptText = `You are an expert financial accountant. Analyze the provided receipt or credit card bill image.
+  
+      Perform these exact steps:
+      1. Extract line items (name, quantity, price) into an "items" array.
+      2. Extract the grand total as "amount" (number).
+      3. Determine the "currency" ("HKD" or "JPY"). Default to "HKD".
+      4. Extract the explicit foreign currency exchange rate as "exchangeRate" (number, max 4 decimal places) ONLY IF it is clearly printed on the bill. If not explicitly shown, omit this key entirely.
+      5. Categorize the transaction into EXACTLY ONE of these category IDs: [${categoryIdsPrompt}]. Default to "other_expense" if unsure.
+      6. Parse the transaction "date" (YYYY-MM-DD). Use today's date if missing.
+      7. Write a short merchant name or summary as "note".
+
+      Respond ONLY with a strictly valid JSON array (even for 1 receipt). Structure:
+      [
+        {
+          "amount": number,
+          "currency": "HKD" | "JPY",
+          "category": "One of the exact Chinese strings above",
+          "exchangeRate": number (optional, e.g., 0.0492),
+          "date": "YYYY-MM-DD",
+          "note": "Merchant name",
+          "items": [
+            { "name": "item", "quantity": 1, "price": 10 }
+          ]
+        }
+      ]
+
+      RULES:
+      - NO markdown syntax (like \`\`\`json).
+      - NO conversational text.
+      - 1 receipt/bill = 1 object in the array.`; 
+
+    const requestPayload = {
       contents: [{
-        parts: [{
-          text: prompt
-        }]
+        parts: [
+          { text: promptText },
+          {
+            inlineData: {
+              mimeType: 'image/jpeg',
+              data: base64Image
+            }
+          }
+        ]
       }]
     };
 
-    return this.http.post<any>(url, requestBody).pipe(
-      map(response => {
-        if (response.candidates && response.candidates[0]?.content?.parts?.[0]?.text) {
-          return response.candidates[0].content.parts[0].text;
-        }
-        return '分析完成，但未收到有效回應';
-      }),
-      catchError(error => {
-        console.error('AI Analysis error:', error);
-        return of('AI 分析失敗，請檢查 API Key 或網路連線');
-      })
-    );
+    try {
+      const apiResponse: any = await this.http.post(url, requestPayload).toPromise();
+      if (apiResponse?.error) {
+         throw new Error(apiResponse.error.message);
+      }
+      const rawTextResponse = apiResponse?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      if (!rawTextResponse) {
+          throw new Error('Empty response from Gemini API');
+      }
+      
+      // 清理 Markdown 標記並解析 JSON
+      const cleanTarget = rawTextResponse.replace(/```json/gi, '').replace(/```/g, '').trim();
+      const parsedData = JSON.parse(cleanTarget);
+      
+      return Array.isArray(parsedData) ? parsedData : [parsedData];
+    } catch (e) {
+      console.error('API integration stream runtime parsing exception:', e);
+      return null;
+    }
   }
+
 }

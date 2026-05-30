@@ -8,7 +8,7 @@
     <ion-title mode="ios">{{ isEditMode ? '編輯' : '新增紀錄' }}</ion-title>
     
     <ion-buttons slot="end">
-      <ion-button (click)="saveTransaction()" [disabled]="!validateForm()" color="primary" fill="clear">
+      <ion-button (click)="saveTransaction()"  color="primary" fill="clear">
         <strong style="font-size: 15px;">{{ isEditMode ? '更新' : '儲存' }}</strong>
       </ion-button>
     </ion-buttons>
@@ -75,6 +75,15 @@
       <ion-icon name="chevron-forward-outline" class="arrow-icon"></ion-icon>
     </div>
    
+    <div class="validation-errors-container" *ngIf="currentErrors.length > 0 && transactionForm.dirty">
+      <ion-list lines="none" class="error-list">
+        <ion-item *ngFor="let err of currentErrors">
+          <ion-icon name="warning" slot="start" color="danger"></ion-icon>
+          <ion-label color="danger" class="ion-text-wrap">{{ err }}</ion-label>
+        </ion-item>
+      </ion-list>
+    </div>
+
     <div class="amount-card-container">
       <div class="modern-amount-box" [ngClass]="txnType">
         <div class="input-main-zone">
