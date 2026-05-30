@@ -900,6 +900,7 @@ export class AddTransactionPagePage implements OnInit {
   
   // Navigation methods for multiple AI transactions
   nextAITransaction() {
+    this.updateValidationErrors();
     if (!this.validateForm()) {
       this.alertController.create({ header: '資料不完整', message: '請填寫所有必填欄位後再進入下一張', buttons: ['確定'] }).then(a => a.present());
       return;
