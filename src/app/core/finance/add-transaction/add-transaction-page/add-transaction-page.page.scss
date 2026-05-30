@@ -379,3 +379,24 @@ ion-list.settings-list, ion-list.items-list {
     }
   }
 }
+
+.rate-list {
+  margin-top: 12px;
+  margin-bottom: 0;
+  background: white;
+  border-radius: 16px;
+  
+  ion-item {
+    --min-height: 44px;
+    --background: transparent;
+  }
+  
+  .rate-result {
+    --padding-top: 0;
+    --padding-bottom: 8px;
+    
+    strong {
+      margin-left: 8px;
+    }
+  }
+}

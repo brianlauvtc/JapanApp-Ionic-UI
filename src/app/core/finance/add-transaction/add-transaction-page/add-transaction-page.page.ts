@@ -28,6 +28,8 @@ export class AddTransactionPagePage implements OnInit {
   contextType: string | null = null;
   
   isModal: boolean = false;
+  ignoreRateCalc = false;
+  realExchangeRates: { [key: string]: number } = { HKD: 1, JPY: 20 }; // 預設值，避免網路不通
   
   // Items form and data
   items: { name: string; quantity: number; price: number }[] = [];
@@ -64,6 +66,7 @@ export class AddTransactionPagePage implements OnInit {
   }
 
   ngOnInit() {
+    this.fetchRealRates();
     this.initForm();
     this.setupTypeSubscription();
     this.loadContextFromRoute();      
@@ -87,6 +90,24 @@ export class AddTransactionPagePage implements OnInit {
       const state = this.router.getCurrentNavigation()?.extras?.state || history.state;
       this.checkForAiData(state);
     });
+  }
+
+  async fetchRealRates() {
+    try {
+      const response = await fetch('https://open.er-api.com/v6/latest/HKD');
+      const data = await response.json();
+      if (data && data.rates) {
+        this.realExchangeRates['HKD'] = 1;
+        this.realExchangeRates['JPY'] = data.rates.JPY; // 抓取真實匯率
+        
+        // 如果是新增模式，且還沒填寫過資料，則刷新匯率
+        if (!this.isEditMode) {
+           this.calculateExchangeRate();
+        }
+      }
+    } catch (e) {
+      console.error('無法獲取即時匯率，將使用預設值', e);
+    }
   }
 
   private checkForAiData(state: any) {
@@ -217,21 +238,24 @@ export class AddTransactionPagePage implements OnInit {
 
   setupFormListeners() {
     this.transactionForm.get('currency')?.valueChanges.subscribe(() => {
-      this.calculateExchangeRate();
+      if (!this.ignoreRateCalc) this.calculateExchangeRate();
       this.checkFormDirty();
     });
     
     this.transactionForm.get('accountId')?.valueChanges.subscribe(() => {
-      this.calculateExchangeRate();
+      if (!this.ignoreRateCalc) this.calculateExchangeRate();
+      this.checkFormDirty();
+    });
+
+    this.transactionForm.get('accountToId')?.valueChanges.subscribe(() => {
+      if (!this.ignoreRateCalc) this.calculateExchangeRate();
       this.checkFormDirty();
     });
     
     this.transactionForm.get('amount')?.valueChanges.subscribe(() => {
-      this.updateCalculatedAmount();
       this.checkFormDirty();
     });
-    
-    // Add listeners for other form controls
+
     this.transactionForm.valueChanges.subscribe(() => {
       this.checkFormDirty();
     });
@@ -254,28 +278,37 @@ export class AddTransactionPagePage implements OnInit {
   calculateExchangeRate() {
     const currency = this.transactionForm.get('currency')?.value;
     const accountId = this.transactionForm.get('accountId')?.value;
+    const accountToId = this.transactionForm.get('accountToId')?.value;
     
-    if (!currency || !accountId) {
+    if (!currency) return;
+    
+    // 決定要比較匯率的目標帳戶 (轉帳時看轉入或轉出，一般看扣款帳戶)
+    let targetAccId = accountId;
+    if (this.txnType === 'transfer') {
+       const fromAcc = this.financeVar.getAccounts().find(a => a.id === accountId);
+       const toAcc = this.financeVar.getAccounts().find(a => a.id === accountToId);
+       if (toAcc && currency !== toAcc.currency && currency === fromAcc?.currency) {
+           targetAccId = accountToId;
+       }
+    }
+
+    if (!targetAccId) {
       this.transactionForm.patchValue({ exchangeRate: 1 }, { emitEvent: false });
       return;
     }
-    
-    const account = this.financeVar.getAppData().accounts.find(a => a.id === accountId);
-    if (!account) {
-      this.transactionForm.patchValue({ exchangeRate: 1 }, { emitEvent: false });
-      return;
-    }
-    
-    if (currency === account.currency) {
+
+    const targetAccount = this.financeVar.getAccounts().find(a => a.id === targetAccId);
+    if (!targetAccount) return;
+
+    if (currency === targetAccount.currency) {
       this.transactionForm.patchValue({ exchangeRate: 1 }, { emitEvent: false });
     } else {
-      // Calculate exchange rate based on configured rates
-      const currencies = {
-        HKD: { symbol: '$', rate: 1, name: 'HKD' },
-        JPY: { symbol: '¥', rate: 0.05, name: 'JPY' }
-      };
-      const rate = currencies[currency as keyof typeof currencies].rate / currencies[account.currency as keyof typeof currencies].rate;
-      this.transactionForm.patchValue({ exchangeRate: rate }, { emitEvent: false });
+      // 動態換算：例如用 JPY 扣 HKD 帳戶 -> rate = 1 / 19.5 = 0.05128
+      const fromRate = this.realExchangeRates[currency] || 1;
+      const toRate = this.realExchangeRates[targetAccount.currency] || 1;
+      const rate = toRate / fromRate;
+      
+      this.transactionForm.patchValue({ exchangeRate: Number(rate.toFixed(4)) }, { emitEvent: false });
     }
   }
 
@@ -548,17 +581,28 @@ export class AddTransactionPagePage implements OnInit {
   showExchangeRate(): boolean {
     const currency = this.transactionForm.get('currency')?.value;
     const accountId = this.transactionForm.get('accountId')?.value;
-    if (!currency || !accountId) return false;
+    const accountToId = this.transactionForm.get('accountToId')?.value;
     
-    const account = this.financeVar.getAccounts().find(a => a.id === accountId);
-    return !!account && currency !== account.currency;
+    if (!currency) return false;
+    const fromAcc = this.financeVar.getAccounts().find(a => a.id === accountId);
+    
+    if (this.txnType === 'transfer') {
+       const toAcc = this.financeVar.getAccounts().find(a => a.id === accountToId);
+       return (fromAcc && currency !== fromAcc.currency) || (toAcc && currency !== toAcc.currency) || false;
+    } else {
+       return !!fromAcc && currency !== fromAcc.currency;
+    }
   }
 
   calculatedAmount(): string {
     const amount = parseFloat(this.transactionForm.get('amount')?.value) || 0;
     const exchangeRate = parseFloat(this.transactionForm.get('exchangeRate')?.value) || 1;
-    const accountCurrency = this.getAccountCurrency(this.transactionForm.get('accountId')?.value);
-    return `${this.getCurrencySymbol(accountCurrency)}${(amount * exchangeRate).toFixed(2)}`;
+    
+    const accountId = this.transactionForm.get('accountId')?.value;
+    const account = this.financeVar.getAccounts().find(a => a.id === accountId);
+    const accountCurrency = account?.currency || 'HKD';
+    
+    return `${this.getCurrencySymbol(accountCurrency)} ${(amount * exchangeRate).toFixed(2)}`;
   }
 
   getAccountLabel(): string {
@@ -652,6 +696,8 @@ export class AddTransactionPagePage implements OnInit {
       return;
     }
     
+    this.ignoreRateCalc = true; // 暫停自動算匯率
+
     this.txnType = transaction.type as any;
     this.selectedCategory = { name: transaction.category, icon: transaction.icon || '💰' };
     
@@ -667,18 +713,17 @@ export class AddTransactionPagePage implements OnInit {
       exchangeRate: transaction.exRate || 1
     });
     
-    // Load items if they exist
     if (transaction.items && transaction.items.length > 0) {
       this.items = [...transaction.items];
     }
-    
-    // Refresh categories for the loaded transaction type
     this.categories = this.getCategories();
     
-    this.calculateExchangeRate();
-    
-    // Capture initial form values after loading edit data
-    this.captureInitialFormValues();
+    // (注意：把原本放在這裡的 this.calculateExchangeRate() 刪除！)
+
+    setTimeout(() => {
+      this.ignoreRateCalc = false; // 恢復自動算匯率
+      this.captureInitialFormValues();
+    }, 100);
   }
 
   // Save last used account for this transaction type
@@ -827,41 +872,27 @@ export class AddTransactionPagePage implements OnInit {
   }
   
   async saveTransaction() {
-    if (!this.validateForm()) {
-      return;
-    }
+    if (!this.validateForm()) return;
     
     const saveButton = document.querySelector('.save-transaction-btn');
-    if (saveButton) {
-      saveButton.setAttribute('disabled', 'true');
-    }
+    if (saveButton) saveButton.setAttribute('disabled', 'true');
     
     try {
       if (this.isAIScanningMode) {
-        // ==========================================
-        // AI BATCH SAVE LOGIC ("SAVE ALL")
-        // ==========================================
-        
-        // 1. Sync the form state of the receipt they are currently looking at to the array
+        // AI 模式維持現有儲存流程，只更新從即時匯率拿到的計算
         this.syncFormToAITransaction();
-        
-        // 2. Loop through and save ALL transactions in the queue at once
         for (let i = 0; i < this.aiTransactions.length; i++) {
           const aiTxn = this.aiTransactions[i];
           const amount = parseFloat(aiTxn.amount) || 0;
-          
-          // Calculate exchange rate for each individual transaction
           let exchangeRate = 1;
           const account = this.financeVar.getAccounts().find(a => a.id === aiTxn.accountId);
           if (account && aiTxn.currency !== account.currency) {
-            const currencies = { HKD: { rate: 1 }, JPY: { rate: 0.05 } };
-            const fromRate = currencies[aiTxn.currency as keyof typeof currencies]?.rate || 1;
-            const toRate = currencies[account.currency as keyof typeof currencies]?.rate || 1;
-            exchangeRate = fromRate / toRate;
+            const fromRate = this.realExchangeRates[aiTxn.currency] || 1;
+            const toRate = this.realExchangeRates[account.currency] || 1;
+            exchangeRate = toRate / fromRate;
           }
-          
           const transaction: Transaction = {
-            id: `t_${Date.now()}_${i}`, // Ensure unique IDs for the batch
+            id: `t_${Date.now()}_${i}`,
             type: 'expense',
             amount: amount,
             currency: aiTxn.currency,
@@ -875,22 +906,17 @@ export class AddTransactionPagePage implements OnInit {
             items: aiTxn.items ? [...aiTxn.items] : [],
             _warnLimit: false
           };
-          
           this.financeService.executeAddTransaction(transaction);
         }
-        
-        // 3. Force form to clean state to avoid "Cancel" alerts
+        // 清理並返回
         this.transactionForm.markAsPristine();
         this.transactionForm.markAsUntouched();
         this.isFormDirty = false;
         this.initialFormValues = this.transactionForm.getRawValue();
-        
-        // 4. Clear out the AI states completely
         this.aiTransactions = [];
         this.isAIScanningMode = false;
         this.currentTransactionIndex = 0;
         
-        // 5. Alert user of success and go back
         const alert = await this.alertController.create({
           header: '全部儲存成功',
           message: '已成功儲存所有掃描收據！',
@@ -900,28 +926,39 @@ export class AddTransactionPagePage implements OnInit {
         await this.goBack();
 
       } else {
-        // ==========================================
-        // NORMAL MANUAL / EDIT SAVE LOGIC
-        // ==========================================
-        
+        // ===== 一般 / 編輯模式儲存：重點使用手動匯率 =====
         const formValue = this.transactionForm.value;
         const amount = parseFloat(formValue.amount);
-        const exchangeRate = parseFloat(formValue.exchangeRate) || 1;
+        const manualRate = parseFloat(formValue.exchangeRate) || 1;
         
-        const accDeduction = this.txnType === 'income' ? -(amount * exchangeRate) : (amount * exchangeRate);
-        
+        let accDeduction = 0;
         let toAccDeduction = undefined;
+        
         if (this.txnType === 'transfer' && formValue.accountToId) {
-          const toAccount = this.financeVar.getAccounts().find(a => a.id === formValue.accountToId);
-          if (toAccount) {
-            const currenciesObj = {
-              HKD: { symbol: '$', rate: 1, name: 'HKD' },
-              JPY: { symbol: '¥', rate: 0.05, name: 'JPY' }
-            };
-            const fromRate = currenciesObj[formValue.currency as keyof typeof currenciesObj].rate;
-            const toRate = currenciesObj[toAccount.currency as keyof typeof currenciesObj].rate;
-            toAccDeduction = -((amount * fromRate) / toRate);
-          }
+            const fromAccount = this.financeVar.getAccounts().find(a => a.id === formValue.accountId);
+            const toAccount = this.financeVar.getAccounts().find(a => a.id === formValue.accountToId);
+            
+            if (fromAccount && toAccount) {
+                // 若交易貨幣與來源不同，使用手動匯率算扣款
+                if (formValue.currency !== fromAccount.currency) {
+                   accDeduction = amount * manualRate;
+                } else {
+                   accDeduction = amount;
+                }
+                // 若交易貨幣與目標不同，使用手動匯率算收款
+                if (formValue.currency !== toAccount.currency) {
+                   toAccDeduction = -(amount * manualRate);
+                } else {
+                   toAccDeduction = -amount;
+                }
+            }
+        } else {
+            const account = this.financeVar.getAccounts().find(a => a.id === formValue.accountId);
+            if (account && formValue.currency !== account.currency) {
+                accDeduction = this.txnType === 'income' ? -(amount * manualRate) : (amount * manualRate);
+            } else {
+                accDeduction = this.txnType === 'income' ? -amount : amount;
+            }
         }
         
         const transaction: Transaction = {
@@ -929,8 +966,8 @@ export class AddTransactionPagePage implements OnInit {
           type: this.txnType,
           amount: amount,
           currency: formValue.currency,
-          exRate: exchangeRate,
-          accDeduction: accDeduction,
+          exRate: manualRate,          // ✔️ 將使用者的匯率真正寫入
+          accDeduction: accDeduction,  // ✔️ 將結算好的金額寫入
           toAccountId: this.txnType === 'transfer' ? formValue.accountToId : undefined,
           toAccDeduction: toAccDeduction, 
           accountId: formValue.accountId,
@@ -954,7 +991,6 @@ export class AddTransactionPagePage implements OnInit {
         
         this.saveLastAccount(formValue.accountId);
 
-        // Force form to clean state to avoid "Cancel" alerts
         this.transactionForm.markAsPristine();
         this.transactionForm.markAsUntouched();
         this.isFormDirty = false;
@@ -962,12 +998,9 @@ export class AddTransactionPagePage implements OnInit {
 
         await this.goBack();
       }
-      
     } catch (error) {
       console.error('Error saving transaction:', error);
-      if (saveButton) {
-        saveButton.removeAttribute('disabled');
-      }
+      if (saveButton) saveButton.removeAttribute('disabled');
     }
   }
 

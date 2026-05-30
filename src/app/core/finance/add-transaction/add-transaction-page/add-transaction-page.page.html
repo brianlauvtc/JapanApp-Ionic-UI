@@ -74,7 +74,7 @@
       </div>
       <ion-icon name="chevron-forward-outline" class="arrow-icon"></ion-icon>
     </div>
-
+   
     <div class="amount-card-container">
       <div class="modern-amount-box" [ngClass]="txnType">
         <div class="input-main-zone">
@@ -96,6 +96,28 @@
         </div>
       </div>
     </div>
+
+    <ion-list inset="true" class="rate-list" *ngIf="showExchangeRate()">
+      <ion-item lines="none">
+        <ion-icon name="swap-horizontal-outline" slot="start" color="warning"></ion-icon>
+        <ion-input 
+          formControlName="exchangeRate" 
+          type="number" 
+          label="銀行/信用卡實際匯率"
+          step="0.0001"
+          label-placement="start"
+          inputmode="decimal"
+          style="text-align: right; color: var(--ion-color-primary);">
+        </ion-input>
+      </ion-item>
+      <ion-item lines="none" class="rate-result">
+        <ion-label class="ion-text-right">
+          <span style="font-size: 13px; color: var(--ion-color-medium);">帳戶預估變動: </span>
+          <strong style="font-size: 16px; color: var(--ion-color-danger);">{{ calculatedAmount() }}</strong>
+        </ion-label>
+      </ion-item>
+    </ion-list>
+
 
     <div class="modern-category-section" *ngIf="txnType !== 'transfer'">
       <div class="category-grid">
