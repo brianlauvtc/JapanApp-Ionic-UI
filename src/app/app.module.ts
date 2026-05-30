@@ -11,6 +11,7 @@ import { AddTransactionPageSharedModule } from './core/finance/add-transaction/a
 import { FinanceVarService } from './core/finance/service/finance-var.service';
 import { FinanceService } from './core/finance/service/finance.service';
 import { AIService } from './core/finance/service/ai.service';
+import { FileSyncService } from './core/finance/service/file-sync.service';
 
 @NgModule({
   declarations: [AppComponent],
@@ -26,6 +27,7 @@ import { AIService } from './core/finance/service/ai.service';
     Storage,
     FinanceVarService,
     FinanceService,
+    FileSyncService,
     AIService
   ],
   bootstrap: [AppComponent],
