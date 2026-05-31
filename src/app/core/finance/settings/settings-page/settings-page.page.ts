@@ -2,9 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { FinanceVarService } from '../../service/finance-var.service';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
-import { AlertController, ToastController } from '@ionic/angular';
+import { AlertController, ToastController, LoadingController } from '@ionic/angular';
 import { FinanceService } from '../../service/finance.service';
 import { Platform } from '@ionic/angular';
+import { AIService } from '../../service/ai.service';
 
 @Component({
   selector: 'app-settings-page',
@@ -17,11 +18,19 @@ export class SettingsPagePage implements OnInit {
   jpyToHkd: number | null = null;
   isRateLoading = false;
   exportFormat = 'json';
+  showCategoryModal = false;
+  catType: 'expense' | 'income' = 'expense';
+  newCat = { name: '', id: '', icon: '' };
+  isEditCatMode = false;
+  editOriginalId = '';
+
   constructor(
     private fb: FormBuilder,
     private financeVar: FinanceVarService,
     private alertCtrl: AlertController,
     private toastCtrl: ToastController,
+    private loadingCtrl: LoadingController,
+    private aiService: AIService,
     private financeService: FinanceService,
     private platform: Platform
   ) {}
@@ -140,5 +149,96 @@ export class SettingsPagePage implements OnInit {
   async showToast(msg: string) {
     const toast = await this.toastCtrl.create({ message: msg, duration: 2000 });
     toast.present();
+  }
+
+  get customCategories() {
+    return this.financeVar.getAppData().customCategories?.filter(c => c.type === this.catType) || [];
+  }
+
+  openCategoryManager() {
+    this.showCategoryModal = true;
+  }
+
+  closeCategoryManager() {
+    this.showCategoryModal = false;
+    this.resetCatForm();
+  }
+
+  resetCatForm() {
+    this.newCat = { name: '', id: '', icon: '' };
+    this.isEditCatMode = false;
+    this.editOriginalId = '';
+  }
+
+  editCustomCategory(cat: any) {
+    this.isEditCatMode = true;
+    this.editOriginalId = cat.id;
+    // 將選中項目的資料複製到表單中 (解構賦值避免直接改動原資料)
+    this.newCat = { name: cat.name, id: cat.id, icon: cat.icon };
+  }
+
+  cancelCatEdit() {
+    this.resetCatForm();
+  }
+  // 🌟 呼叫 AI 神奇生成
+  async generateCatWithAI() {
+    if (!this.newCat.name) return;
+    
+    const loading = await this.loadingCtrl.create({ message: 'AI 生成中...', spinner: 'crescent' });
+    await loading.present();
+
+    const result = await this.aiService.generateCategoryDetails(this.newCat.name);
+    await loading.dismiss();
+
+    if (result) {
+      this.newCat.id = result.id;
+      this.newCat.icon = result.icon;
+    } else {
+      const alert = await this.alertCtrl.create({ header: '生成失敗', message: '請檢查 API 或是手動輸入', buttons: ['確定'] });
+      await alert.present();
+    }
+  }
+
+  async addCustomCategory() {
+    if (!this.newCat.name || !this.newCat.id || !this.newCat.icon) return;
+
+    const currentList = this.financeVar.getAppData().customCategories || [];
+
+    if (this.isEditCatMode) {
+      // 編輯模式：檢查是否改了 ID，且新 ID 是否與「其他」現有分類重複
+      if (this.newCat.id !== this.editOriginalId) {
+        const isExist = Object.keys(this.financeVar.getCategoryMap()).includes(this.newCat.id);
+        if (isExist) {
+          const alert = await this.alertCtrl.create({ header: 'ID 重複', message: '此英文 ID 已被其他分類使用，請修改。', buttons: ['確定'] });
+          await alert.present();
+          return;
+        }
+      }
+
+      // 找出原本那筆資料並更新
+      const index = currentList.findIndex(c => c.id === this.editOriginalId);
+      if (index > -1) {
+        currentList[index] = { ...this.newCat, type: this.catType };
+      }
+    } else {
+      // 新增模式：檢查 ID 是否重複
+      const isExist = Object.keys(this.financeVar.getCategoryMap()).includes(this.newCat.id);
+      if (isExist) {
+        const alert = await this.alertCtrl.create({ header: 'ID 重複', message: '此英文 ID 已存在，請修改。', buttons: ['確定'] });
+        await alert.present();
+        return;
+      }
+      
+      currentList.push({ ...this.newCat, type: this.catType });
+    }
+
+    this.financeVar.updateCustomCategories(currentList);
+    this.resetCatForm(); // 儲存完畢後清空表單
+  }
+
+  deleteCustomCategory(id: string) {
+    let currentList = this.financeVar.getAppData().customCategories || [];
+    currentList = currentList.filter(c => c.id !== id);
+    this.financeVar.updateCustomCategories(currentList);
   }
 }

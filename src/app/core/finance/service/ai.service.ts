@@ -27,7 +27,8 @@ export class AIService {
     }
 
     const url = `${this.GEMINI_API_URL}?key=${apiKey}`;
-    const categoryIdsPrompt = EXPENSE_CATEGORIES.map(c => `"${c.id}"`).join(', ');
+    const allExpenseCats = this.financeVar.getAllExpenseCategories();
+    const categoryIdsPrompt = allExpenseCats.map(c => `"${c.id}"`).join(', ');
     // 🧠 優化的英文 Prompt：省 Token 且精準度更高，強制 category 輸出繁體中文
     const promptText = `You are an expert financial accountant. Analyze the provided receipt or credit card bill image.
   
@@ -95,4 +96,24 @@ export class AIService {
     }
   }
 
+  async generateCategoryDetails(chineseName: string): Promise<{id: string, icon: string} | null> {
+    const apiKey = this.financeVar.getAppData().settings.apiKey;
+    if (!apiKey) return null;
+
+    const url = `${this.GEMINI_API_URL}?key=${apiKey}`;
+    const promptText = `You are a UI designer for an accounting app. The user is adding a new custom transaction category named "${chineseName}".
+Generate a short English ID (lowercase, underscore separated, e.g. "fast_food", "game_topup") and exactly ONE most suitable emoji as the icon.
+Respond ONLY with strictly valid JSON format: {"id": "english_id", "icon": "emoji"}`;
+
+    try {
+      const requestPayload = { contents: [{ parts: [{ text: promptText }] }] };
+      const apiResponse: any = await this.http.post(url, requestPayload).toPromise();
+      const rawText = apiResponse?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      const cleanTarget = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+      return JSON.parse(cleanTarget);
+    } catch (e) {
+      console.error('AI Category Generation failed:', e);
+      return null;
+    }
+  }
 }

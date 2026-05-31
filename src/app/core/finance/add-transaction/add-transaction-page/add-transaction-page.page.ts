@@ -354,16 +354,12 @@ export class AddTransactionPagePage implements OnInit {
 
   getCategories() {
     const allTransactions = this.financeVar.getTransactions();
-    
     if (this.txnType === 'income') {
-      return this.sortCategoriesByFrequency(INCOME_CATEGORIES, allTransactions);
+      return this.sortCategoriesByFrequency(this.financeVar.getAllIncomeCategories(), allTransactions); // 🌟 改為動態
     } else if (this.txnType === 'expense') {
-      return this.sortCategoriesByFrequency(EXPENSE_CATEGORIES, allTransactions);
+      return this.sortCategoriesByFrequency(this.financeVar.getAllExpenseCategories(), allTransactions); // 🌟 改為動態
     } else {
-      // Transfer - only show transfer category
-      return [
-        { id: 'transfer', name: '轉帳', icon: '🔀' }
-      ];
+      return [{ id: 'transfer', name: '轉帳', icon: '🔀' }];
     }
   }
 
@@ -571,16 +567,16 @@ export class AddTransactionPagePage implements OnInit {
     // Handle AI scanning mode - show confirmation before going back
     if (this.isAIScanningMode) {
       const alert = await this.alertController.create({
-        header: '取消新增交易',
-        message: '確定要取消新增這筆交易嗎？已輸入的資料將會遺失。',
+        header: '取消全部掃描',
+        message: '確定要取消並捨棄所有尚未儲存的收據紀錄嗎？已輸入的資料將會遺失。',
         buttons: [
           {
-            text: '繼續掃描',
+            text: '繼續檢視',
             role: 'cancel',
             cssClass: 'secondary'
           },
           {
-            text: '取消全部',
+            text: '捨棄全部',
             role: 'destructive',
             handler: () => {
               // Navigate back based on context
@@ -850,16 +846,18 @@ export class AddTransactionPagePage implements OnInit {
     this.txnType = 'expense';
     
     // 直接使用共用的 EXPENSE_CATEGORIES 進行比對
-    let selectedCategory = EXPENSE_CATEGORIES.find(cat => cat.name === transaction.category);
+    const allExpCats = this.financeVar.getAllExpenseCategories();
+    let selectedCategory = allExpCats.find(cat => cat.name === transaction.category);
+    
     if (!selectedCategory) {
-      for (const cat of EXPENSE_CATEGORIES) {
+      for (const cat of allExpCats) {
         if (transaction.category?.includes(cat.name) || cat.name.includes(transaction.category)) {
           selectedCategory = cat;
           break;
         }
       }
       if (!selectedCategory) {
-        selectedCategory = EXPENSE_CATEGORIES.find(cat => cat.name === '其他') || EXPENSE_CATEGORIES[0];
+        selectedCategory = allExpCats.find(cat => cat.name === '其他') || allExpCats[0];
       }
     }
     
@@ -916,14 +914,16 @@ export class AddTransactionPagePage implements OnInit {
       }
       
       this.prefillFormFromAITransaction(this.aiTransactions[this.currentTransactionIndex]);
+      this.updateValidationErrors();
     }
   }
   
   previousAITransaction() {
     if (this.currentTransactionIndex > 0) {
-      this.syncFormToAITransaction(); // Save their current edits to the array
+      this.syncFormToAITransaction(); 
       this.currentTransactionIndex--;
       this.prefillFormFromAITransaction(this.aiTransactions[this.currentTransactionIndex]);
+      this.updateValidationErrors(); // 換頁後檢查新頁面有沒有錯
     }
   }
   
@@ -942,6 +942,25 @@ export class AddTransactionPagePage implements OnInit {
       if (this.isAIScanningMode) {
         this.syncFormToAITransaction();
         
+
+        const batchValidation = this.checkBatchValidation();
+        if (batchValidation !== null) {
+            // 如果驗證失敗，自動把畫面跳轉到有問題的那一張，並顯示錯誤
+            this.currentTransactionIndex = batchValidation.index;
+            this.prefillFormFromAITransaction(this.aiTransactions[this.currentTransactionIndex]);
+            this.currentErrors = batchValidation.errors; 
+            
+            if (saveButton) saveButton.removeAttribute('disabled');
+            
+            const alert = await this.alertController.create({
+                header: '資料有誤',
+                message: `第 ${batchValidation.index + 1} 筆收據的資料不符合儲存條件 (如餘額不足)，請檢查畫面的紅字提示並修正。`,
+                buttons: ['確定']
+            });
+            await alert.present();
+            return; // 中止儲存程序，讓用戶自己修
+        }
+
         for (let i = 0; i < this.aiTransactions.length; i++) {
           const aiTxn = this.aiTransactions[i];
           const amount = parseFloat(aiTxn.amount) || 0;
@@ -1112,5 +1131,103 @@ export class AddTransactionPagePage implements OnInit {
         }
       }
     });
+  }
+
+  async removeCurrentAITransaction() {
+    const alert = await this.alertController.create({
+      header: '確認移除',
+      message: `確定要捨棄第 ${this.currentTransactionIndex + 1} 筆收據的掃描紀錄嗎？`,
+      buttons: [
+        { text: '保留', role: 'cancel' },
+        { 
+          text: '捨棄', 
+          role: 'destructive',
+          handler: () => {
+            this.aiTransactions.splice(this.currentTransactionIndex, 1);
+            
+            if (this.aiTransactions.length === 0) {
+              // 如果全部被刪光了，自動關閉頁面
+              this.isAIScanningMode = false;
+              this.performGoBack();
+            } else {
+              // 防越界處理
+              if (this.currentTransactionIndex >= this.aiTransactions.length) {
+                this.currentTransactionIndex = this.aiTransactions.length - 1;
+              }
+              // 載入新的當前交易，並清空錯誤
+              this.prefillFormFromAITransaction(this.aiTransactions[this.currentTransactionIndex]);
+              this.currentErrors = [];
+            }
+          }
+        }
+      ]
+    });
+    await alert.present();
+  }
+
+  private checkBatchValidation(): { index: number, errors: string[] } | null {
+    const simulatedBalances = new Map<string, number>(); // 用來記錄每一筆扣完後的累加餘額
+    
+    for (let i = 0; i < this.aiTransactions.length; i++) {
+        const txn = this.aiTransactions[i];
+        const errors: string[] = [];
+        
+        const amount = parseFloat(txn.amount) || 0;
+        const accountId = txn.accountId;
+        
+        let rate = txn.exchangeRate || txn.exRate;
+        let account = null;
+        
+        if (accountId) {
+            account = this.financeVar.getAccounts().find(a => a.id === accountId);
+            // 初始化虛擬餘額
+            if (!simulatedBalances.has(accountId)) {
+                simulatedBalances.set(accountId, this.getAccBalance(accountId));
+            }
+        }
+        
+        // 匯率計算同步
+        if (!rate) {
+            rate = 1;
+            if (account && txn.currency !== account.currency) {
+                const fromRate = this.realExchangeRates[txn.currency] || 1;
+                const toRate = this.realExchangeRates[account.currency] || 1;
+                rate = toRate / fromRate;
+            }
+        }
+        rate = Number(Number(rate).toFixed(4));
+        
+        // 基本檢查
+        if (isNaN(amount) || amount <= 0) errors.push('請輸入大於 0 的金額');
+        if (!accountId) errors.push('請選擇付款帳戶');
+        if (!txn.category) errors.push('請選擇交易分類');
+        
+        // 累積餘額檢查
+        if (amount > 0 && accountId && account) {
+            const txAmount = amount * rate;
+            let currentBal = simulatedBalances.get(accountId)!;
+            
+            if (account.type === 'transit') {
+                if (!account.autoTopUp) {
+                    let actualLimit = currentBal;
+                    if (account.allowNegative) {
+                        actualLimit = (account.negativeMode === 'once' && currentBal < 0) ? 0 : currentBal + (account.negativeLimit || 0);
+                    }
+                    if (txAmount > actualLimit) {
+                        errors.push(`【${account.name}】連續扣除後餘額將不足`);
+                    }
+                }
+            } else if (account.type !== 'credit') {
+                if (currentBal - txAmount < 0) {
+                    errors.push(`【${account.name}】連續扣除後餘額將不足`);
+                }
+            }
+            // 寫入扣除後的虛擬餘額，供下一筆收據檢查
+            simulatedBalances.set(accountId, currentBal - txAmount);
+        }
+        
+        if (errors.length > 0) return { index: i, errors }; // 只要有一張錯，馬上回傳錯在哪一張
+    }
+    return null; // 全數通過
   }
 }

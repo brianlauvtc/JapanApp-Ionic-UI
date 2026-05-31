@@ -64,6 +64,24 @@
 
     <ion-list inset="true" class="custom-module-list">
       <ion-list-header>
+        <ion-label color="medium">分類管理</ion-label>
+      </ion-list-header>
+
+      <div class="setting-module-card">
+        <ion-item lines="none" class="transparent-item" button detail="true" (click)="openCategoryManager()">
+          <div class="icon-wrapper" slot="start" style="background: rgba(var(--ion-color-primary-rgb), 0.1);">
+            <ion-icon name="grid-outline" color="primary"></ion-icon>
+          </div>
+          <ion-label>
+            <h3>自訂交易分類</h3>
+            <p>新增與管理專屬記帳類別，支援 AI 智慧補全。</p>
+          </ion-label>
+        </ion-item>
+      </div>
+    </ion-list>
+
+    <ion-list inset="true" class="custom-module-list">
+      <ion-list-header>
         <ion-label color="medium">數據管理</ion-label>
       </ion-list-header>
 
@@ -109,3 +127,98 @@
     </div>
   </ion-toolbar>
 </ion-footer>
+
+<ion-modal [isOpen]="showCategoryModal" (didDismiss)="closeCategoryManager()" class="custom-category-modal">
+  <ng-template>
+    <ion-header class="ion-no-border">
+      <ion-toolbar>
+        <ion-title>自訂分類管理</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="closeCategoryManager()" color="primary" style="font-weight: 600;">完成</ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+
+    <ion-content class="modal-bg-light">
+      
+      <div class="segment-wrapper">
+        <ion-segment [(ngModel)]="catType" mode="ios">
+          <ion-segment-button value="expense"><ion-label>支出</ion-label></ion-segment-button>
+          <ion-segment-button value="income"><ion-label>收入</ion-label></ion-segment-button>
+        </ion-segment>
+      </div>
+
+      <div class="add-category-card">
+        <div class="card-header">
+          <h3>✨ {{ isEditCatMode ? '編輯' : '新增' }}{{ catType === 'expense' ? '支出' : '收入' }}分類</h3>
+        </div>
+        
+        <div class="input-group">
+          <div class="input-row with-ai">
+            <div class="input-box fill">
+              <label>中文名稱</label>
+              <input type="text" [(ngModel)]="newCat.name" placeholder="例：演唱會門票">
+            </div>
+            <ion-button fill="clear" class="ai-magic-btn" (click)="generateCatWithAI()" [disabled]="!newCat.name || !financeVar.getAppData()?.settings?.apiKey">
+              <ion-icon name="color-wand" slot="start"></ion-icon> AI 補全
+            </ion-button>
+          </div>
+          
+          <div class="input-row split">
+            <div class="input-box fill">
+              <label>系統英文 ID</label>
+              <input type="text" [(ngModel)]="newCat.id" placeholder="例：concert_ticket">
+            </div>
+            <div class="input-box emoji-box">
+              <label>圖示</label>
+              <input type="text" [(ngModel)]="newCat.icon" placeholder="🎫">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions" style="display: flex; gap: 12px; margin-top: 20px;">
+          <ion-button *ngIf="isEditCatMode" expand="block" fill="outline" color="medium" (click)="cancelCatEdit()" style="flex: 1; margin: 0; --border-radius: 12px;">
+            取消
+          </ion-button>
+          
+          <ion-button expand="block" class="save-cat-btn" (click)="addCustomCategory()" [disabled]="!newCat.name || !newCat.id || !newCat.icon" [style.flex]="isEditCatMode ? '2' : '1'" style="margin: 0; --border-radius: 12px;">
+            <ion-icon [name]="isEditCatMode ? 'save-outline' : 'add-circle'" slot="start"></ion-icon> 
+            {{ isEditCatMode ? '儲存修改' : '儲存分類' }}
+          </ion-button>
+        </div>
+      </div>
+
+      <div class="category-list-section">
+        <h3 class="section-title">已建立的自訂項目</h3>
+        
+        <ion-list inset="true" class="custom-cat-list" *ngIf="customCategories.length > 0">
+          <ion-item *ngFor="let cat of customCategories" lines="full">
+            <div class="cat-icon-box" slot="start">{{ cat.icon }}</div>
+            <ion-label>
+              <h2>{{ cat.name }}</h2>
+              <p>ID: <span>{{ cat.id }}</span></p>
+            </ion-label>
+            
+            <div slot="end" style="display: flex; gap: 4px;">
+              <ion-button fill="clear" color="primary" (click)="editCustomCategory(cat)">
+                <ion-icon name="pencil-outline" slot="icon-only"></ion-icon>
+              </ion-button>
+              <ion-button fill="clear" color="danger" (click)="deleteCustomCategory(cat.id)">
+                <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+              </ion-button>
+            </div>
+          </ion-item>
+        </ion-list>
+        
+        <div class="empty-state" *ngIf="customCategories.length === 0">
+          <div class="empty-icon">
+            <ion-icon name="layers-outline"></ion-icon>
+          </div>
+          <p>目前沒有自訂{{ catType === 'expense' ? '支出' : '收入' }}分類</p>
+          <span>在上方輸入名稱並點擊 AI 補全來新增吧！</span>
+        </div>
+      </div>
+
+    </ion-content>
+  </ng-template>
+</ion-modal>

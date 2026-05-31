@@ -71,11 +71,11 @@ export class AIProcessingPage implements OnInit {
       const base64Data = await this.convertPhotoToBase64(activePhoto);
       const parsedResults = await this.aiService.analyzeReceiptImage(base64Data);
      
-
+      const dynamicCategoryMap = this.financeVar.getCategoryMap();
       if (parsedResults && parsedResults.length > 0) {
         
         parsedResults.forEach((tx: any) => {
-          const mappedCategoryName = CATEGORY_MAP[tx.category] || '其他';
+          const mappedCategoryName = dynamicCategoryMap[tx.category] || '其他';
           this.extractedTransactions.push({
             amount: tx.amount || 0,
             currency: tx.currency || 'HKD',

@@ -456,3 +456,114 @@ ion-list.settings-list, ion-list.items-list {
     }
   }
 }
+
+
+/* 🌟 AI 掃描現代化導航列設計 */
+.modern-ai-nav {
+  margin: 16px;
+  background: white;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(var(--ion-color-primary-rgb), 0.1);
+  position: relative;
+  overflow: hidden;
+
+ 
+  .nav-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+
+    .nav-info {
+      display: flex;
+      flex-direction: column;
+
+      .title-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 15px;
+
+        ion-icon {
+          font-size: 18px;
+        }
+      }
+
+      .counter {
+        font-size: 13px;
+        color: var(--ion-color-medium);
+        margin-top: 4px;
+        font-weight: 500;
+      }
+    }
+
+    /* 捨棄按鈕的警示設計 */
+    .delete-btn {
+      --padding-start: 10px;
+      --padding-end: 10px;
+      margin: 0;
+      font-weight: 600;
+      font-size: 13px;
+      letter-spacing: 0.5px;
+      background: rgba(var(--ion-color-danger-rgb), 0.08); /* 淡紅色背景 */
+      border-radius: 8px;
+
+      &:active {
+        background: rgba(var(--ion-color-danger-rgb), 0.15);
+      }
+
+      ion-icon {
+        font-size: 16px;
+      }
+    }
+  }
+
+  /* 圓潤加粗的進度條 */
+  .custom-progress {
+    height: 6px;
+    border-radius: 4px;
+    margin-bottom: 16px;
+    --background: rgba(var(--ion-color-primary-rgb), 0.1);
+    --progress-background: var(--ion-color-primary);
+  }
+
+  .nav-controls {
+    display: flex;
+    gap: 12px;
+
+    .pager-btn {
+      margin: 0;
+      flex: 1;
+      height: 42px;
+      font-weight: 600;
+      font-size: 14px;
+      --border-radius: 10px;
+      --box-shadow: none;
+
+      /* 上一張按鈕：低調邊框 */
+      &.prev {
+        --color: var(--ion-color-medium);
+        --border-color: #e5e7eb;
+        --border-width: 1.5px;
+      }
+
+      /* 下一張按鈕：主題色弱化背景 (Tinted Button) */
+      &.next {
+        --background: rgba(var(--ion-color-primary-rgb), 0.1);
+        --color: var(--ion-color-primary);
+
+        &:not([disabled]) {
+          &:active {
+            --background: rgba(var(--ion-color-primary-rgb), 0.2);
+          }
+        }
+      }
+
+      &[disabled] {
+        opacity: 0.4;
+      }
+    }
+  }
+}

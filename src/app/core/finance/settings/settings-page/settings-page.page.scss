@@ -190,3 +190,221 @@ ion-footer ion-toolbar {
     }
   }
 }
+
+
+/* 🌟 自訂分類 Modal 專屬樣式 */
+.custom-category-modal {
+  --background: #f4f5f8; // iOS 常見的淺灰背景色，讓白卡片浮現出來
+
+  .modal-bg-light {
+    --background: transparent;
+  }
+
+  .segment-wrapper {
+    padding: 16px 20px 8px 20px;
+    
+    ion-segment {
+      background: rgba(0, 0, 0, 0.05);
+      border-radius: 10px;
+    }
+  }
+
+  /* 新增分類卡片設計 */
+  .add-category-card {
+    background: white;
+    margin: 12px 16px;
+    padding: 16px;
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.02);
+
+    .card-header h3 {
+      margin: 0 0 16px 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--ion-color-dark);
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+
+      .input-row {
+        display: flex;
+        gap: 12px;
+
+        &.with-ai {
+          align-items: flex-end;
+        }
+
+        &.split {
+          .emoji-box {
+            width: 80px; // Emoji 輸入框比較小
+            input { text-align: center; font-size: 18px; }
+          }
+        }
+
+        .input-box {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+
+          &.fill { flex: 1; }
+
+          label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--ion-color-medium);
+            padding-left: 4px;
+          }
+
+          input {
+            background: #f8f9fa;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            height: 44px;
+            padding: 0 12px;
+            font-size: 14px;
+            color: var(--ion-color-dark);
+            outline: none;
+            transition: all 0.2s ease;
+
+            &:focus {
+              border-color: var(--ion-color-primary);
+              background: white;
+              box-shadow: 0 0 0 3px rgba(var(--ion-color-primary-rgb), 0.1);
+            }
+          }
+        }
+      }
+
+      /* AI 魔法按鈕設計 */
+      .ai-magic-btn {
+        margin: 0;
+        height: 44px;
+        --color: var(--ion-color-tertiary);
+        background: linear-gradient(135deg, rgba(var(--ion-color-tertiary-rgb), 0.15), rgba(var(--ion-color-tertiary-rgb), 0.05));
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 13px;
+        letter-spacing: 0.5px;
+        --box-shadow: none;
+
+        &:not([disabled]):active {
+          background: rgba(var(--ion-color-tertiary-rgb), 0.25);
+        }
+      }
+    }
+
+    .save-cat-btn {
+      margin-top: 20px;
+      margin-bottom: 0;
+      height: 44px;
+      --border-radius: 12px;
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+  }
+
+  /* 分類列表設計 */
+  .category-list-section {
+    margin-top: 24px;
+
+    .section-title {
+      margin: 0 20px 8px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ion-color-medium);
+      text-transform: uppercase;
+    }
+
+    .custom-cat-list {
+      margin: 0 16px;
+      border-radius: 16px;
+      background: white;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
+
+      ion-item {
+        --background: transparent;
+        --padding-start: 16px;
+        --inner-padding-end: 8px;
+
+        .cat-icon-box {
+          width: 40px;
+          height: 40px;
+          background: #f4f5f8;
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 20px;
+          margin-right: 14px;
+        }
+
+        h2 {
+          font-weight: 600;
+          font-size: 15px;
+          margin-bottom: 4px;
+        }
+
+        p {
+          font-size: 12px;
+          span {
+            font-family: monospace;
+            background: #f0f1f3;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--ion-color-medium);
+          }
+        }
+      }
+    }
+
+    /* 空狀態設計 */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      text-align: center;
+
+      .empty-icon {
+        width: 64px;
+        height: 64px;
+        background: rgba(var(--ion-color-medium-rgb), 0.1);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 16px;
+
+        ion-icon {
+          font-size: 32px;
+          color: var(--ion-color-medium);
+        }
+      }
+
+      p {
+        margin: 0 0 6px 0;
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--ion-color-dark);
+      }
+
+      span {
+        font-size: 13px;
+        color: var(--ion-color-medium);
+      }
+    }
+  }
+}
+
+.save-cat-btn {
+      // margin-top: 20px; 👉 刪除這行，因為 HTML 的 style 已經有寫 margin-top 了
+      // margin-bottom: 0; 👉 刪除這行
+      height: 44px;
+      font-weight: 600;
+      letter-spacing: 1px;
+    }

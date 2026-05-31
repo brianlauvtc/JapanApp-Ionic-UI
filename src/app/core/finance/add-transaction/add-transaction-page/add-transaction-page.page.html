@@ -16,40 +16,45 @@
 </ion-header>
 
 <ion-content class="add-transaction-content ion-padding-bottom">
-  <div class="modern-step-indicator" *ngIf="isAIScanningMode">
-    <div class="step active"><span class="step-num">✓</span><span class="step-text">上傳</span></div>
-    <div class="step-line active"></div>
-    <div class="step active"><span class="step-num">✓</span><span class="step-text">分析</span></div>
-    <div class="step-line active"></div>
-    <div class="step active"><span class="step-num">3</span><span class="step-text">確認</span></div>
-  </div>
-  
-  <!-- AI Scanning Navigation -->
-  <div class="ai-navigation-section" *ngIf="isAIScanningMode && aiTransactions.length > 1">
-    <div class="progress-indicator">
-      <p>Receipt {{currentTransactionIndex + 1}} of {{aiTransactions.length}}</p>
-      <ion-progress-bar 
-        [value]="(currentTransactionIndex + 1) / aiTransactions.length" 
-        [color]="'primary'">
-      </ion-progress-bar>
+  <div class="modern-ai-nav" *ngIf="isAIScanningMode && aiTransactions.length > 0">
+    <div class="nav-top">
+      <div class="nav-info">
+        <div class="title-row">
+          <ion-icon name="scan-outline" color="primary"></ion-icon>
+          <strong>AI 辨識核對</strong>
+        </div>
+        <span class="counter">第 {{currentTransactionIndex + 1}} / {{aiTransactions.length}} 張收據</span>
+      </div>
+      
+      <ion-button fill="clear" color="danger" class="delete-btn" (click)="removeCurrentAITransaction()">
+        <ion-icon name="trash-outline" slot="start"></ion-icon>
+        捨棄此張
+      </ion-button>
     </div>
-    <div class="navigation-buttons">
+
+    <ion-progress-bar 
+      [value]="(currentTransactionIndex + 1) / aiTransactions.length" 
+      class="custom-progress">
+    </ion-progress-bar>
+
+    <div class="nav-controls">
       <ion-button 
         fill="outline" 
+        class="pager-btn prev" 
         (click)="previousAITransaction()" 
-        [disabled]="currentTransactionIndex === 0"
-        size="small">
-        Previous
+        [disabled]="currentTransactionIndex === 0">
+        <ion-icon name="chevron-back" slot="start"></ion-icon> 上一張
       </ion-button>
+
       <ion-button 
+        fill="solid" 
+        class="pager-btn next" 
         (click)="nextAITransaction()" 
-        [disabled]="currentTransactionIndex === aiTransactions.length - 1"
-        size="small">
-        Next
+        [disabled]="currentTransactionIndex === aiTransactions.length - 1">
+        下一張 <ion-icon name="chevron-forward" slot="end"></ion-icon>
       </ion-button>
     </div>
   </div>
-  
   <div [formGroup]="transactionForm">
     
     <div class="segment-container" *ngIf="!isAIScanningMode">

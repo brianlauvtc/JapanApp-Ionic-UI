@@ -4,6 +4,7 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import { AppData, Account, Transaction, Fund, Plan, AIHistoryItem } from '../model/finance.model';
 import { AlertController } from '@ionic/angular';
 import { FileSyncService } from './file-sync.service';
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, CATEGORY_MAP } from '../.././../../environments/categories';
 
 @Injectable({
   providedIn: 'root'
@@ -250,6 +251,31 @@ export class FinanceVarService {
     });
 
     await alert.present();
+  }
+
+  // 🌟 動態獲取所有支出分類 (靜態 + 自訂)
+  getAllExpenseCategories() {
+    const custom = this.getAppData().customCategories?.filter(c => c.type === 'expense') || [];
+    return [...EXPENSE_CATEGORIES, ...custom];
+  }
+
+  // 🌟 動態獲取所有收入分類 (靜態 + 自訂)
+  getAllIncomeCategories() {
+    const custom = this.getAppData().customCategories?.filter(c => c.type === 'income') || [];
+    return [...INCOME_CATEGORIES, ...custom];
+  }
+
+  // 🌟 動態產生供 AI 與系統翻譯用的 Map 對照表
+  getCategoryMap() {
+    const map = { ...CATEGORY_MAP };
+    const custom = this.getAppData().customCategories || [];
+    custom.forEach(c => map[c.id] = c.name);
+    return map;
+  }
+
+  // 🌟 儲存/刪除自訂分類 (會自動觸發實體檔案備份)
+  updateCustomCategories(categories: any[]) {
+    this.updateAppData({ customCategories: categories });
   }
   
 }

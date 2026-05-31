@@ -80,4 +80,5 @@ export interface AppData {
   aiHistory: AIHistoryItem[];
   lastAITime: string | null;
   lastRolloverDate: string | null;
+  customCategories?: { id: string, name: string, icon: string, type: 'expense' | 'income' }[];
 }
