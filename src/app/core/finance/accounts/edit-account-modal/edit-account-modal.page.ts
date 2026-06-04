@@ -57,7 +57,7 @@ export class EditAccountModalPage implements OnInit {
 
     this.accountForm.get('type')?.valueChanges.subscribe(type => {
       const balanceCtrl = this.accountForm.get('initBalance');
-      if (type === 'loan' || type === 'transit') {
+      if (type === 'loan' || type === 'transit' || type === 'credit') {
         // 借款帳戶：只要求必填，允許負數
         balanceCtrl?.setValidators([Validators.required]);
       } else {
@@ -144,13 +144,16 @@ export class EditAccountModalPage implements OnInit {
       topUpTrigger: formValue.topUpTrigger
     };
 
+    const isIncome = diff > 0;
+    const absDiff = Math.abs(diff);
+
     const adjustmentTxn: Transaction = {
       id: `adj_${Date.now()}`,
       type: diff > 0 ? 'income' : 'expense',
       amount: Math.abs(diff),
       currency: oldAccount.currency,
       exRate: 1,
-      accDeduction: Math.abs(diff),
+      accDeduction: isIncome ? -absDiff : absDiff,
       accountId: this.editAccountId!,
       date: moment().format('YYYY-MM-DD'),
       note: '帳戶餘額手動調整'

@@ -19,17 +19,19 @@ export class TransactionItemComponent {
   
   constructor(private financeService: FinanceService) {}
 
-  getTransactionDisplay(): { prefix: string; color: string; note: string; displayHtml: string } {
+  getTransactionDisplay(): { prefix: string; color: string; note: string; displayHtml: string; catName: string } {
 
     if (!this.transaction) {
-      return { prefix: '', color: '', note: '', displayHtml: '' };
+      return { prefix: '', color: '', note: '', displayHtml: '', catName: '' };
     }
 
-    let prefix = '', color = 'text-gray-800', note = this.transaction.note || '', catName = this.transaction.category;
+    let prefix = '';
+    let color = 'text-gray-800';
+    let note = this.transaction.note || '';
+    let catName = this.transaction.category;
     let displayAmt = this.transaction.amount;
     const currenciesObj = currencies as any;
     let symbol = currenciesObj[this.transaction.currency]?.symbol || '$';
-    let displayHtml = `${symbol}${Number(this.transaction.amount).toLocaleString()}`;
     let accSymbol = null;
 
     const appData = this.financeService['financeVar'].getAppData();
@@ -38,19 +40,19 @@ export class TransactionItemComponent {
       accSymbol = currenciesObj[acc.currency]?.symbol || '$';
     }
 
-    // Handle different transaction types
+    // 判斷交易類型與正負號
     if (this.transaction.type.startsWith('sys_')) {
       catName = '系統調整';
       color = 'text-gray-500';
     } else if (this.transaction.type === 'expense') {
-      prefix = '-';
+      prefix = '-'; // 支出加上負號
       color = 'text-danger';
       if (this.context === 'home') {
         const accountName = appData.accounts.find(a => a.id === this.transaction.accountId)?.name || '未知';
         note = `${accountName} · ${note}`;
       }
     } else if (this.transaction.type === 'income') {
-      prefix = '+';
+      prefix = '+'; // 收入加上正號
       color = 'text-success';
       if (this.context === 'home') {
         const accountName = appData.accounts.find(a => a.id === this.transaction.accountId)?.name || '未知';
@@ -67,14 +69,14 @@ export class TransactionItemComponent {
         color = 'text-medium';
       } else if (this.context === 'account') {
         if (this.contextId === this.transaction.accountId) {
-          prefix = '-';
+          prefix = '-'; // 轉出加上負號
           color = 'text-danger';
           note = `轉出至 ${toAcc?.name}`;
           const baseVal = this.transaction.amount * currenciesObj[this.transaction.currency].rate;
           displayAmt = baseVal / currenciesObj[fromAcc!.currency].rate;
           symbol = currenciesObj[fromAcc!.currency].symbol;
         } else if (this.contextId === this.transaction.toAccountId) {
-          prefix = '+';
+          prefix = '+'; // 轉入加上正號
           color = 'text-success';
           note = `由 ${fromAcc?.name} 轉入`;
           const baseVal = this.transaction.amount * currenciesObj[this.transaction.currency].rate;
@@ -84,12 +86,18 @@ export class TransactionItemComponent {
       }
     }
 
-    // Handle currency conversion display
+    // ✨ 修正：在這裡組合 displayHtml，確保 prefix (正負號) 被加入，且使用正確的 displayAmt
+    let displayHtml = '';
     if (this.context === 'account' && acc && this.transaction.currency !== acc.currency) {
-      displayHtml = `${accSymbol}${Math.abs(this.transaction.accDeduction).toLocaleString()} <small class="text-small text-medium">(${symbol}${this.transaction.amount.toLocaleString()})</small>`;
+      // 跨幣種顯示
+      displayHtml = `${prefix}${accSymbol}${Math.abs(this.transaction.accDeduction).toLocaleString()} <small class="text-small text-medium">(${symbol}${this.transaction.amount.toLocaleString()})</small>`;
+    } else {
+      // 一般顯示
+      displayHtml = `${prefix}${symbol}${Number(displayAmt).toLocaleString()}`;
     }
 
-    return { prefix, color, note, displayHtml };
+    // ✨ 修正：把 catName 也回傳，讓 HTML 畫面的 {{ getTransactionDisplay().catName }} 能夠正確讀取
+    return { prefix, color, note, displayHtml, catName };
   }
 
   getCurrencySymbol(): string {

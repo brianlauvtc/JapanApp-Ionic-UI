@@ -86,6 +86,16 @@
       </ion-list-header>
 
       <div class="setting-module-card">
+        
+        <ion-item>
+          <ion-label>
+            <h2>從 Money+ 匯入資料</h2>
+            <p>請先確保兩邊的「帳戶名稱」完全一致</p>
+          </ion-label>
+          <ion-button slot="end" color="primary" (click)="triggerCsvUpload()">選擇 CSV 匯入</ion-button>
+          <input type="file" id="moneyPlusCsvUpload" accept=".csv" (change)="onCsvFileSelected($event)" hidden>
+        </ion-item>
+
         <ion-item lines="none" class="transparent-item">
           <div class="icon-wrapper" slot="start">
             <ion-icon name="cloud-download-outline" color="tertiary"></ion-icon>
