@@ -6,6 +6,9 @@
 
 <ion-content class="analysis-content">
   <ion-segment [(ngModel)]="aiTab" (ionChange)="switchTab(aiTab)">
+    <ion-segment-button value="stats">
+      <ion-label>📊 統計圖表</ion-label>
+    </ion-segment-button>
     <ion-segment-button value="ai">
       <ion-label>✨ AI 顧問</ion-label>
     </ion-segment-button>
@@ -13,6 +16,10 @@
       <ion-label>未來計畫</ion-label>
     </ion-segment-button>
   </ion-segment>
+
+  <div *ngIf="aiTab === 'stats'">
+    <app-analysis-statistics></app-analysis-statistics>
+  </div>
 
   <div *ngIf="aiTab === 'ai'" class="ai-content">
     <div *ngIf="!hasAPIKey()" class="api-key-warning">

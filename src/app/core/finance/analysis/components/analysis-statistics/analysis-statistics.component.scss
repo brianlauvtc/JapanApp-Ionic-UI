@@ -1,0 +1,558 @@
+/* PREMIUM DESIGN SYSTEM: Standard Accounting Dashboard Stylesheet */
+
+:host {
+  display: block;
+  padding: 12px 16px 32px 16px;
+  background: var(--ion-background-color, #faf9f6);
+  min-height: 100%;
+}
+
+/* 1. Header & Filters Section */
+.filter-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+  transition: all 0.3s ease;
+}
+
+html.dark .filter-header-bar {
+  background: rgba(30, 41, 59, 0.4);
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+.month-picker-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.picker-icon {
+  font-size: 20px;
+  color: var(--ion-color-primary, #6366f1);
+}
+
+.premium-select {
+  --placeholder-color: var(--ion-color-step-700, #475569);
+  --placeholder-opacity: 1;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--ion-color-step-900, #0f172a);
+}
+
+.export-button {
+  --padding-start: 8px;
+  --padding-end: 8px;
+  margin: 0;
+  font-size: 18px;
+}
+
+/* 2. Global Empty State fallback layout (Rec 8) */
+.global-empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 70vh;
+  width: 100%;
+}
+
+.empty-card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  padding: 32px 24px;
+  text-align: center;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.03);
+  max-width: 400px;
+  width: 100%;
+}
+
+html.dark .empty-card {
+  background: rgba(30, 41, 59, 0.6);
+  border-color: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.animation-container {
+  margin-bottom: 20px;
+}
+
+.piggy-bank-illustration {
+  font-size: 64px;
+  display: inline-block;
+  animation: bounce 2s infinite ease-in-out;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.empty-card h2 {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 10px 0;
+  color: var(--ion-color-step-900, #0f172a);
+}
+
+.empty-card p {
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0 0 24px 0;
+  color: var(--ion-color-step-600, #64748b);
+}
+
+.cta-button {
+  --border-radius: 12px;
+  font-weight: 600;
+  height: 48px;
+}
+
+/* 3. Glassmorphic Cards Styling System */
+.glass-card {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.02);
+  margin-bottom: 16px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+html.dark .glass-card {
+  background: rgba(30, 41, 59, 0.55);
+  border-color: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+/* 4. KPI Summary Cards Grid */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+@media (min-width: 768px) {
+  .kpi-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.kpi-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+}
+
+.kpi-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--ion-color-primary, #6366f1);
+  font-size: 22px;
+}
+
+.kpi-content {
+  flex: 1;
+}
+
+.kpi-content h3 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin: 0 0 4px 0;
+  color: var(--ion-color-step-500, #64748b);
+  font-weight: 600;
+}
+
+.kpi-num {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ion-color-step-900, #0f172a);
+}
+
+.kpi-values {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.kpi-values .exp-val {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ef4444; /* Premium Coral Red */
+}
+
+.kpi-values .inc-val {
+  font-size: 13px;
+  font-weight: 600;
+  color: #10b981; /* Premium Emerald */
+}
+
+.kpi-subtitle {
+  font-size: 11px;
+  margin: 2px 0 0 0;
+  color: var(--ion-color-step-600, #64748b);
+}
+
+/* Financial health coloring (excellent, warning, deficit) */
+.savings-card.saving-excellent {
+  border-left: 5px solid #10b981;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(255, 255, 255, 0.75));
+}
+.savings-card.saving-excellent .kpi-num,
+.savings-card.saving-excellent .kpi-subtitle {
+  color: #10b981 !important;
+  font-weight: 700;
+}
+.savings-card.saving-excellent .kpi-icon-wrapper {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+.savings-card.saving-warning {
+  border-left: 5px solid #f59e0b;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.05), rgba(255, 255, 255, 0.75));
+}
+.savings-card.saving-warning .kpi-num,
+.savings-card.saving-warning .kpi-subtitle {
+  color: #f59e0b !important;
+  font-weight: 700;
+}
+.savings-card.saving-warning .kpi-icon-wrapper {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+
+.savings-card.saving-deficit {
+  border-left: 5px solid #ef4444;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.05), rgba(255, 255, 255, 0.75));
+}
+.savings-card.saving-deficit .kpi-num,
+.savings-card.saving-deficit .kpi-subtitle {
+  color: #ef4444 !important;
+  font-weight: 700;
+}
+.savings-card.saving-deficit .kpi-icon-wrapper {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+html.dark {
+  .savings-card.saving-excellent {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(30, 41, 59, 0.55));
+  }
+  .savings-card.saving-warning {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(30, 41, 59, 0.55));
+  }
+  .savings-card.saving-deficit {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(30, 41, 59, 0.55));
+  }
+}
+
+/* 5. Premium Segment Toggle */
+.toggle-segment-container {
+  margin-bottom: 16px;
+}
+
+.premium-segment {
+  --background: rgba(0, 0, 0, 0.03);
+  border-radius: 12px;
+  padding: 4px;
+}
+
+html.dark .premium-segment {
+  --background: rgba(255, 255, 255, 0.03);
+}
+
+/* 6. Chart Cards & Containers */
+.chart-card {
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.card-header {
+  margin-bottom: 14px;
+}
+
+.card-header h2 {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--ion-color-step-800, #1e293b);
+}
+
+.chart-wrapper {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 200px;
+}
+
+/* 7. Category Ranked progress bars & collapsible accordions */
+.categories-list-card {
+  padding-bottom: 4px;
+}
+
+.category-item-container {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+  padding: 10px 0;
+  
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+html.dark .category-item-container {
+  border-color: rgba(255, 255, 255, 0.04);
+}
+
+.category-header-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 8px;
+  transition: background 0.2s ease;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.02);
+  }
+}
+
+html.dark .category-header-row:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.active-row {
+  background: rgba(0, 0, 0, 0.015);
+}
+
+html.dark .active-row {
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.category-icon {
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+html.dark .category-icon {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.category-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.category-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.category-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ion-color-step-800, #1e293b);
+}
+
+.category-percentage {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ion-color-step-500, #64748b);
+  background: rgba(0, 0, 0, 0.04);
+  padding: 1px 6px;
+  border-radius: 12px;
+}
+
+html.dark .category-percentage {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.progress-bar-container {
+  height: 6px;
+  width: 100%;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+html.dark .progress-bar-container {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--ion-color-primary, #6366f1) 0%, #8b5cf6 100%);
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.2);
+  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+
+  &.income-bar {
+    background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.2);
+  }
+
+  &.expense-bar {
+    background: linear-gradient(90deg, #ef4444 0%, #f87171 100%);
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.2);
+  }
+}
+
+.category-amount-arrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.category-amount {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ion-color-step-900, #0f172a);
+}
+
+.arrow-icon {
+  font-size: 14px;
+  color: var(--ion-color-step-400, #94a3b8);
+  transition: transform 0.2s ease;
+}
+
+/* Accordion slide-down styling and transaction lists */
+.accordion-body {
+  padding: 8px 12px 6px 52px;
+  animation: slideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.transaction-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.transaction-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px dotted rgba(0, 0, 0, 0.06);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+html.dark .transaction-item {
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.txn-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.txn-date {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--ion-color-step-400, #94a3b8);
+  letter-spacing: 0.5px;
+}
+
+.txn-note {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ion-color-step-800, #1e293b);
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.txn-right {
+  text-align: right;
+}
+
+.txn-local-val {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ion-color-step-900, #0f172a);
+}
+
+.txn-base-val {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--ion-color-step-500, #64748b);
+  margin-top: 1px;
+}
+
+/* Load More performance-lazy button (Rec 1) */
+.load-more-row {
+  display: flex;
+  justify-content: center;
+  padding-top: 8px;
+}
+
+.load-more-btn {
+  --border-radius: 8px;
+  --border-width: 1px;
+  font-size: 11px;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* 8. Partial empty state for active category direction selection (Expenses or Income) */
+.no-data-notice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--ion-color-step-400, #94a3b8);
+  gap: 10px;
+  min-height: 180px;
+
+  ion-icon {
+    font-size: 40px;
+    color: var(--ion-color-step-300, #cbd5e1);
+  }
+
+  p {
+    font-size: 13px;
+    font-weight: 500;
+    margin: 0;
+  }
+}

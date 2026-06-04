@@ -63,7 +63,7 @@ export class AddTransactionPagePage implements OnInit {
     private financeService: FinanceService,
     private modalCtrl: ModalController,
     private alertController: AlertController,
-    private navParams: NavParams
+    @Optional() private navParams: NavParams
   ) {
     this.isModal = !!this.navParams && !!this.navParams.data;
   }

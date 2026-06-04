@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { FinanceVarService } from '../../service/finance-var.service';
 import { FinanceService } from '../../service/finance.service';
+import { AnalysisStatisticsComponent } from '../components/analysis-statistics/analysis-statistics.component';
 
 @Component({
   selector: 'app-analysis-page',
@@ -8,7 +9,8 @@ import { FinanceService } from '../../service/finance.service';
   styleUrls: ['./analysis-page.page.scss']
 })
 export class AnalysisPagePage implements OnInit {
-  aiTab: 'ai' | 'plans' = 'ai';
+  @ViewChild(AnalysisStatisticsComponent) statsComponent!: AnalysisStatisticsComponent;
+  aiTab: 'stats' | 'ai' | 'plans' = 'stats';
 
   constructor(
     private financeVar: FinanceVarService,
@@ -19,8 +21,21 @@ export class AnalysisPagePage implements OnInit {
     this.checkAutoAI();
   }
 
-  switchTab(tab: 'ai' | 'plans') {
+  ionViewDidEnter() {
+    if (this.statsComponent) {
+      this.statsComponent.ionViewDidEnter();
+    }
+  }
+
+  switchTab(tab: 'stats' | 'ai' | 'plans') {
     this.aiTab = tab;
+    if (tab === 'stats') {
+      setTimeout(() => {
+        if (this.statsComponent) {
+          this.statsComponent.ionViewDidEnter();
+        }
+      }, 50);
+    }
   }
 
   triggerAIAnalysis() {
