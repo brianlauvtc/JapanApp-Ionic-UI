@@ -271,31 +271,28 @@ export class SettingsPagePage implements OnInit {
     let importCount = 0;
     let skipCount = 0;
 
-    // Money+ CSV 欄位順序: 
-    // 0:日期, 1:帳單(分類/轉入帳戶), 2:金額, 3:類型, 4:成員, 5:帳戶(扣款帳戶), 6:帳本, 7:備註
-    
     // 從第 1 行開始，跳過標題列
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i].trim();
       
-      // 跳過空行或無效行（例如第二行通常是 ,,,,,,,）
+      // 跳過空行或無效行
       if (!line || line.startsWith(',,,,')) continue; 
       
       // 使用正則表達式分割逗號，避免備註內的逗號破壞欄位
       const cols = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(col => col.replace(/^"|"$/g, ''));
       if (cols.length < 6) continue;
 
-      const dateStr = cols[0];      // e.g. "2026-06-04"
-      const categoryCol = cols[1];  // e.g. "飲食" 或 "信用卡" (若為轉帳)
+      const dateStr = cols[0];      
+      const categoryCol = cols[1];  // 非轉帳:分類名稱 / 轉帳: 目標帳戶
       const amountStr = cols[2];
-      const typeStr = cols[3];      // e.g. "支出", "收入", "轉帳"
-      const accName = cols[5];      // e.g. "8達通"
+      const typeStr = cols[3];      
+      const accName = cols[5];      // 來源帳戶
       const note = cols[7] || '';
 
       const amount = parseFloat(amountStr);
       if (isNaN(amount)) continue;
 
-      // 匹配來源帳戶
+      // 匹配來源帳戶 (From)
       const fromAcc = accounts.find(a => a.name === accName);
       if (!fromAcc) {
         console.warn(`找不到帳戶: ${accName}，跳過此筆: ${line}`);
@@ -313,7 +310,7 @@ export class SettingsPagePage implements OnInit {
         txType = 'income';
       } else if (typeStr === '轉帳') {
         txType = 'transfer';
-        // 對於 Money+ 的轉帳，「帳單 (categoryCol)」其實是「轉入帳戶」
+        // 🚨 這裡處理你提到的轉帳邏輯：帳單欄位 (categoryCol) 是 To
         const toAcc = accounts.find(a => a.name === categoryCol);
         if (!toAcc) {
           console.warn(`找不到轉入帳戶: ${categoryCol}，跳過此筆: ${line}`);
@@ -322,7 +319,7 @@ export class SettingsPagePage implements OnInit {
         }
         toAccId = toAcc.id;
       } else {
-        continue; // 無法識別的類型
+        continue; 
       }
 
       // 建立 Transaction 物件
@@ -331,19 +328,21 @@ export class SettingsPagePage implements OnInit {
         type: txType,
         amount: amount,
         currency: fromAcc.currency, 
-        exRate: 1, // 預設同幣值匯率為 1
-        accDeduction: amount,
+        exRate: 1, 
+        // ✨ 重要修正：如果是收入，必須存為負數，這樣系統計算餘額時才會增加！
+        accDeduction: txType === 'income' ? -amount : amount, 
         accountId: fromAcc.id,
         date: dateStr,
         note: note !== '' ? note : undefined,
+        // 🚨 這裡處理非轉帳邏輯：把帳單欄位 (categoryCol) 存入 category
         category: txType !== 'transfer' ? categoryCol : '轉帳', 
-        icon: txType === 'transfer' ? '🔄' : '📝' // 給個預設圖示
+        icon: txType === 'transfer' ? '🔄' : '📝' 
       };
 
-      // 處理轉帳的目的地欄位
+      // 處理轉帳的目的地扣款設定
       if (txType === 'transfer' && toAccId) {
         txn.toAccountId = toAccId;
-        txn.toAccDeduction = -amount; // 依照你 finance.service.ts 內的邏輯，負數代表增加餘額
+        txn.toAccDeduction = -amount; // 負數代表目標帳戶增加餘額
       }
 
       newTransactions.push(txn);
@@ -354,7 +353,6 @@ export class SettingsPagePage implements OnInit {
     if (newTransactions.length > 0) {
       const allTxns = [...appData.transactions, ...newTransactions];
       
-      // 更新 App 資料（這會自動寫入 IndexedDB 並觸發 FileSync 儲存檔案）
       this.financeVar.updateAppData({ transactions: allTxns });
       
       const alert = await this.alertCtrl.create({
