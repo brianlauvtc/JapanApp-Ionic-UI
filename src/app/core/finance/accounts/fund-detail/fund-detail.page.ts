@@ -146,6 +146,14 @@ export class FundDetailPage implements OnInit {
     this.renderFundDetail(); // 或 renderHome()
   }
 
+  onMonthPickerChange(event: any) {
+    const val = event.detail.value;
+    if (val) {
+      this.viewedMonth = val.substring(0, 7);
+      this.renderFundDetail();
+    }
+  }
+
   getFund() {
     return this.financeVar.getAppData().funds.find(f => f.id === this.fundId);
   }
@@ -162,13 +170,18 @@ export class FundDetailPage implements OnInit {
     return this.financeService.getFundBalanceUpTo(this.fundId);
   }
 
+  getToday() {
+    return this.financeService.getToday();
+  }
+
   async openAddForm() {
     try {
       const modal = await this.modalController.create({
         component: AddTransactionPagePage,
         componentProps: {
           fundId: this.fundId,
-          context: 'fund'
+          context: 'fund',
+          viewedMonth: this.viewedMonth
         },
         cssClass: 'add-transaction-modal'
       });

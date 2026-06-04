@@ -9,11 +9,25 @@
     <ion-button fill="clear" (click)="changeMonth(-1)" >
       <ion-icon name="chevron-back"></ion-icon>
     </ion-button>
-    <h2 class="month-title">{{ formatMonthView() }}</h2>
+    <h2 class="month-title" id="open-home-month-picker" style="cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;">
+      {{ formatMonthView() }}
+      <ion-icon name="caret-down-outline" style="font-size: 14px; color: var(--ion-color-medium);"></ion-icon>
+    </h2>
     <ion-button fill="clear" (click)="changeMonth(1)">
       <ion-icon name="chevron-forward"></ion-icon>
     </ion-button>
   </div>
+
+  <ion-popover trigger="open-home-month-picker" triggerAction="click" [dismissOnSelect]="true" class="month-picker-popover" mode="ios">
+    <ng-template>
+      <ion-datetime 
+        presentation="month-year" 
+        [value]="viewedMonth" 
+        [max]="getToday()"
+        (ionChange)="onMonthPickerChange($event)">
+      </ion-datetime>
+    </ng-template>
+  </ion-popover>
 
   <div class="net-worth-card">
     <div class="net-worth-header">

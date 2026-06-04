@@ -8,7 +8,16 @@ import { currencies } from '../environment/environment';
   providedIn: 'root'
 })
 export class FinanceService {
-  constructor(private financeVar: FinanceVarService) {}
+  private balanceCache = new Map<string, number>();
+  private fundBalanceCache = new Map<string, number>();
+
+  constructor(private financeVar: FinanceVarService) {
+    // Automatically clear cached balances whenever IndexedDB or the behavior subject updates
+    this.financeVar.appData$.subscribe(() => {
+      this.balanceCache.clear();
+      this.fundBalanceCache.clear();
+    });
+  }
 
   // Currency conversion methods
   getRateToBase(curr: string): number {
@@ -17,8 +26,38 @@ export class FinanceService {
     return currenciesObj[curr].rate / currenciesObj[appData.settings.baseCurrency].rate;
   }
 
+  // Pre-calculate balances for ALL accounts in a single pass over transactions (O(N) instead of O(A * N))
+  getAccountsBalancesUpTo(upToDateStr: string | null = null): { [accountId: string]: number } {
+    const appData = this.financeVar.getAppData();
+    const balances: { [accountId: string]: number } = {};
+    
+    // Initialize
+    appData.accounts.forEach(acc => {
+      balances[acc.id] = acc.type === 'credit' ? -Math.abs(acc.initBalance) : acc.initBalance;
+    });
+    
+    // Single pass
+    appData.transactions.forEach(t => {
+      if (upToDateStr && t.date >= upToDateStr) return;
+      
+      if (balances[t.accountId] !== undefined) {
+        balances[t.accountId] -= t.accDeduction;
+      }
+      if (t.toAccountId && balances[t.toAccountId] !== undefined) {
+        balances[t.toAccountId] += Math.abs(t.toAccDeduction || t.accDeduction);
+      }
+    });
+    
+    return balances;
+  }
+
   // Account balance calculation
   getAccBalanceUpTo(accountId: string, upToDateStr: string | null = null): number {
+    const cacheKey = `${accountId}_${upToDateStr || 'current'}`;
+    if (this.balanceCache.has(cacheKey)) {
+      return this.balanceCache.get(cacheKey)!;
+    }
+
     const appData = this.financeVar.getAppData();
     const acc = appData.accounts.find(a => a.id === accountId);
     if (!acc) return 0;
@@ -32,6 +71,7 @@ export class FinanceService {
       if (t.toAccountId === accountId) bal += Math.abs(t.toAccDeduction || t.accDeduction);
     });
     
+    this.balanceCache.set(cacheKey, bal);
     return bal;
   }
 
@@ -41,6 +81,11 @@ export class FinanceService {
 
   // Fund balance calculation
   getFundBalanceUpTo(fundId: string, upToDateStr: string | null = null): number {
+    const cacheKey = `${fundId}_${upToDateStr || 'current'}`;
+    if (this.fundBalanceCache.has(cacheKey)) {
+      return this.fundBalanceCache.get(cacheKey)!;
+    }
+
     const appData = this.financeVar.getAppData();
     const fund = appData.funds.find(f => f.id === fundId);
     if (!fund) return 0;
@@ -67,6 +112,7 @@ export class FinanceService {
       if (t.type === 'sys_fund_transfer_in' && t.fundId === fundId) bal += t.amount; // 這裡本來是 toFundId，改為 fundId
     });
     
+    this.fundBalanceCache.set(cacheKey, bal);
     return bal;
   }
 
@@ -277,9 +323,11 @@ export class FinanceService {
     let openingBal = 0;
     
     if (context === 'home') {
-      appData.accounts.forEach(a => 
-        openingBal += this.getAccBalanceUpTo(a.id, firstDayOfMonth) * this.getRateToBase(a.currency)
-      );
+      const balances = this.getAccountsBalancesUpTo(firstDayOfMonth);
+      appData.accounts.forEach(a => {
+        const bal = balances[a.id] || 0;
+        openingBal += bal * this.getRateToBase(a.currency);
+      });
     } else if (context === 'account' && contextId) {
       openingBal = this.getAccBalanceUpTo(contextId, firstDayOfMonth);
     } else if (context === 'fund' && contextId) {

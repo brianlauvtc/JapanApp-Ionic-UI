@@ -55,6 +55,11 @@ export class AddTransactionPagePage implements OnInit {
 
   currentErrors: string[] = [];
 
+  // Custom Date Picker state variables
+  isDatePickerOpen = false;
+  pickerActiveMonth!: moment.Moment;
+  calendarWeeks: any[][] = [];
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -73,6 +78,11 @@ export class AddTransactionPagePage implements OnInit {
     this.initForm();
     this.setupTypeSubscription();
     this.loadContextFromRoute();      
+
+    // Initialize custom date picker active month and calendar grid
+    const currentDate = this.transactionForm?.get('date')?.value || this.getToday();
+    this.pickerActiveMonth = moment(currentDate, 'YYYY-MM-DD');
+    this.generateCalendar();
 
     this.categories = this.getCategories();
     this.setupFormListeners();
@@ -197,12 +207,14 @@ export class AddTransactionPagePage implements OnInit {
 
   loadContextFromRoute() {
     let id = null;
+    let viewedMonth = null;
     
     if (this.isModal) {
       id = this.navParams?.get('id') || this.navParams?.get('transactionId');
       this.contextAccountId = this.navParams?.get('accountId');
       this.contextFundId = this.navParams?.get('fundId');
       this.contextType = this.navParams?.get('context');
+      viewedMonth = this.navParams?.get('viewedMonth');
     }
     
     if (!id && this.route && this.route.snapshot) {
@@ -210,6 +222,7 @@ export class AddTransactionPagePage implements OnInit {
       if (!this.contextAccountId) this.contextAccountId = this.route.snapshot.queryParamMap?.get('accountId');
       if (!this.contextFundId) this.contextFundId = this.route.snapshot.queryParamMap?.get('fundId');
       if (!this.contextType) this.contextType = this.route.snapshot.queryParamMap?.get('context');
+      if (!viewedMonth) viewedMonth = this.route.snapshot.queryParamMap?.get('viewedMonth');
     }
     
     if (id) {
@@ -236,6 +249,13 @@ export class AddTransactionPagePage implements OnInit {
         this.transactionForm.patchValue({ fundId: this.contextFundId });
         this.txnType = 'expense';
       }
+
+      // Default date parsing logic: if viewedMonth is not the current month, default date to the last day of that viewed month.
+      let defaultDate = this.getToday();
+      if (viewedMonth && viewedMonth !== moment().format('YYYY-MM')) {
+        defaultDate = moment(viewedMonth, 'YYYY-MM').endOf('month').format('YYYY-MM-DD');
+      }
+      this.transactionForm.patchValue({ date: defaultDate });
     }
   }
 
@@ -1229,5 +1249,82 @@ export class AddTransactionPagePage implements OnInit {
         if (errors.length > 0) return { index: i, errors }; // 只要有一張錯，馬上回傳錯在哪一張
     }
     return null; // 全數通過
+  }
+
+  // ==========================================
+  // Premium Custom Date Picker Methods
+  // ==========================================
+
+  openCustomDatePicker() {
+    const currentVal = this.transactionForm.get('date')?.value || this.getToday();
+    this.pickerActiveMonth = moment(currentVal, 'YYYY-MM-DD');
+    this.generateCalendar();
+    this.isDatePickerOpen = true;
+  }
+
+  closeCustomDatePicker() {
+    this.isDatePickerOpen = false;
+  }
+
+  changePickerMonth(offset: number) {
+    this.pickerActiveMonth.add(offset, 'months');
+    this.generateCalendar();
+  }
+
+  selectPickerDate(dateStr: string) {
+    const selectedDate = moment(dateStr, 'YYYY-MM-DD');
+    const today = moment().startOf('day');
+    if (selectedDate.isAfter(today)) {
+      return;
+    }
+    
+    this.transactionForm.patchValue({ date: dateStr });
+    this.isDatePickerOpen = false;
+  }
+
+  setTodayDate() {
+    this.transactionForm.patchValue({ date: this.getToday() });
+    this.pickerActiveMonth = moment();
+    this.generateCalendar();
+  }
+
+  generateCalendar() {
+    const startOfMonth = this.pickerActiveMonth.clone().startOf('month');
+    const endOfMonth = this.pickerActiveMonth.clone().endOf('month');
+    const todayStr = this.getToday();
+    const selectedDateStr = this.transactionForm.get('date')?.value || todayStr;
+    const currentYearMonth = this.pickerActiveMonth.format('YYYY-MM');
+
+    const startDayOfWeek = startOfMonth.day(); // 0 is Sunday, 1 is Monday, etc.
+    const startDate = startOfMonth.clone().subtract(startDayOfWeek, 'days');
+
+    const weeks: any[][] = [];
+    let currentDay = startDate.clone();
+
+    for (let w = 0; w < 6; w++) {
+      const weekDays: any[] = [];
+      for (let d = 0; d < 7; d++) {
+        const dateStr = currentDay.format('YYYY-MM-DD');
+        const dayNum = currentDay.date();
+        const isCurrentMonth = currentDay.format('YYYY-MM') === currentYearMonth;
+        const isSelected = dateStr === selectedDateStr;
+        const isToday = dateStr === todayStr;
+        const isDisabled = currentDay.isAfter(moment().endOf('day'));
+
+        weekDays.push({
+          dateStr,
+          dayNum,
+          isCurrentMonth,
+          isSelected,
+          isToday,
+          isDisabled
+        });
+
+        currentDay.add(1, 'day');
+      }
+      weeks.push(weekDays);
+    }
+
+    this.calendarWeeks = weeks;
   }
 }

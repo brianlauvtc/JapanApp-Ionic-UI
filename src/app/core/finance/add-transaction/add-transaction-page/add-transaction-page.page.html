@@ -202,15 +202,60 @@
       </ng-container>
 
       <ion-item lines="full">
-        <ion-icon name="calendar-outline" slot="start" color="secondary"></ion-icon>
+        <ion-button fill="clear" slot="start" class="today-shortcut-btn" (click)="setTodayDate()" style="--padding-start: 0; --padding-end: 0; margin-inline-end: 16px; margin-top: 0; margin-bottom: 0;">
+          <ion-icon name="calendar-outline" color="secondary" style="font-size: 24px; margin: 0;"></ion-icon>
+        </ion-button>
         <ion-label>日期</ion-label>
-        <ion-datetime-button datetime="datetime"></ion-datetime-button>
-        <ion-modal [keepContentsMounted]="true">
-          <ng-template>
-            <ion-datetime id="datetime" formControlName="date" presentation="date" [max]="getToday()"></ion-datetime>
-          </ng-template>
-        </ion-modal>
+        <div class="custom-date-pill-button" (click)="openCustomDatePicker()">
+          {{ transactionForm.get('date')?.value }}
+        </div>
       </ion-item>
+
+      <ion-modal [isOpen]="isDatePickerOpen" (didDismiss)="closeCustomDatePicker()" class="custom-calendar-modal" mode="ios">
+        <ng-template>
+          <div class="calendar-modal-container">
+            <div class="calendar-header">
+              <ion-button fill="clear" (click)="changePickerMonth(-1)">
+                <ion-icon name="chevron-back" slot="icon-only"></ion-icon>
+              </ion-button>
+              <h3>{{ pickerActiveMonth.format('YYYY年 M月') }}</h3>
+              <ion-button fill="clear" (click)="changePickerMonth(1)">
+                <ion-icon name="chevron-forward" slot="icon-only"></ion-icon>
+              </ion-button>
+            </div>
+
+            <div class="weekdays-grid">
+              <div>日</div>
+              <div>一</div>
+              <div>二</div>
+              <div>三</div>
+              <div>四</div>
+              <div>五</div>
+              <div>六</div>
+            </div>
+
+            <div class="days-grid">
+              <ng-container *ngFor="let week of calendarWeeks">
+                <div 
+                  *ngFor="let day of week" 
+                  class="calendar-day-cell"
+                  [class.outside-month]="!day.isCurrentMonth"
+                  [class.selected-day]="day.isSelected"
+                  [class.today-day]="day.isToday"
+                  [class.disabled-day]="day.isDisabled"
+                  (click)="!day.isDisabled && selectPickerDate(day.dateStr)">
+                  <span class="day-number">{{ day.dayNum }}</span>
+                </div>
+              </ng-container>
+            </div>
+
+            <div class="calendar-footer">
+              <ion-button fill="clear" color="medium" (click)="closeCustomDatePicker()">取消</ion-button>
+              <ion-button fill="solid" color="secondary" class="today-footer-btn" (click)="setTodayDate(); closeCustomDatePicker()">今天</ion-button>
+            </div>
+          </div>
+        </ng-template>
+      </ion-modal>
 
       <ion-item lines="none">
         <ion-icon name="document-text-outline" slot="start" color="medium"></ion-icon>

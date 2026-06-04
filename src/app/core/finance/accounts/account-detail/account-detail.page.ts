@@ -150,6 +150,14 @@ export class AccountDetailPage implements OnInit {
   this.renderAccountDetail(); // 或 renderHome()
 }
 
+  onMonthPickerChange(event: any) {
+    const val = event.detail.value;
+    if (val) {
+      this.viewedMonth = val.substring(0, 7);
+      this.renderAccountDetail();
+    }
+  }
+
   getAccount() {
     return this.financeVar.getAppData().accounts.find(a => a.id === this.accountId);
   }
@@ -166,13 +174,18 @@ export class AccountDetailPage implements OnInit {
     return this.financeService.getAccBalance(this.accountId);
   }
 
+  getToday() {
+    return this.financeService.getToday();
+  }
+
   async openAddForm() {
     try {
       const modal = await this.modalController.create({
         component: AddTransactionPagePage,
         componentProps: {
           accountId: this.accountId,
-          context: 'account'
+          context: 'account',
+          viewedMonth: this.viewedMonth
         },
         cssClass: 'add-transaction-modal'
       });

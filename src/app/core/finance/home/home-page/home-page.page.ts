@@ -158,6 +158,14 @@ export class HomePagePage implements OnInit, OnDestroy {
      this.renderHome(); // 或 renderHome()
    }
 
+  onMonthPickerChange(event: any) {
+    const val = event.detail.value;
+    if (val) {
+      this.viewedMonth = val.substring(0, 7);
+      this.renderHome();
+    }
+  }
+
   getNetWorth() {
     return this.financeService.getNetWorth();
   }
@@ -178,6 +186,9 @@ export class HomePagePage implements OnInit, OnDestroy {
     try {
       const modal = await this.modalController.create({
         component: AddTransactionPagePage,
+        componentProps: {
+          viewedMonth: this.viewedMonth
+        },
         cssClass: 'add-transaction-modal'
       });
       

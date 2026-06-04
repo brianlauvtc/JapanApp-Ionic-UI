@@ -471,6 +471,9 @@ export class AnalysisStatisticsComponent implements OnInit, OnDestroy {
     try {
       const modal = await this.modalCtrl.create({
         component: AddTransactionPagePage,
+        componentProps: {
+          viewedMonth: this.analysisService.selectedMonth()
+        },
         cssClass: 'add-transaction-modal'
       });
       await modal.present();
