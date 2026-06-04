@@ -112,6 +112,59 @@ ion-segment {
     font-size: 14px;
     line-height: 1.625;
     white-space: pre-wrap;
+
+    h3 {
+      font-size: 16px;
+      font-weight: 800;
+      color: #4f46e5;
+      margin-top: 16px;
+      margin-bottom: 8px;
+    }
+
+    h4 {
+      font-size: 14px;
+      font-weight: 700;
+      color: #312e81;
+      margin-top: 12px;
+      margin-bottom: 6px;
+    }
+
+    li {
+      margin-left: 12px;
+      margin-bottom: 4px;
+      list-style-type: disc;
+    }
+
+    strong {
+      color: #1f2937;
+      font-weight: 700;
+    }
+  }
+}
+
+.active-history {
+  border: 1px solid #a5b4fc !important;
+  --background: #eef2ff !important;
+}
+
+.ai-advisor-selector {
+  --background: #f3f4f6;
+  border-radius: 12px;
+  padding: 4px;
+
+  ion-segment-button {
+    --indicator-color: #ffffff;
+    --color: #6b7280;
+    --color-checked: #4f46e5;
+    font-weight: 600;
+    font-size: 12px;
+    --padding-top: 8px;
+    --padding-bottom: 8px;
+    --indicator-height: 100%;
+    --indicator-box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    margin: 0;
+    border-radius: 8px;
+    min-width: 90px;
   }
 }
 

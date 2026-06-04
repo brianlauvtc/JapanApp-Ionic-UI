@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Storage } from '@ionic/storage-angular';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { AppData, Account, Transaction, Fund, Plan, AIHistoryItem } from '../model/finance.model';
+import { AppData, Account, Transaction, Fund, Plan, AIHistoryItem, AIAnalysisType, AIAnalysisResult } from '../model/finance.model';
 import { AlertController } from '@ionic/angular';
 import { FileSyncService } from './file-sync.service';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, CATEGORY_MAP } from '../.././../../environments/categories';
@@ -188,6 +188,46 @@ export class FinanceVarService {
   addAIHistory(item: AIHistoryItem) {
     const aiHistory = [item, ...this.getAppData().aiHistory];
     this.updateAppData({ aiHistory });
+  }
+
+  getAIAnalysisHistory(type: AIAnalysisType): AIAnalysisResult[] {
+    const history = this.getAppData().aiAnalysisHistory || [];
+    return history.filter(h => h.type === type).sort((a, b) => b.date.localeCompare(a.date));
+  }
+
+  addAIAnalysisResult(result: AIAnalysisResult) {
+    const currentData = this.getAppData();
+    const history = currentData.aiAnalysisHistory || [];
+    
+    // Add new result to the front
+    const updatedHistory = [result, ...history];
+    
+    // Filter to keep only latest 3 per type, preserving chronological order (descending by ID/Date)
+    const finalHistory: AIAnalysisResult[] = [];
+    const counts: { [key in AIAnalysisType]?: number } = {};
+    
+    updatedHistory.forEach(item => {
+      if (!counts[item.type]) {
+        counts[item.type] = 0;
+      }
+      if (counts[item.type]! < 3) {
+        finalHistory.push(item);
+        counts[item.type]!++;
+      }
+    });
+    
+    this.updateAppData({ aiAnalysisHistory: finalHistory });
+  }
+
+  clearAIAnalysisHistory(type?: AIAnalysisType) {
+    const currentData = this.getAppData();
+    if (!type) {
+      this.updateAppData({ aiAnalysisHistory: [] });
+    } else {
+      const history = currentData.aiAnalysisHistory || [];
+      const filtered = history.filter(h => h.type !== type);
+      this.updateAppData({ aiAnalysisHistory: filtered });
+    }
   }
 
   // Plan methods

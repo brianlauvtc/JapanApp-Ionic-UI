@@ -27,7 +27,7 @@
         <ion-card-content>
           <div class="warning-content">
             <ion-icon name="warning" color="warning"></ion-icon>
-            <p>⚠️ 尚未設定 API Key，目前僅可查看過往分析紀錄。</p>
+            <p>⚠️ 尚未設定 API Key，請前往設定輸入您的 Gemini API Key 以啟用 AI 顧問功能。</p>
             <ion-button routerLink="/tabs/settings" fill="outline" color="warning" size="small">
               前往設定
             </ion-button>
@@ -36,43 +36,95 @@
       </ion-card>
     </div>
 
-    <ion-card>
-      <ion-card-header>
-        <ion-card-title>✨ 最新分析建議</ion-card-title>
-        <ion-card-subtitle *ngIf="getLastAITime()">最後分析: {{ getLastAITime() }}</ion-card-subtitle>
-      </ion-card-header>
-      <ion-card-content>
-        <ion-button expand="block" (click)="triggerAIAnalysis()" [disabled]="!hasAPIKey()">
+    <!-- AI Advisor Category Selector -->
+    <div style="margin-bottom: 16px;">
+      <ion-segment [value]="selectedAnalysisType" (ionChange)="switchAnalysisType($event.detail.value)" scrollable="true" class="ai-advisor-selector">
+        <ion-segment-button value="financial_health">
+          <ion-label style="font-size: 12px;">⚖️ 財務健康</ion-label>
+        </ion-segment-button>
+        <ion-segment-button value="expense_optimization">
+          <ion-label style="font-size: 12px;">💸 消費優化</ion-label>
+        </ion-segment-button>
+        <ion-segment-button value="saving_goals">
+          <ion-label style="font-size: 12px;">🎯 儲蓄計畫</ion-label>
+        </ion-segment-button>
+        <ion-segment-button value="asset_allocation">
+          <ion-label style="font-size: 12px;">🏦 資產配置</ion-label>
+        </ion-segment-button>
+      </ion-segment>
+    </div>
+
+    <!-- Processing Loader -->
+    <div *ngIf="isAnalyzing" class="no-history-card" style="padding: 40px 16px; text-align: center; background: white; border-radius: 16px; border: 1px solid #f3f4f6;">
+      <ion-spinner name="crescent" color="primary" style="transform: scale(1.5); margin-bottom: 16px;"></ion-spinner>
+      <h3 style="font-weight: bold; color: #4f46e5; margin: 8px 0 4px 0;">✨ AI 正在進行深度分析與評估...</h3>
+      <p style="font-size: 12px; color: #9ca3af; margin: 0;">這大約需要 5-10 秒，請不要關閉頁面</p>
+    </div>
+
+    <!-- Active Advisor Report View -->
+    <div *ngIf="!isAnalyzing">
+      <div class="latest-analysis-header" *ngIf="latestResult">
+        <div>
+          <h3>✨ AI 顧問分析報告</h3>
+          <p>產出時間: {{ latestResult.date }}</p>
+        </div>
+        <ion-button (click)="triggerAIAdvisorAnalysis()" [disabled]="!hasAPIKey()">
           <ion-icon name="refresh" slot="start"></ion-icon>
           重新分析
         </ion-button>
-      </ion-card-content>
-    </ion-card>
+      </div>
 
-    <ion-card *ngIf="getAIHistory().length > 0">
-      <ion-card-header>
-        <ion-card-title>過往分析紀錄</ion-card-title>
-      </ion-card-header>
-      <ion-card-content>
-        <ion-list>
-          <ion-item *ngFor="let history of getAIHistory().slice(0, 3)" lines="none">
-            <ion-label>
-              <h3>{{ history.date }}</h3>
-              <p>{{ history.text | slice:0:50 }}...</p>
-            </ion-label>
-          </ion-item>
-        </ion-list>
-      </ion-card-content>
-    </ion-card>
+      <ion-card class="analysis-result-card" *ngIf="latestResult">
+        <ion-card-content class="result-content" [innerHTML]="formatMarkdown(latestResult.chineseText)" style="padding: 0;">
+        </ion-card-content>
+      </ion-card>
 
-    <ion-card *ngIf="getAIHistory().length === 0">
-      <ion-card-content class="no-history">
-        <p>尚無分析紀錄</p>
-        <ion-button expand="block" (click)="triggerAIAnalysis()" [disabled]="!hasAPIKey()">
-          立即產生報告
-        </ion-button>
-      </ion-card-content>
-    </ion-card>
+      <!-- Empty state when no report is generated yet -->
+      <ion-card *ngIf="!latestResult" style="border-radius: 16px; border: 1px solid #f3f4f6; margin-top: 0; margin-bottom: 24px;">
+        <ion-card-content class="no-history" style="padding: 32px 16px;">
+          <ion-icon name="bulb" color="primary" style="font-size: 48px; margin-bottom: 12px;"></ion-icon>
+          <h3 style="font-weight: 700; color: #374151; margin-bottom: 8px;">尚無分析建議</h3>
+          <p style="font-size: 13px; color: #9ca3af; margin-bottom: 16px;">
+            AI 顧問將根據您本月的收支交易、資產狀態及儲蓄計畫，為您提供專屬的優化建議與評估。
+          </p>
+          <ion-button expand="block" (click)="triggerAIAdvisorAnalysis()" [disabled]="!hasAPIKey()" style="--border-radius: 12px;">
+            立即產生 AI 顧問建議
+          </ion-button>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- History List Section (keeps up to 3 items per type) -->
+      <ion-card *ngIf="historyList.length > 0" style="border-radius: 16px; border: 1px solid #f3f4f6; margin-top: 0;">
+        <ion-card-header style="padding-bottom: 8px;">
+          <ion-card-title style="font-size: 15px; font-weight: bold; color: #4b5563;">📜 本類別歷史分析紀錄 (最多保留 3 筆)</ion-card-title>
+        </ion-card-header>
+        <ion-card-content style="padding-top: 0;">
+          <ion-list lines="none" style="background: transparent; padding: 0;">
+            <ion-item *ngFor="let item of historyList; let i = index" [button]="true" (click)="viewHistoryItem(item)" style="--background: #f9fafb; --border-radius: 12px; margin-bottom: 8px;" [class.active-history]="latestResult?.id === item.id">
+              <ion-icon [name]="latestResult?.id === item.id ? 'checkmark-circle' : 'time-outline'" slot="start" [color]="latestResult?.id === item.id ? 'primary' : 'medium'"></ion-icon>
+              <ion-label>
+                <h3 style="font-weight: bold; color: #374151;">分析報告 #{{ historyList.length - i }}</h3>
+                <p style="font-size: 11px; color: #9ca3af;">{{ item.date }}</p>
+                <p style="font-size: 12px; color: #6b7280; text-overflow: ellipsis; white-space: nowrap; overflow: hidden; margin-top: 2px;">
+                  {{ item.chineseText | slice:0:50 }}...
+                </p>
+              </ion-label>
+            </ion-item>
+          </ion-list>
+          
+          <div style="display: flex; gap: 8px; margin-top: 16px;">
+            <ion-button fill="outline" color="danger" size="small" expand="block" style="flex: 1; --border-radius: 8px; font-weight: bold;" (click)="confirmClearHistory(selectedAnalysisType)">
+              <ion-icon name="trash" slot="start"></ion-icon>
+              清除本類歷史
+            </ion-button>
+            <ion-button fill="outline" color="danger" size="small" expand="block" style="flex: 1; --border-radius: 8px; font-weight: bold;" (click)="confirmClearHistory()">
+              <ion-icon name="alert-circle" slot="start"></ion-icon>
+              清除全部歷史
+            </ion-button>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </div>
   </div>
 
   <div *ngIf="aiTab === 'plans'" class="plans-content">

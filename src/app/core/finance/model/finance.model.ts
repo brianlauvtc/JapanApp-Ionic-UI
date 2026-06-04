@@ -65,6 +65,16 @@ export interface AIHistoryItem {
   text: string;
 }
 
+export type AIAnalysisType = 'financial_health' | 'expense_optimization' | 'saving_goals' | 'asset_allocation';
+
+export interface AIAnalysisResult {
+  id: string;
+  type: AIAnalysisType;
+  date: string;
+  chineseText: string;
+  englishText?: string;
+}
+
 export interface AppData {
   isInit: boolean;
   settings: {
@@ -78,6 +88,7 @@ export interface AppData {
   funds: Fund[];
   plans: Plan[];
   aiHistory: AIHistoryItem[];
+  aiAnalysisHistory?: AIAnalysisResult[];
   lastAITime: string | null;
   lastRolloverDate: string | null;
   customCategories?: { id: string, name: string, icon: string, type: 'expense' | 'income' }[];

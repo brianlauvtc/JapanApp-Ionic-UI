@@ -4,6 +4,7 @@ import { Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { FinanceVarService } from './finance-var.service';
 import { EXPENSE_CATEGORIES } from '../../../../environments/categories';
+import { AIAnalysisType } from '../model/finance.model';
 
 @Injectable({
   providedIn: 'root'
@@ -113,6 +114,96 @@ Respond ONLY with strictly valid JSON format: {"id": "english_id", "icon": "emoj
       return JSON.parse(cleanTarget);
     } catch (e) {
       console.error('AI Category Generation failed:', e);
+      return null;
+    }
+  }
+
+  async generateAIAdvisorAnalysis(type: AIAnalysisType, contextData: any, previousResult?: string): Promise<string | null> {
+    const apiKey = this.financeVar.getAppData().settings.apiKey;
+    if (!apiKey) {
+      throw new Error('API Key missing');
+    }
+
+    const url = `${this.GEMINI_API_URL}?key=${apiKey}`;
+
+    // 🧠 SYSTEM PROMPT: Strict Zero-Filler Traditional Chinese
+    const systemPrompt = `You are an expert personal financial advisor. Analyze the user's financial data JSON and provide direct, professional, and actionable analysis.
+Output ONLY the raw analysis headers and bullet points in Traditional Chinese (繁體中文).
+
+CRITICAL CONSTRAINTS (TOKEN REDUCTION RULES):
+1. Do NOT include any conversational filler, polite greetings, introductions, or transitional remarks.
+2. Do NOT say things like "以下是您的財務建議：", "根據您的數據...", "很高興為您分析...", or "Here is my advice:".
+3. Do NOT output any concluding remarks like "希望這些建議對您有幫助。" or "如有其他問題...".
+4. Start IMMEDIATELY with the first header or bullet point.
+5. Use brief, direct, and high-density Traditional Chinese (繁體中文). Keep the entire response under 200 words.
+6. Use markdown bullet points (- or *) and bold text for key figures.`;
+
+    let userPrompt = '';
+    if (type === 'financial_health') {
+      userPrompt = `Analyze my overall financial health for the month of ${contextData.month} based on this data:
+${JSON.stringify(contextData)}
+
+Detail to cover:
+- Assessment of current income, expenses, and savings rate (is it healthy/above 20%?).
+- Identify if any categories of spending are abnormally high.
+- Exactly 2 high-level suggestions for improvement.`;
+    } else if (type === 'expense_optimization') {
+      userPrompt = `Analyze my spending behavior and suggest optimizations for the month of ${contextData.month} based on this data:
+${JSON.stringify(contextData)}
+
+Detail to cover:
+- Point out category occupying the highest percentage or high daily average.
+- Flag any high-amount individual transactions from the recent transactions list.
+- Provide exactly 3 specific, actionable ways to reduce expenses next month.`;
+    } else if (type === 'saving_goals') {
+      userPrompt = `Analyze the feasibility of my future plans based on my savings rate, current assets, and active goals:
+${JSON.stringify(contextData)}
+
+Detail to cover:
+- Feasibility check: Can I reach each goal on time with my current monthly savings?
+- If not feasible, suggest how much to increase monthly savings or by how many months to delay.
+- 1 target optimization tip to reach these goals faster.`;
+    } else if (type === 'asset_allocation') {
+      userPrompt = `Analyze my asset allocation and financial risks based on this accounts data:
+${JSON.stringify(contextData)}
+
+Detail to cover:
+- Liquidity ratio: Is there enough cash/bank reserves relative to credit card/loan debt?
+- Currency exposure: Risk check for utilizing both HKD and JPY (e.g. exchange fluctuations).
+- Clear Risk Level (Low/Medium/High) and 1 risk mitigation step.`;
+    }
+
+    if (previousResult) {
+      userPrompt += `\n\nCRITICAL COMPARISON RULE:
+Here is my previous analysis result of this type from the last analysis:
+"${previousResult}"
+
+Please compare my current data with this previous result. 
+Directly include a section comparing the two (e.g., increased/decreased savings, changes in high-spending categories, or progress towards plans). 
+Identify if I am moving in the right direction. Do NOT use filler words.`;
+    }
+
+    const requestPayload = {
+      contents: [{
+        parts: [
+          { text: systemPrompt },
+          { text: userPrompt }
+        ]
+      }]
+    };
+
+    try {
+      const apiResponse: any = await this.http.post(url, requestPayload).toPromise();
+      if (apiResponse?.error) {
+         throw new Error(apiResponse.error.message);
+      }
+      const rawTextResponse = apiResponse?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      if (!rawTextResponse) {
+          throw new Error('Empty response from Gemini API');
+      }
+      return rawTextResponse.trim();
+    } catch (e) {
+      console.error('AI Advisor Analysis generation failed:', e);
       return null;
     }
   }
