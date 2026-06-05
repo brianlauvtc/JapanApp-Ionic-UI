@@ -91,10 +91,10 @@ export class TransactionItemComponent {
     let displayHtml = '';
     if (this.context === 'account' && acc && this.transaction.currency !== acc.currency) {
       // 跨幣種顯示
-      displayHtml = `${prefix}${accSymbol}${Math.abs(this.transaction.accDeduction).toLocaleString()} <small class="text-small text-medium">(${symbol}${this.transaction.amount.toLocaleString()})</small>`;
+      displayHtml = `${prefix}${accSymbol}${Math.abs(this.transaction.accDeduction).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <small class="text-small text-medium">(${symbol}${this.transaction.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</small>`;
     } else {
       // 一般顯示
-      displayHtml = `${prefix}${symbol}${Number(displayAmt).toLocaleString()}`;
+      displayHtml = `${prefix}${symbol}${Number(displayAmt).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     }
 
     // ✨ 修正：把 catName 也回傳，讓 HTML 畫面的 {{ getTransactionDisplay().catName }} 能夠正確讀取

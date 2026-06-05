@@ -21,7 +21,13 @@ export class AddTransactionPagePage implements OnInit {
   selectedCategory: any = null;
   isEditMode = false;
   editTransactionId: string | null = null;
-  categories = this.getCategories();
+  categories: any[] = [];
+
+  // Performance caching and guard variables
+  ignoreTypeChange = false;
+  categoryCountsCache: { [type: string]: { [categoryName: string]: number } } = {};
+  referencableTxnsRemainingBalances: { [txId: string]: number } = {};
+  referencableTxnsAlreadyRepaidBalances: { [txId: string]: number } = {};
   
   // Context from navigation
   contextAccountId: string | null = null;
@@ -369,6 +375,9 @@ export class AddTransactionPagePage implements OnInit {
   }
 
   setTxnType(type: 'expense' | 'income' | 'transfer') {
+    if (this.ignoreTypeChange) {
+      return;
+    }
     this.txnType = type;
     this.selectedCategory = null;
     this.transactionForm.patchValue({ category: '' });
@@ -399,30 +408,40 @@ export class AddTransactionPagePage implements OnInit {
     this.showAllCategories = !this.showAllCategories;
   }
 
-  getCategories() {
+  precomputeCategoryCounts() {
     const allTransactions = this.financeVar.getTransactions();
+    this.categoryCountsCache = { expense: {}, income: {} };
+    allTransactions.forEach(txn => {
+      if (txn.category) {
+        const type = txn.type;
+        if (type === 'expense' || type === 'income') {
+          if (!this.categoryCountsCache[type]) {
+            this.categoryCountsCache[type] = {};
+          }
+          this.categoryCountsCache[type][txn.category] = (this.categoryCountsCache[type][txn.category] || 0) + 1;
+        }
+      }
+    });
+  }
+
+  getCategories() {
+    if (!this.categoryCountsCache || Object.keys(this.categoryCountsCache).length === 0) {
+      this.precomputeCategoryCounts();
+    }
     if (this.txnType === 'income') {
-      return this.sortCategoriesByFrequency(this.financeVar.getAllIncomeCategories(), allTransactions); // 🌟 改為動態
+      return this.sortCategoriesByFrequency(this.financeVar.getAllIncomeCategories());
     } else if (this.txnType === 'expense') {
-      return this.sortCategoriesByFrequency(this.financeVar.getAllExpenseCategories(), allTransactions); // 🌟 改為動態
+      return this.sortCategoriesByFrequency(this.financeVar.getAllExpenseCategories());
     } else {
       return [{ id: 'transfer', name: '轉帳', icon: '🔀' }];
     }
   }
 
-  private sortCategoriesByFrequency(categories: any[], transactions: any[]): any[] {
-    // Count transactions for each category
-    const categoryCounts: { [key: string]: number } = {};
-    transactions.forEach(txn => {
-      if (txn.type === this.txnType && txn.category) {
-        categoryCounts[txn.category] = (categoryCounts[txn.category] || 0) + 1;
-      }
-    });
-    
-    // Sort categories by count (descending)
+  private sortCategoriesByFrequency(categories: any[]): any[] {
+    const counts = this.categoryCountsCache[this.txnType] || {};
     return [...categories].sort((a, b) => {
-      const countA = categoryCounts[a.name] || 0;
-      const countB = categoryCounts[b.name] || 0;
+      const countA = counts[a.name] || 0;
+      const countB = counts[b.name] || 0;
       return countB - countA; // Descending order
     });
   }
@@ -823,9 +842,17 @@ export class AddTransactionPagePage implements OnInit {
     }
     
     this.ignoreRateCalc = true; // 暫停自動算匯率
+    this.ignoreTypeChange = true; // 避免切換 txnType 時清空已載入的 category
 
     this.txnType = transaction.type as any;
-    this.selectedCategory = { name: transaction.category, icon: transaction.icon || '💰' };
+    this.categories = this.getCategories();
+    
+    const matchedCategory = this.categories.find(c => c.name === transaction.category);
+    if (matchedCategory) {
+      this.selectedCategory = matchedCategory;
+    } else {
+      this.selectedCategory = { id: transaction.category, name: transaction.category, icon: transaction.icon || '💰' };
+    }
     
     const isSplit = !!transaction.isSplitPay;
     const totalAmount = isSplit ? (transaction.amount + (transaction.splitOthersShare || 0)) : transaction.amount;
@@ -885,12 +912,12 @@ export class AddTransactionPagePage implements OnInit {
     if (transaction.items && transaction.items.length > 0) {
       this.items = [...transaction.items];
     }
-    this.categories = this.getCategories();
     
     // (注意：把原本放在這裡的 this.calculateExchangeRate() 刪除！)
 
     setTimeout(() => {
       this.ignoreRateCalc = false; // 恢復自動算匯率
+      this.ignoreTypeChange = false; // 恢復自動切換 txnType
       this.captureInitialFormValues();
     }, 100);
   }
@@ -1436,6 +1463,9 @@ export class AddTransactionPagePage implements OnInit {
 
   getRemainingBalance(tx: Transaction, loanAccId: string | null): number {
     if (!loanAccId) return 0;
+    if (this.referencableTxnsRemainingBalances[tx.id] !== undefined) {
+      return this.referencableTxnsRemainingBalances[tx.id];
+    }
     const originalAmount = this.getSplitAmountForAccount(tx, loanAccId);
     if (originalAmount <= 0) return 0;
 
@@ -1469,6 +1499,9 @@ export class AddTransactionPagePage implements OnInit {
   getAlreadyRepaidAmount(tx: Transaction): number {
     const loanAccId = this.getSelectedLoanAccountId();
     if (!loanAccId) return 0;
+    if (this.referencableTxnsAlreadyRepaidBalances[tx.id] !== undefined) {
+      return this.referencableTxnsAlreadyRepaidBalances[tx.id];
+    }
     const original = this.getSplitAmountForAccount(tx, loanAccId);
     const remaining = this.getRemainingBalance(tx, loanAccId);
     return Math.max(0, original - remaining);
@@ -1478,9 +1511,69 @@ export class AddTransactionPagePage implements OnInit {
     const loanAccId = this.getSelectedLoanAccountId();
     if (!loanAccId) {
       this.referencableTxns = [];
+      this.referencableTxnsRemainingBalances = {};
+      this.referencableTxnsAlreadyRepaidBalances = {};
       return;
     }
-    this.referencableTxns = this.financeVar.getTransactions().filter(t => {
+
+    const allTxns = this.financeVar.getTransactions();
+    
+    // First, map the original split amount for each transaction for the active loan account
+    const originalAmounts: { [txId: string]: number } = {};
+    const repaidAmounts: { [txId: string]: number } = {};
+    
+    allTxns.forEach(tx => {
+      if (tx.type === 'expense' && tx.isSplitPay) {
+        originalAmounts[tx.id] = this.getSplitAmountForAccount(tx, loanAccId);
+        repaidAmounts[tx.id] = 0;
+      }
+    });
+
+    // Now, let's find all repayments (type === 'transfer' with referencedTransactionIds) and aggregate them
+    allTxns.forEach(t => {
+      if (this.isEditMode && t.id === this.editTransactionId) return;
+
+      if (t.type === 'transfer' && t.referencedTransactionIds && t.referencedTransactionIds.length > 0) {
+        // ONLY count transfers that involve this specific friend's loan account!
+        if (t.accountId !== loanAccId && t.toAccountId !== loanAccId) {
+          return;
+        }
+
+        // We need the sum of original shares for the referenced transactions
+        const referencedTxns = allTxns.filter(refTx => t.referencedTransactionIds!.includes(refTx.id));
+        const sumShares = referencedTxns.reduce((sum, refTx) => {
+          return sum + this.getSplitAmountForAccount(refTx, loanAccId);
+        }, 0);
+
+        t.referencedTransactionIds.forEach(refId => {
+          const originalAmount = originalAmounts[refId] || 0;
+          if (originalAmount <= 0) return;
+
+          if (sumShares > 0) {
+            const allocation = t.amount * (originalAmount / sumShares);
+            repaidAmounts[refId] = (repaidAmounts[refId] || 0) + allocation;
+          } else {
+            repaidAmounts[refId] = (repaidAmounts[refId] || 0) + t.amount;
+          }
+        });
+      }
+    });
+
+    // Write to cache maps
+    this.referencableTxnsRemainingBalances = {};
+    this.referencableTxnsAlreadyRepaidBalances = {};
+    
+    allTxns.forEach(tx => {
+      if (tx.type === 'expense' && tx.isSplitPay) {
+        const original = originalAmounts[tx.id] || 0;
+        const repaid = repaidAmounts[tx.id] || 0;
+        const remaining = Math.max(0, original - repaid);
+        this.referencableTxnsRemainingBalances[tx.id] = remaining;
+        this.referencableTxnsAlreadyRepaidBalances[tx.id] = Math.max(0, original - remaining);
+      }
+    });
+
+    this.referencableTxns = allTxns.filter(t => {
       if (t.type !== 'expense' || !t.isSplitPay) return false;
       const isLinked = (t.splitLoanAccountId === loanAccId) || 
                        (t.splitShares && t.splitShares.some(s => s.loanAccountId === loanAccId));

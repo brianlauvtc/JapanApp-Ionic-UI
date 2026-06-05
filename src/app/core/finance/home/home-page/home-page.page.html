@@ -35,12 +35,12 @@
         <p class="net-worth-label">目前總資產 ({{ baseCurrency }})</p>
         <div class="net-worth-amount">
           <span class="currency-symbol">{{ baseCurrencySymbol }}</span>
-          <span>{{ netWorthData.net | number:'1.0-0' }}</span>
+          <span>{{ netWorthData.net | number:'1.2-2' }}</span>
         </div>
       </div>
       <div class="balance-details">
-        <div>月頭: {{ homeData.openBal | number:'1.0-0' }}</div>
-        <div>月尾: {{ homeData.closeBal | number:'1.0-0' }}</div>
+        <div>月頭: {{ homeData.openBal | number:'1.2-2' }}</div>
+        <div>月尾: {{ homeData.closeBal | number:'1.2-2' }}</div>
       </div>
     </div>
     <div class="chart-container" *ngIf="homeData.days.length > 0">
@@ -62,11 +62,11 @@
   <div class="summary-row">
     <div class="summary-item">
       <span class="summary-label">總支:</span>
-      <span class="summary-value text-danger">{{ homeData.totalExp | number:'1.0-0' }}</span>
+      <span class="summary-value text-danger">{{ homeData.totalExp | number:'1.2-2' }}</span>
     </div>
     <div class="summary-item">
       <span class="summary-label">總收:</span>
-      <span class="summary-value text-success">{{ homeData.totalInc | number:'1.0-0' }}</span>
+      <span class="summary-value text-success">{{ homeData.totalInc | number:'1.2-2' }}</span>
     </div>
   </div>
 
@@ -88,7 +88,7 @@
     </div>
 
     <ng-container *ngIf="!isLoading">
-      <div *ngFor="let dayGroup of homeData.days" class="day-group">
+      <div *ngFor="let dayGroup of visibleDays" class="day-group">
         <h4 class="day-header">{{ formatDate(dayGroup.date) }}</h4>
         <app-transaction-item 
           *ngFor="let transaction of dayGroup.txns" 
@@ -100,9 +100,15 @@
         </app-transaction-item>
       </div>
       
-      <div *ngIf="homeData.days.length === 0" class="no-transactions">
+      <div *ngIf="visibleDays.length === 0" class="no-transactions">
         此月無紀錄
       </div>
+
+      <ion-infinite-scroll (ionInfinite)="onLoadMore($event)" [disabled]="currentLoadedIndex >= totalDays.length">
+        <ion-infinite-scroll-content loadingSpinner="bubbles" loadingText="載入中...">
+        </ion-infinite-scroll-content>
+      </ion-infinite-scroll>
+      
       <!-- Bottom spacing spacer to prevent FAB blocking transaction amounts when scrolled to the bottom -->
       <div style="height: 80px; width: 100%;"></div>
     </ng-container>

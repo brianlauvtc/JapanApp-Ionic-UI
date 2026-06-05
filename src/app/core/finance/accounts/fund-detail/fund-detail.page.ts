@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AlertController, ModalController } from '@ionic/angular';
 import { FinanceVarService } from '../../service/finance-var.service';
@@ -8,13 +8,14 @@ import moment from 'moment';
 import { currencies } from '../../environment/environment';
 import { AddTransactionPagePage } from '../../add-transaction/add-transaction-page/add-transaction-page.page';
 import { EditFundModalPage } from '../edit-fund-modal/edit-fund-modal.page';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-fund-detail',
   templateUrl: './fund-detail.page.html',
   styleUrls: ['./fund-detail.page.scss']
 })
-export class FundDetailPage implements OnInit {
+export class FundDetailPage implements OnInit, OnDestroy {
   currencies = currencies;
   fundId!: string;
   viewedMonth: string = '';
@@ -24,6 +25,13 @@ export class FundDetailPage implements OnInit {
   baseCurrency: string = 'HKD';
   baseCurrencySymbol: string = '$';
   groupedData: any = { days: [] };
+  fund: any = null;
+
+  // Progressive loading variables
+  visibleDays: any[] = [];
+  totalDays: any[] = [];
+  currentLoadedIndex = 0;
+  private appDataSubscription!: Subscription;
 
   constructor(
     private route: ActivatedRoute,
@@ -40,6 +48,17 @@ export class FundDetailPage implements OnInit {
     this.today = this.financeService.getToday();
     this.updateCurrencyInfo();
     this.renderFundDetail();
+
+    this.appDataSubscription = this.financeVar.appData$.subscribe(() => {
+      this.updateCurrencyInfo();
+      this.renderFundDetail();
+    });
+  }
+
+  ngOnDestroy() {
+    if (this.appDataSubscription) {
+      this.appDataSubscription.unsubscribe();
+    }
   }
 
   private updateCurrencyInfo() {
@@ -58,6 +77,7 @@ export class FundDetailPage implements OnInit {
       this.router.navigate(['/accounts']);
       return;
     }
+    this.fund = fund;
     
     // Update chart data
     const chartData = [{ date: `${this.viewedMonth}-01`, val: data.openBal }];
@@ -130,6 +150,29 @@ export class FundDetailPage implements OnInit {
       name: '基金餘額',
       data: values
     }];
+
+    // Reset progressive chunk loader
+    this.totalDays = this.groupedData.days || [];
+    this.visibleDays = [];
+    this.currentLoadedIndex = 0;
+    this.loadNextChunk(5); // Load first 5 days immediately
+  }
+
+  loadNextChunk(chunkSize: number = 5) {
+    if (this.currentLoadedIndex >= this.totalDays.length) {
+      return;
+    }
+    const nextIndex = Math.min(this.currentLoadedIndex + chunkSize, this.totalDays.length);
+    const chunk = this.totalDays.slice(this.currentLoadedIndex, nextIndex);
+    this.visibleDays = [...this.visibleDays, ...chunk];
+    this.currentLoadedIndex = nextIndex;
+  }
+
+  onLoadMore(event: any) {
+    setTimeout(() => {
+      this.loadNextChunk(10);
+      event.target.complete();
+    }, 100);
   }
 
   changeMonth(offset: number) {

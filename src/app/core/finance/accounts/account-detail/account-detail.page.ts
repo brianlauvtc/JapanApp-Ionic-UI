@@ -24,6 +24,12 @@ export class AccountDetailPage implements OnInit {
   today: string = '';
   private appDataSubscription!: Subscription;
   groupedData: any = { days: [] };
+
+  // Progressive loading variables
+  visibleDays: any[] = [];
+  totalDays: any[] = [];
+  currentLoadedIndex = 0;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -133,6 +139,29 @@ export class AccountDetailPage implements OnInit {
       name: '餘額',
       data: values
     }];
+
+    // Reset progressive chunk loader
+    this.totalDays = this.groupedData.days || [];
+    this.visibleDays = [];
+    this.currentLoadedIndex = 0;
+    this.loadNextChunk(5); // Load first 5 days immediately
+  }
+
+  loadNextChunk(chunkSize: number = 5) {
+    if (this.currentLoadedIndex >= this.totalDays.length) {
+      return;
+    }
+    const nextIndex = Math.min(this.currentLoadedIndex + chunkSize, this.totalDays.length);
+    const chunk = this.totalDays.slice(this.currentLoadedIndex, nextIndex);
+    this.visibleDays = [...this.visibleDays, ...chunk];
+    this.currentLoadedIndex = nextIndex;
+  }
+
+  onLoadMore(event: any) {
+    setTimeout(() => {
+      this.loadNextChunk(10);
+      event.target.complete();
+    }, 100);
   }
 
 

@@ -42,13 +42,13 @@
       <p class="balance-label">目前餘額</p>
       <div class="balance-amount">
         <span class="currency-symbol">{{ currencies[getAccount()?.currency || 'HKD'].symbol }}</span>
-        <span [class.text-danger]="getAccBalance() < 0">{{ getAccBalance() | number:'1.0-0' }}</span>
+        <span [class.text-danger]="getAccBalance() < 0">{{ getAccBalance() | number:'1.2-2' }}</span>
       </div>
     </div>
     <div class="dashboard-divider"></div>
     <div class="balance-details">
-      <div>月頭: {{ groupedData.openBal | number:'1.0-0' }}</div>
-      <div>月尾: {{ groupedData.closeBal | number:'1.0-0' }}</div>
+      <div>月頭: {{ groupedData.openBal | number:'1.2-2' }}</div>
+      <div>月尾: {{ groupedData.closeBal | number:'1.2-2' }}</div>
     </div>
     <div class="chart-container">
       <apx-chart
@@ -67,7 +67,7 @@
   </div>
 
  <div class="transactions-list">
-  <div *ngFor="let dayGroup of groupedData.days" class="day-group modern-account-list">
+  <div *ngFor="let dayGroup of visibleDays" class="day-group modern-account-list">
     <h4 class="day-header">{{ formatDate(dayGroup.date) }}</h4>
     <app-transaction-item 
       *ngFor="let transaction of dayGroup.txns" 
@@ -80,9 +80,15 @@
     </app-transaction-item>
     </div>
   
-  <div *ngIf="groupedData.days.length === 0" class="group-empty-state">
+  <div *ngIf="visibleDays.length === 0" class="group-empty-state">
     此月無紀錄
   </div>
+
+  <ion-infinite-scroll (ionInfinite)="onLoadMore($event)" [disabled]="currentLoadedIndex >= totalDays.length">
+    <ion-infinite-scroll-content loadingSpinner="bubbles" loadingText="載入中...">
+    </ion-infinite-scroll-content>
+  </ion-infinite-scroll>
+  
   <!-- Bottom spacing spacer to prevent FAB blocking transaction amounts when scrolled to the bottom -->
   <div style="height: 80px; width: 100%;"></div>
 </div>

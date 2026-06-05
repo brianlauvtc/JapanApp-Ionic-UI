@@ -393,13 +393,13 @@ export class AnalysisStatisticsComponent implements OnInit, OnDestroy {
           fontSize: '11px',
           fontWeight: 'bold'
         },
-        formatter: (val: string) => `${symbol}${Number(val).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`,
+        formatter: (val: string) => `${symbol}${Number(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
         offsetX: 0
       },
       xaxis: {
         categories: chartLabels,
         labels: {
-          formatter: (val: string) => `${symbol}${Number(val).toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+          formatter: (val: string) => `${symbol}${Number(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
         }
       },
       yaxis: {

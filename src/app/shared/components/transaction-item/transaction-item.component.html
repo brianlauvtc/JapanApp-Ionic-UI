@@ -19,7 +19,7 @@
       <!-- Multi-Split Details Breakdown -->
       <div *ngIf="hasSplitShares()" class="split-shares-detail-box" style="margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px;">
         <span *ngFor="let s of getSplitSharesDetails()" style="font-size: 11px; background: rgba(245, 158, 11, 0.08); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.15); padding: 1px 6px; border-radius: 4px;">
-          👥 {{ s.name }}: {{ s.symbol }}{{ s.amount | number:'1.0-2' }}
+          👥 {{ s.name }}: {{ s.symbol }}{{ s.amount | number:'1.2-2' }}
         </span>
       </div>
 
@@ -28,7 +28,7 @@
         <div style="font-size: 10px; font-weight: 600; color: var(--ion-color-primary); margin-bottom: 2px;">🔗 已結算以下代付項目:</div>
         <div *ngFor="let ref of getReferencedTxnsDetails()" style="font-size: 10px; color: var(--ion-color-step-600); display: flex; align-items: center; justify-content: space-between; gap: 8px;">
           <span>{{ ref.icon }} {{ ref.category }} - {{ ref.note }} ({{ ref.date }})</span>
-          <span style="font-weight: 500;">{{ ref.symbol }}{{ ref.amount | number:'1.0-2' }}</span>
+          <span style="font-weight: 500;">{{ ref.symbol }}{{ ref.amount | number:'1.2-2' }}</span>
         </div>
       </div>
     </ion-label>
@@ -36,7 +36,7 @@
     <div class="amount-container" slot="end">
       <h2 [class]="getTransactionDisplay().color" [innerHTML]="getTransactionDisplay().displayHtml"></h2>
       <p *ngIf="transaction?._runningBal !== undefined && context !== 'home_recent'" class="running-balance">
-        餘: {{ getCurrencySymbol() }}{{ transaction?._runningBal | number:'1.0-0' }}
+        餘: {{ getCurrencySymbol() }}{{ transaction?._runningBal | number:'1.2-2' }}
       </p>
     </div>
   </ion-item>

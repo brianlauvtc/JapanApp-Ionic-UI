@@ -27,6 +27,11 @@ export class HomePagePage implements OnInit, OnDestroy {
   homeData: any = { days: [], openBal: 0, closeBal: 0, totalInc: 0, totalExp: 0 };
   netWorthData: any = { net: 0 };
 
+  // Progressive loading variables
+  visibleDays: any[] = [];
+  totalDays: any[] = [];
+  currentLoadedIndex = 0;
+
   constructor(
     private financeVar: FinanceVarService,
     private financeService: FinanceService,
@@ -139,8 +144,32 @@ export class HomePagePage implements OnInit, OnDestroy {
         name: '淨資產',
         data: values
       }];
+
+      // Reset progressive chunk loader
+      this.totalDays = this.homeData.days || [];
+      this.visibleDays = [];
+      this.currentLoadedIndex = 0;
+      this.loadNextChunk(5); // Load first 5 days immediately
+      
       this.isLoading = false; // 載入完成
     }, 200); // 200 毫秒的延遲讓畫面有喘息空間
+  }
+
+  loadNextChunk(chunkSize: number = 5) {
+    if (this.currentLoadedIndex >= this.totalDays.length) {
+      return;
+    }
+    const nextIndex = Math.min(this.currentLoadedIndex + chunkSize, this.totalDays.length);
+    const chunk = this.totalDays.slice(this.currentLoadedIndex, nextIndex);
+    this.visibleDays = [...this.visibleDays, ...chunk];
+    this.currentLoadedIndex = nextIndex;
+  }
+
+  onLoadMore(event: any) {
+    setTimeout(() => {
+      this.loadNextChunk(10);
+      event.target.complete();
+    }, 100);
   }
 
  

@@ -166,7 +166,7 @@
           <ion-icon name="log-out-outline" slot="start" color="medium"></ion-icon>
           <ion-select formControlName="accountId" interface="action-sheet" [disabled]="!!contextAccountId" label="轉出帳戶">
             <ion-select-option *ngFor="let account of availableAccounts" [value]="account.id">
-              {{ account.name }} ({{ getCurrencySymbol(account.currency) }}{{ getAccBalance(account.id) | number:'1.0-0' }})
+              {{ account.name }} ({{ getCurrencySymbol(account.currency) }}{{ getAccBalance(account.id) | number:'1.2-2' }})
             </ion-select-option>
           </ion-select>
         </ion-item>
@@ -179,7 +179,7 @@
           <ion-icon name="log-in-outline" slot="start" color="medium"></ion-icon>
           <ion-select formControlName="accountToId" interface="action-sheet" label="轉入帳戶">
             <ion-select-option *ngFor="let account of availableAccounts" [value]="account.id" [disabled]="account.id === transactionForm.get('accountId')?.value">
-              {{ account.name }} ({{ getCurrencySymbol(account.currency) }}{{ getAccBalance(account.id) | number:'1.0-0' }})
+              {{ account.name }} ({{ getCurrencySymbol(account.currency) }}{{ getAccBalance(account.id) | number:'1.2-2' }})
             </ion-select-option>
           </ion-select>
         </ion-item>
@@ -206,15 +206,15 @@
               </span>
               <span style="font-size: 11px; color: var(--ion-color-step-500); display: flex; flex-wrap: wrap; gap: 8px; margin-top: 2px;">
                 <span>📅 {{ tx.date }}</span>
-                <span>• 代付: {{ getCurrencySymbol(tx.currency) }}{{ getSplitAmountForAccount(tx, getSelectedLoanAccountId()) | number:'1.0-2' }}</span>
-                <span *ngIf="getAlreadyRepaidAmount(tx) > 0" style="color: var(--ion-color-medium);">• 已還: {{ getCurrencySymbol(tx.currency) }}{{ getAlreadyRepaidAmount(tx) | number:'1.0-2' }}</span>
-                <span *ngIf="getAlreadyRepaidAmount(tx) > 0" style="color: #d97706; font-weight: 600;">• 剩：{{ getCurrencySymbol(tx.currency) }}{{ getRemainingBalance(tx, getSelectedLoanAccountId()) | number:'1.0-2' }}</span>
+                <span>• 代付: {{ getCurrencySymbol(tx.currency) }}{{ getSplitAmountForAccount(tx, getSelectedLoanAccountId()) | number:'1.2-2' }}</span>
+                <span *ngIf="getAlreadyRepaidAmount(tx) > 0" style="color: var(--ion-color-medium); font-weight: 500;">• 已還: {{ getCurrencySymbol(tx.currency) }}{{ getAlreadyRepaidAmount(tx) | number:'1.2-2' }}</span>
+                <span *ngIf="getAlreadyRepaidAmount(tx) > 0" style="color: #d97706; font-weight: 600;">• 剩：{{ getCurrencySymbol(tx.currency) }}{{ getRemainingBalance(tx, getSelectedLoanAccountId()) | number:'1.2-2' }}</span>
               </span>
             </div>
           </div>
           <div style="font-size: 13px; font-weight: 600; color: var(--ion-color-primary); display: flex; flex-direction: column; align-items: flex-end;">
             <span style="font-size: 9px; font-weight: 500; color: var(--ion-color-step-500);">待結算:</span>
-            <span>{{ getCurrencySymbol(tx.currency) }}{{ getRemainingBalance(tx, getSelectedLoanAccountId()) | number:'1.0-2' }}</span>
+            <span>{{ getCurrencySymbol(tx.currency) }}{{ getRemainingBalance(tx, getSelectedLoanAccountId()) | number:'1.2-2' }}</span>
           </div>
         </div>
       </div>
@@ -224,7 +224,7 @@
           <ion-icon name="wallet-outline" slot="start" color="primary"></ion-icon>
           <ion-select formControlName="accountId" interface="action-sheet" [disabled]="!!contextAccountId" [label]="getAccountLabel()">
             <ion-select-option *ngFor="let account of availableAccounts" [value]="account.id">
-              {{ account.name }} ({{ getCurrencySymbol(account.currency) }}{{ getAccBalance(account.id) | number:'1.0-0' }})
+              {{ account.name }} ({{ getCurrencySymbol(account.currency) }}{{ getAccBalance(account.id) | number:'1.2-2' }})
             </ion-select-option>
           </ion-select>
         </ion-item>
