@@ -41,6 +41,7 @@ export class AIService {
       5. Categorize the transaction into EXACTLY ONE of these category IDs: [${categoryIdsPrompt}]. Default to "other_expense" if unsure.
       6. Parse the transaction "date" (YYYY-MM-DD). Use today's date if missing.
       7. Write a short merchant name or summary as "note".
+      8. Detect prepayment splits or friend loans from either the user's comment (e.g. "Eric 80, Carl 90" or "split Eric 100") or the image receipt. If mentioned, set "isSplitPay" to true and populate "splitShares" with each friend's name and amount. Exclude the user's portion (e.g. "me 130") from the splitShares array. If not mentioned, set "isSplitPay" to false and "splitShares" to an empty array.
 
       Respond ONLY with a strictly valid JSON array (even for 1 receipt). Structure:
       [
@@ -53,6 +54,10 @@ export class AIService {
           "note": "Merchant name",
           "items": [
             { "name": "item", "quantity": 1, "price": 10 }
+          ],
+          "isSplitPay": boolean,
+          "splitShares": [
+            { "name": "friend name", "amount": number }
           ]
         }
       ]

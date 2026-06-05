@@ -972,6 +972,8 @@ export class AddTransactionPagePage implements OnInit {
     // 🔍 檢查 AI 辨識出的結果有沒有包含匯率欄位 (支援 exchangeRate 或 exRate 命名)
     const aiDetectedRate = transaction.exchangeRate || transaction.exRate;
     
+    const isSplit = !!transaction.isSplitPay;
+    
     // Patch 表單資料
     this.transactionForm.patchValue({
       amount: transaction.amount || 0,
@@ -981,11 +983,36 @@ export class AddTransactionPagePage implements OnInit {
       note: transaction.note || '',
       category: selectedCategory.name,
       // ✔️ 如果截圖有匯率就直接填入四位小數，沒有的話先預設為 1
-      exchangeRate: aiDetectedRate ? Number(Number(aiDetectedRate).toFixed(6)) : 1 
+      exchangeRate: aiDetectedRate ? Number(Number(aiDetectedRate).toFixed(6)) : 1,
+      isSplitPay: isSplit
     });
     
     if (transaction.items && transaction.items.length > 0) {
       this.items = [...transaction.items];
+    }
+
+    this.initFriendSplits();
+    if (isSplit && transaction.splitShares && transaction.splitShares.length > 0) {
+      transaction.splitShares.forEach((share: any) => {
+        const name = share.name.trim();
+        if (!name) return;
+
+        const existing = this.friendSplits.find(fs => fs.accountName.toLowerCase() === name.toLowerCase());
+        if (existing) {
+          existing.selected = true;
+          existing.amount = share.amount;
+        } else {
+          const tempId = `loan_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+          this.friendSplits.push({
+            accountId: tempId,
+            accountName: name,
+            amount: share.amount,
+            selected: true,
+            isNew: true
+          });
+        }
+      });
+      this.onFriendSplitChange();
     }
     
     // ✔️ 防禦關鍵：如果 AI 從截圖中有辨識到實際匯率，就直接沿用，不再執行市場預設匯率計算

@@ -86,7 +86,9 @@ export class AIProcessingPage implements OnInit {
             exchangeRate: tx.exchangeRate || tx.exRate || null,
             date: tx.date || new Date().toISOString().split('T')[0],
             note: tx.note || '',
-            items: tx.items || [] // Maps perfectly into your TransactionItem[] interface
+            items: tx.items || [], // Maps perfectly into your TransactionItem[] interface
+            isSplitPay: !!tx.isSplitPay,
+            splitShares: tx.splitShares || []
           });
         });
         console.log(`✅ Successfully processed image ${index + 1}/${this.totalImages}`);
