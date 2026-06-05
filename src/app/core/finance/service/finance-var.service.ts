@@ -343,5 +343,22 @@ export class FinanceVarService {
   updateCustomCategories(categories: any[]) {
     this.updateAppData({ customCategories: categories });
   }
-  
+
+  // Cache for exchange rates to prevent blocking API requests on modal open
+  private cachedExchangeRates: { [key: string]: number } = { HKD: 1, JPY: 20 };
+  private lastRatesFetchTime: number = 0;
+
+  getExchangeRates(): { [key: string]: number } {
+    return this.cachedExchangeRates;
+  }
+
+  setExchangeRates(rates: { [key: string]: number }) {
+    this.cachedExchangeRates = { ...this.cachedExchangeRates, ...rates };
+    this.lastRatesFetchTime = Date.now();
+  }
+
+  isRatesFresh(): boolean {
+    // Fresh if fetched within last 4 hours
+    return (Date.now() - this.lastRatesFetchTime) < 4 * 60 * 60 * 1000;
+  }
 }

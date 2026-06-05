@@ -340,7 +340,7 @@
         </div>
       </ion-item>
 
-      <ion-modal [isOpen]="isDatePickerOpen" (didDismiss)="closeCustomDatePicker()" class="custom-calendar-modal" mode="ios">
+      <ion-modal [isOpen]="isDatePickerOpen" [keepContentsMounted]="true" (didDismiss)="closeCustomDatePicker()" class="custom-calendar-modal" mode="ios">
         <ng-template>
           <div class="calendar-modal-container">
             <div class="calendar-header">

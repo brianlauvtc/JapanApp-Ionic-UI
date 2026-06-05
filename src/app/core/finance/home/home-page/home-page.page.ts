@@ -66,11 +66,9 @@ export class HomePagePage implements OnInit, OnDestroy {
     }
   }
 
-  renderHome() {
-    this.isLoading = true; // 開始載入
-
-    setTimeout(() => {
-
+  renderHome(preventReset: boolean = false) {
+    if (preventReset) {
+      // Synchronous, in-place update for optimal performance (no loading screen or delay)
       this.homeData = this.financeService.calculateDailyGroupedData(this.viewedMonth, 'home');
       this.netWorthData = this.financeService.getNetWorth();
 
@@ -82,77 +80,114 @@ export class HomePagePage implements OnInit, OnDestroy {
       const sortedChartData = chartData.sort((a, b) => moment(a.date).diff(moment(b.date)));
       const labels = sortedChartData.map(d => moment(d.date).format('D'));
       const values = sortedChartData.map(d => d.val);
-      
-      this.chartOptions = {
-        chart: {
-          type: 'line',
-          height: 80,
-          animations: {
-            enabled: false
-          },
-          toolbar: {
-            show: false
-          }
-        },
-        stroke: {
-          curve: 'smooth',
-          width: 2
-        },
-        fill: {
-          type: 'gradient',
-          gradient: {
-            shade: 'light',
-            type: 'vertical',
-            shadeIntensity: 0.4,
-            gradientToColors: undefined,
-            inverseColors: false,
-            opacityFrom: 0.2,
-            opacityTo: 0.1,
-            stops: [0, 100]
-          }
-        },
-        dataLabels: {
-          enabled: false
-        },
-        markers: {
-          size: 0
-        },
-        xaxis: {
-          categories: labels,
-          labels: {
-            show: false
-          },
-          axisTicks: {
-            show: false
-          },
-          axisBorder: {
-            show: false
-          }
-        },
-        yaxis: {
-          show: false,
+
+      if (this.chartOptions && this.chartOptions.xaxis && this.chartOptions.yaxis) {
+        this.chartSeries = [{
+          name: '淨資產',
+          data: values
+        }];
+        this.chartOptions.xaxis = {
+          ...this.chartOptions.xaxis,
+          categories: labels
+        };
+        this.chartOptions.yaxis = {
+          ...this.chartOptions.yaxis,
           min: Math.min(...values) * 0.9,
           max: Math.max(...values) * 1.1
-        },
-        grid: {
-          show: false
-        },
-        colors: ['#4f46e5']
-      };
-      
-      this.chartSeries = [{
-        name: '淨資產',
-        data: values
-      }];
+        };
+      }
 
-      // Reset progressive chunk loader
       this.totalDays = this.homeData.days || [];
-      this.visibleDays = [];
-      this.currentLoadedIndex = 0;
-      this.loadNextChunk(5); // Load first 5 days immediately
-      
-      this.isLoading = false; // 載入完成
-    }, 200); // 200 毫秒的延遲讓畫面有喘息空間
+      this.currentLoadedIndex = Math.max(this.currentLoadedIndex, 5);
+      this.visibleDays = this.totalDays.slice(0, this.currentLoadedIndex);
+      this.isLoading = false;
+    } else {
+      this.isLoading = true; // 開始載入
+
+      setTimeout(() => {
+        this.homeData = this.financeService.calculateDailyGroupedData(this.viewedMonth, 'home');
+        this.netWorthData = this.financeService.getNetWorth();
+
+        const chartData = [{ date: `${this.viewedMonth}-01`, val: this.homeData.openBal }];
+        this.homeData.days.forEach((dayGrp: any) => {
+          chartData.push({ date: dayGrp.date, val: dayGrp.endBal });
+        });
+        
+        const sortedChartData = chartData.sort((a, b) => moment(a.date).diff(moment(b.date)));
+        const labels = sortedChartData.map(d => moment(d.date).format('D'));
+        const values = sortedChartData.map(d => d.val);
+        
+        this.chartOptions = {
+          chart: {
+            type: 'line',
+            height: 80,
+            animations: {
+              enabled: false
+            },
+            toolbar: {
+              show: false
+            }
+          },
+          stroke: {
+            curve: 'smooth',
+            width: 2
+          },
+          fill: {
+            type: 'gradient',
+            gradient: {
+              shade: 'light',
+              type: 'vertical',
+              shadeIntensity: 0.4,
+              gradientToColors: undefined,
+              inverseColors: false,
+              opacityFrom: 0.2,
+              opacityTo: 0.1,
+              stops: [0, 100]
+            }
+          },
+          dataLabels: {
+            enabled: false
+          },
+          markers: {
+            size: 0
+          },
+          xaxis: {
+            categories: labels,
+            labels: {
+              show: false
+            },
+            axisTicks: {
+              show: false
+            },
+            axisBorder: {
+              show: false
+            }
+          },
+          yaxis: {
+            show: false,
+            min: Math.min(...values) * 0.9,
+            max: Math.max(...values) * 1.1
+          },
+          grid: {
+            show: false
+          },
+          colors: ['#4f46e5']
+        };
+        
+        this.chartSeries = [{
+          name: '淨資產',
+          data: values
+        }];
+
+        // Reset progressive chunk loader
+        this.totalDays = this.homeData.days || [];
+        this.visibleDays = [];
+        this.currentLoadedIndex = 0;
+        this.loadNextChunk(5); // Load first 5 days immediately
+        
+        this.isLoading = false; // 載入完成
+      }, 200); // 200 毫秒的延遲讓畫面有喘息空間
+    }
   }
 
   loadNextChunk(chunkSize: number = 5) {
@@ -230,8 +265,9 @@ export class HomePagePage implements OnInit, OnDestroy {
           this.router.navigate(['/auto-upload-receipt']);
         } else {
           console.log('Transaction saved:', data);
-          // Refresh the data
-          this.renderHome();
+          const isSameMonth = data.transaction && data.transaction.date.substring(0, 7) === this.viewedMonth;
+          const shouldPreventReset = data.success && (isSameMonth || data.deleted);
+          this.renderHome(shouldPreventReset);
         }
       }
     } catch (error) {
@@ -258,8 +294,9 @@ export class HomePagePage implements OnInit, OnDestroy {
           this.router.navigate(['/auto-upload-receipt']);
         } else {
           console.log('Transaction updated:', data);
-          // Refresh the data
-          this.renderHome();
+          const isSameMonth = data.transaction && data.transaction.date.substring(0, 7) === this.viewedMonth;
+          const shouldPreventReset = data.success && (isSameMonth || data.deleted);
+          this.renderHome(shouldPreventReset);
         }
       }
     } catch (error) {
@@ -286,7 +323,9 @@ export class HomePagePage implements OnInit, OnDestroy {
           this.router.navigate(['/auto-upload-receipt']);
         } else {
           console.log('Transaction copied and saved:', data);
-          this.renderHome();
+          const isSameMonth = data.transaction && data.transaction.date.substring(0, 7) === this.viewedMonth;
+          const shouldPreventReset = data.success && (isSameMonth || data.deleted);
+          this.renderHome(shouldPreventReset);
         }
       }
     } catch (error) {
@@ -317,7 +356,7 @@ export class HomePagePage implements OnInit, OnDestroy {
             this.financeVar.deleteTransaction(transactionId);
             
             // 刪除後重新渲染畫面
-            this.renderHome();
+            this.renderHome(true);
           }
         }
       ]

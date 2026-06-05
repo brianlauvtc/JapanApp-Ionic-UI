@@ -68,7 +68,7 @@ export class FundDetailPage implements OnInit, OnDestroy {
     this.baseCurrencySymbol = currenciesObj[this.baseCurrency]?.symbol || '$';
   }
 
-  renderFundDetail() {
+  renderFundDetail(preventReset: boolean = false) {
     this.groupedData = this.financeService.calculateDailyGroupedData(this.viewedMonth, 'fund', this.fundId);
     const data = this.groupedData;
     const fund = this.financeVar.getAppData().funds.find(f => f.id === this.fundId);
@@ -89,73 +89,94 @@ export class FundDetailPage implements OnInit, OnDestroy {
     const labels = sortedChartData.map(d => moment(d.date).format('D'));
     const values = sortedChartData.map(d => d.val);
     
-    this.chartOptions = {
-      chart: {
-        type: 'line',
-        height: 64,
-        animations: {
-          enabled: false
-        },
-        toolbar: {
-          show: false
-        }
-      },
-      stroke: {
-        curve: 'smooth',
-        width: 2
-      },
-      fill: {
-        type: 'gradient',
-        gradient: {
-          shade: 'light',
-          type: 'vertical',
-          shadeIntensity: 0.4,
-          gradientToColors: undefined,
-          inverseColors: false,
-          opacityFrom: 0.2,
-          opacityTo: 0.1,
-          stops: [0, 100]
-        }
-      },
-      dataLabels: {
-        enabled: false
-      },
-      markers: {
-        size: 0
-      },
-      xaxis: {
-        categories: labels,
-        labels: {
-          show: false
-        },
-        axisTicks: {
-          show: false
-        },
-        axisBorder: {
-          show: false
-        }
-      },
-      yaxis: {
-        show: false,
+    if (preventReset && this.chartOptions && this.chartOptions.xaxis && this.chartOptions.yaxis) {
+      this.chartSeries = [{
+        name: '基金餘額',
+        data: values
+      }];
+      this.chartOptions.xaxis = {
+        ...this.chartOptions.xaxis,
+        categories: labels
+      };
+      this.chartOptions.yaxis = {
+        ...this.chartOptions.yaxis,
         min: Math.min(...values) * 0.9,
         max: Math.max(...values) * 1.1
-      },
-      grid: {
-        show: false
-      },
-      colors: ['#10b981']
-    };
-    
-    this.chartSeries = [{
-      name: '基金餘額',
-      data: values
-    }];
+      };
+    } else {
+      this.chartOptions = {
+        chart: {
+          type: 'line',
+          height: 64,
+          animations: {
+            enabled: false
+          },
+          toolbar: {
+            show: false
+          }
+        },
+        stroke: {
+          curve: 'smooth',
+          width: 2
+        },
+        fill: {
+          type: 'gradient',
+          gradient: {
+            shade: 'light',
+            type: 'vertical',
+            shadeIntensity: 0.4,
+            gradientToColors: undefined,
+            inverseColors: false,
+            opacityFrom: 0.2,
+            opacityTo: 0.1,
+            stops: [0, 100]
+          }
+        },
+        dataLabels: {
+          enabled: false
+        },
+        markers: {
+          size: 0
+        },
+        xaxis: {
+          categories: labels,
+          labels: {
+            show: false
+          },
+          axisTicks: {
+            show: false
+          },
+          axisBorder: {
+            show: false
+          }
+        },
+        yaxis: {
+          show: false,
+          min: Math.min(...values) * 0.9,
+          max: Math.max(...values) * 1.1
+        },
+        grid: {
+          show: false
+        },
+        colors: ['#10b981']
+      };
+      
+      this.chartSeries = [{
+        name: '基金餘額',
+        data: values
+      }];
+    }
 
-    // Reset progressive chunk loader
+    // Reset or preserve progressive chunk loader
     this.totalDays = this.groupedData.days || [];
-    this.visibleDays = [];
-    this.currentLoadedIndex = 0;
-    this.loadNextChunk(5); // Load first 5 days immediately
+    if (preventReset) {
+      this.currentLoadedIndex = Math.max(this.currentLoadedIndex, 5);
+      this.visibleDays = this.totalDays.slice(0, this.currentLoadedIndex);
+    } else {
+      this.visibleDays = [];
+      this.currentLoadedIndex = 0;
+      this.loadNextChunk(5); // Load first 5 days immediately
+    }
   }
 
   loadNextChunk(chunkSize: number = 5) {
@@ -238,7 +259,9 @@ export class FundDetailPage implements OnInit, OnDestroy {
           this.router.navigate(['/auto-upload-receipt']);
         } else {
           console.log('Transaction saved:', data);
-          this.renderFundDetail();
+          const isSameMonth = data.transaction && data.transaction.date.substring(0, 7) === this.viewedMonth;
+          const shouldPreventReset = data.success && (isSameMonth || data.deleted);
+          this.renderFundDetail(shouldPreventReset);
         }
       }
     } catch (error) {
@@ -258,7 +281,7 @@ export class FundDetailPage implements OnInit, OnDestroy {
           role: 'destructive',
           handler: () => {
             this.financeVar.deleteTransaction(id);
-            this.renderFundDetail();
+            this.renderFundDetail(true);
           }
         }
       ]
@@ -307,7 +330,9 @@ export class FundDetailPage implements OnInit, OnDestroy {
           this.router.navigate(['/auto-upload-receipt']);
         } else {
           console.log('Transaction updated:', data);
-          this.renderFundDetail();
+          const isSameMonth = data.transaction && data.transaction.date.substring(0, 7) === this.viewedMonth;
+          const shouldPreventReset = data.success && (isSameMonth || data.deleted);
+          this.renderFundDetail(shouldPreventReset);
         }
       }
     } catch (error) {
@@ -336,7 +361,9 @@ export class FundDetailPage implements OnInit, OnDestroy {
           this.router.navigate(['/auto-upload-receipt']);
         } else {
           console.log('Transaction copied and saved:', data);
-          this.renderFundDetail();
+          const isSameMonth = data.transaction && data.transaction.date.substring(0, 7) === this.viewedMonth;
+          const shouldPreventReset = data.success && (isSameMonth || data.deleted);
+          this.renderFundDetail(shouldPreventReset);
         }
       }
     } catch (error) {

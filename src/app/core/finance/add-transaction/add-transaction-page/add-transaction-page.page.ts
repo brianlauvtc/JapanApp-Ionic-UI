@@ -81,8 +81,8 @@ export class AddTransactionPagePage implements OnInit {
   }
 
   ngOnInit() {
-    this.fetchRealRates();
     this.initForm();
+    this.fetchRealRates();
     this.initFriendSplits();
     this.setupTypeSubscription();
     this.loadContextFromRoute();      
@@ -114,12 +114,24 @@ export class AddTransactionPagePage implements OnInit {
   }
 
   async fetchRealRates() {
+    if (this.financeVar.isRatesFresh()) {
+      this.realExchangeRates = { ...this.financeVar.getExchangeRates() };
+      if (!this.isEditMode) {
+        this.calculateExchangeRate();
+      }
+      return;
+    }
+
     try {
       const response = await fetch('https://open.er-api.com/v6/latest/HKD');
       const data = await response.json();
       if (data && data.rates) {
-        this.realExchangeRates['HKD'] = 1;
-        this.realExchangeRates['JPY'] = data.rates.JPY; // 抓取真實匯率
+        const newRates = {
+          HKD: 1,
+          JPY: data.rates.JPY
+        };
+        this.financeVar.setExchangeRates(newRates);
+        this.realExchangeRates = { ...this.financeVar.getExchangeRates() };
         
         // 如果是新增模式，且還沒填寫過資料，則刷新匯率
         if (!this.isEditMode) {
@@ -127,7 +139,8 @@ export class AddTransactionPagePage implements OnInit {
         }
       }
     } catch (e) {
-      console.error('無法獲取即時匯率，將使用預設值', e);
+      console.error('無法獲取即時匯率，將使用預設或快取值', e);
+      this.realExchangeRates = { ...this.financeVar.getExchangeRates() };
     }
   }
 
@@ -334,6 +347,7 @@ export class AddTransactionPagePage implements OnInit {
   }
 
   calculateExchangeRate() {
+    if (!this.transactionForm) return;
     const currency = this.transactionForm.get('currency')?.value;
     const accountId = this.transactionForm.get('accountId')?.value;
     const accountToId = this.transactionForm.get('accountToId')?.value;
@@ -629,7 +643,12 @@ export class AddTransactionPagePage implements OnInit {
     });
     await alert.present();
   }
-  async goBack() {
+  async goBack(savedData?: any) {
+    if (savedData) {
+      this.performGoBack(savedData);
+      return;
+    }
+
     // Handle AI scanning mode - show confirmation before going back
     if (this.isAIScanningMode) {
       const alert = await this.alertController.create({
@@ -689,10 +708,10 @@ export class AddTransactionPagePage implements OnInit {
     this.performGoBack();
   }
   
-  private async performGoBack() {
+  private async performGoBack(savedData?: any) {
     // Handle modal mode
     if (this.isModal && this.modalCtrl) {
-      await this.modalCtrl.dismiss();
+      await this.modalCtrl.dismiss(savedData);
       return;
     }
     
@@ -1172,12 +1191,13 @@ export class AddTransactionPagePage implements OnInit {
           buttons: ['確定']
         });
         await alert.present();
-        await this.goBack();
+        await this.goBack({ success: true });
 
       } else {
         const formValue = this.transactionForm.value;
         const amount = parseFloat(formValue.amount);
         const manualRate = parseFloat(formValue.exchangeRate) || 1;
+        let savedTransactionToReturn: any = null;
         
         if (this.txnType === 'expense' && formValue.isSplitPay) {
           const selectedSplits = this.friendSplits.filter(fs => fs.selected && (parseFloat(fs.amount as any) || 0) > 0);
@@ -1313,6 +1333,7 @@ export class AddTransactionPagePage implements OnInit {
             this.financeService.executeAddTransaction(expenseTxn);
             transferTxns.forEach(tx => this.financeService.executeAddTransaction(tx));
           }
+          savedTransactionToReturn = expenseTxn;
 
         } else {
           if (this.isEditMode) {
@@ -1387,6 +1408,7 @@ export class AddTransactionPagePage implements OnInit {
           } else {
             this.financeService.executeAddTransaction(transaction);
           }
+          savedTransactionToReturn = transaction;
         }
         
         this.saveLastAccount(formValue.accountId);
@@ -1394,7 +1416,7 @@ export class AddTransactionPagePage implements OnInit {
         this.transactionForm.markAsUntouched();
         this.isFormDirty = false;
         this.initialFormValues = this.transactionForm.getRawValue();
-        await this.goBack();
+        await this.goBack({ success: true, transaction: savedTransactionToReturn });
       }
     } catch (error) {
       console.error('Error saving transaction:', error);
