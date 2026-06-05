@@ -19,6 +19,9 @@ export class AnalysisStatisticsComponent implements OnInit, OnDestroy {
   public donutChartSeries: number[] = [];
   public trendChartOptions: ApexOptions = {};
   public trendChartSeries: any[] = [];
+  public categoryBarChartOptions: ApexOptions = {};
+  public categoryBarChartSeries: any[] = [];
+  public selectedCategoryChartType: 'donut' | 'bar' = 'donut';
 
   // Local component states
   public isDarkMode = false;
@@ -37,6 +40,19 @@ export class AnalysisStatisticsComponent implements OnInit, OnDestroy {
     const appData = this.analysisService.appDataSignal();
     return appData?.settings.baseCurrency === 'JPY' ? '¥' : '$';
   });
+
+  // Local computed signal wrappers to decouple template from service caching
+  public selectedRangeType = computed<'week' | 'month' | 'year' | 'custom'>(() => this.analysisService.selectedRangeType());
+  public transactionsInPeriod = computed<any[]>(() => this.analysisService.transactionsInPeriod());
+  public totalExpenses = computed<number>(() => this.analysisService.totalExpenses());
+  public totalIncomes = computed<number>(() => this.analysisService.totalIncomes());
+  public savingsRate = computed<number>(() => this.analysisService.savingsRate());
+  public dailyAverageExpense = computed<number>(() => this.analysisService.dailyAverageExpense());
+  public selectedType = computed<'expense' | 'income' | 'overall'>(() => this.analysisService.selectedType());
+  public categorySummaries = computed<any[]>(() => this.analysisService.categorySummaries());
+  public customStartDate = computed<string>(() => this.analysisService.customStartDate());
+  public customEndDate = computed<string>(() => this.analysisService.customEndDate());
+  public appDataSignal = computed<any>(() => this.analysisService.appDataSignal());
 
   // Dynamically compile active years and months that contain transactions
   public availableMonths = computed(() => {
@@ -101,6 +117,28 @@ export class AnalysisStatisticsComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
+  // Human-readable formatted date range label
+  public dateRangeLabel = computed(() => {
+    const type = this.analysisService.selectedRangeType();
+    const start = this.analysisService.startDate();
+    const end = this.analysisService.endDate();
+    
+    if (type === 'week') {
+      const startMom = moment(start);
+      const endMom = moment(end);
+      return `${startMom.format('YYYY年MM月DD日')} ~ ${endMom.format('MM月DD日')}`;
+    } else if (type === 'month') {
+      const monthMom = moment(`${this.analysisService.selectedMonth()}-01`);
+      return `${monthMom.format('YYYY年 MM月')}`;
+    } else if (type === 'year') {
+      return `${this.analysisService.selectedYear()}年`;
+    } else {
+      const startMom = moment(start);
+      const endMom = moment(end);
+      return `${startMom.format('YYYY/MM/DD')} ~ ${endMom.format('YYYY/MM/DD')}`;
+    }
+  });
+
   // Set selected Month filter
   public changeMonthFilter(event: any) {
     const month = event.detail.value;
@@ -109,6 +147,60 @@ export class AnalysisStatisticsComponent implements OnInit, OnDestroy {
       this.expandedCategories = {};
       this.limitMap = {};
     }
+  }
+
+  public changeRangeType(type: any) {
+    this.analysisService.selectedRangeType.set(type);
+    this.expandedCategories = {};
+    this.limitMap = {};
+  }
+
+  public changeCustomStartDate(event: any) {
+    if (event.target.value) {
+      this.analysisService.customStartDate.set(event.target.value);
+      this.expandedCategories = {};
+      this.limitMap = {};
+    }
+  }
+
+  public changeCustomEndDate(event: any) {
+    if (event.target.value) {
+      this.analysisService.customEndDate.set(event.target.value);
+      this.expandedCategories = {};
+      this.limitMap = {};
+    }
+  }
+
+  public prevPeriod() {
+    const type = this.analysisService.selectedRangeType();
+    if (type === 'week') {
+      const prevWeek = moment(this.analysisService.currentWeekDate()).subtract(1, 'week').format('YYYY-MM-DD');
+      this.analysisService.currentWeekDate.set(prevWeek);
+    } else if (type === 'month') {
+      const prevMonth = moment(`${this.analysisService.selectedMonth()}-01`).subtract(1, 'month').format('YYYY-MM');
+      this.analysisService.selectedMonth.set(prevMonth);
+    } else if (type === 'year') {
+      const prevYear = moment(`${this.analysisService.selectedYear()}-01-01`).subtract(1, 'year').format('YYYY');
+      this.analysisService.selectedYear.set(prevYear);
+    }
+    this.expandedCategories = {};
+    this.limitMap = {};
+  }
+
+  public nextPeriod() {
+    const type = this.analysisService.selectedRangeType();
+    if (type === 'week') {
+      const nextWeek = moment(this.analysisService.currentWeekDate()).add(1, 'week').format('YYYY-MM-DD');
+      this.analysisService.currentWeekDate.set(nextWeek);
+    } else if (type === 'month') {
+      const nextMonth = moment(`${this.analysisService.selectedMonth()}-01`).add(1, 'month').format('YYYY-MM');
+      this.analysisService.selectedMonth.set(nextMonth);
+    } else if (type === 'year') {
+      const nextYear = moment(`${this.analysisService.selectedYear()}-01-01`).add(1, 'year').format('YYYY');
+      this.analysisService.selectedYear.set(nextYear);
+    }
+    this.expandedCategories = {};
+    this.limitMap = {};
   }
 
   // Change display category type (Expense / Income)
@@ -267,6 +359,69 @@ export class AnalysisStatisticsComponent implements OnInit, OnDestroy {
           formatter: (val: number) => `${symbol}${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
         }
       }
+    };
+
+    // Category Bar Chart configuration (F-2.5)
+    this.categoryBarChartSeries = [{
+      name: this.analysisService.selectedType() === 'overall' ? '儲蓄淨額' : (this.analysisService.selectedType() === 'expense' ? '總支出' : '總收入'),
+      data: chartSeries
+    }];
+
+    this.categoryBarChartOptions = {
+      chart: {
+        type: 'bar',
+        height: Math.max(250, chartSeries.length * 40),
+        foreColor: isDark ? '#e2e8f0' : '#1e293b',
+        toolbar: { show: false }
+      },
+      colors: chartColors,
+      plotOptions: {
+        bar: {
+          horizontal: true,
+          barHeight: '60%',
+          distributed: true,
+          dataLabels: {
+            position: 'end'
+          }
+        }
+      },
+      dataLabels: {
+        enabled: true,
+        textAnchor: 'start',
+        style: {
+          colors: ['#fff'],
+          fontSize: '11px',
+          fontWeight: 'bold'
+        },
+        formatter: (val: string) => `${symbol}${Number(val).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`,
+        offsetX: 0
+      },
+      xaxis: {
+        categories: chartLabels,
+        labels: {
+          formatter: (val: string) => `${symbol}${Number(val).toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+        }
+      },
+      yaxis: {
+        labels: {
+          show: true,
+          style: {
+            fontSize: '12px',
+            fontWeight: '600'
+          }
+        }
+      },
+      grid: {
+        borderColor: isDark ? '#334155' : '#e2e8f0',
+        xaxis: { lines: { show: true } }
+      },
+      tooltip: {
+        theme: isDark ? 'dark' : 'light',
+        y: {
+          formatter: (val: number) => `${symbol}${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        }
+      },
+      legend: { show: false }
     };
 
     // Monthly Bar Chart: Cash flow timeline trends
@@ -465,7 +620,7 @@ export class AnalysisStatisticsComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Launch Add Transaction Modal directly from the Zero-State dashboard trigger.
+   * Launch Add Transaction Modal directly from the Zero-State dashboard trigger (F-8/Component 9 aligned).
    */
   public async openAddForm() {
     try {

@@ -1,4 +1,4 @@
-<ion-item-sliding *ngIf="transaction">
+<ion-item-sliding #slidingItem *ngIf="transaction">
   
   <ion-item [button]="!transaction?.type?.startsWith('sys_')" (click)="onEdit()" lines="none" class="transaction-item">
     <ion-avatar slot="start">
@@ -15,6 +15,22 @@
         <ion-badge *ngIf="transaction?._warnLimit" color="danger" class="warn-badge">⚠️ 超限</ion-badge>
       </h2>
       <p class="transaction-note">{{ getTransactionDisplay().note }}</p>
+      
+      <!-- Multi-Split Details Breakdown -->
+      <div *ngIf="hasSplitShares()" class="split-shares-detail-box" style="margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px;">
+        <span *ngFor="let s of getSplitSharesDetails()" style="font-size: 11px; background: rgba(245, 158, 11, 0.08); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.15); padding: 1px 6px; border-radius: 4px;">
+          👥 {{ s.name }}: {{ s.symbol }}{{ s.amount | number:'1.0-2' }}
+        </span>
+      </div>
+
+      <!-- Repayment Reference Details Breakdown -->
+      <div *ngIf="hasReferences()" class="references-detail-box" style="margin-top: 6px; padding: 4px 8px; background: rgba(56, 189, 248, 0.05); border-left: 2px solid var(--ion-color-primary); border-radius: 0 4px 4px 0;">
+        <div style="font-size: 10px; font-weight: 600; color: var(--ion-color-primary); margin-bottom: 2px;">🔗 已結算以下代付項目:</div>
+        <div *ngFor="let ref of getReferencedTxnsDetails()" style="font-size: 10px; color: var(--ion-color-step-600); display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+          <span>{{ ref.icon }} {{ ref.category }} - {{ ref.note }} ({{ ref.date }})</span>
+          <span style="font-weight: 500;">{{ ref.symbol }}{{ ref.amount | number:'1.0-2' }}</span>
+        </div>
+      </div>
     </ion-label>
     
     <div class="amount-container" slot="end">
@@ -26,7 +42,11 @@
   </ion-item>
 
   <ion-item-options side="end">
-    <ion-item-option color="danger" (click)="onDelete()">
+    <ion-item-option color="secondary" (click)="onCopy(slidingItem)">
+      <ion-icon slot="icon-only" name="copy-outline"></ion-icon>
+      複製
+    </ion-item-option>
+    <ion-item-option color="danger" (click)="onDelete(slidingItem)">
       <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
       刪除
     </ion-item-option>

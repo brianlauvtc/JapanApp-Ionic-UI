@@ -130,7 +130,33 @@ export class FinanceVarService {
   }
 
   deleteTransaction(id: string) {
-    const transactions = this.getTransactions().filter(txn => txn.id !== id);
+    const txn = this.getTransactions().find(t => t.id === id);
+    let transactions = this.getTransactions();
+    if (txn) {
+      const toDelete = new Set<string>();
+      toDelete.add(id);
+
+      if (txn.linkedTransactionId) {
+        toDelete.add(txn.linkedTransactionId);
+      }
+      if (txn.linkedTransactionIds) {
+        txn.linkedTransactionIds.forEach(lid => toDelete.add(lid));
+      }
+
+      // Also handle backwards deletes: find if there is a main transaction that links to this ID
+      const mainTx = this.getTransactions().find(t => t.linkedTransactionId === id || (t.linkedTransactionIds && t.linkedTransactionIds.includes(id)));
+      if (mainTx) {
+        toDelete.add(mainTx.id);
+        if (mainTx.linkedTransactionId) toDelete.add(mainTx.linkedTransactionId);
+        if (mainTx.linkedTransactionIds) {
+          mainTx.linkedTransactionIds.forEach(lid => toDelete.add(lid));
+        }
+      }
+
+      transactions = transactions.filter(t => !toDelete.has(t.id));
+    } else {
+      transactions = transactions.filter(t => t.id !== id);
+    }
     this.updateAppData({ transactions });
   }
 

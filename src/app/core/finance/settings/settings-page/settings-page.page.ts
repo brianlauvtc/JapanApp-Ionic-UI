@@ -24,6 +24,7 @@ export class SettingsPagePage implements OnInit {
   newCat = { name: '', id: '', icon: '' };
   isEditCatMode = false;
   editOriginalId = '';
+  activeSegment: 'profile' | 'categories' | 'datamgt' = 'profile';
 
   constructor(
     private fb: FormBuilder,
@@ -109,6 +110,178 @@ export class SettingsPagePage implements OnInit {
               color: 'dark'
             });
             await toast.present();
+          }
+        }
+      ]
+    });
+
+    await alert.present();
+  }
+
+  async clearRecordsOnly() {
+    const appData = this.financeVar.getAppData();
+    const accounts = appData.accounts;
+    
+    if (!accounts || accounts.length === 0) {
+      const alert = await this.alertCtrl.create({
+        header: '無有效帳戶',
+        message: '系統目前沒有任何帳戶。',
+        buttons: ['確定']
+      });
+      await alert.present();
+      return;
+    }
+
+    const inputs = accounts.map(acc => ({
+      label: `${acc.name} (${acc.currency})`,
+      type: 'checkbox' as const,
+      value: acc.id,
+      checked: false
+    }));
+
+    const alert = await this.alertCtrl.create({
+      header: '清除帳戶紀錄',
+      message: '請選擇要清空交易紀錄的帳戶 (可多選)：',
+      inputs: inputs,
+      buttons: [
+        {
+          text: '取消',
+          role: 'cancel'
+        },
+        {
+          text: '確認清空紀錄',
+          handler: async (selectedIds: string[]) => {
+            if (!selectedIds || selectedIds.length === 0) {
+              const toast = await this.toastCtrl.create({
+                message: '未選擇任何帳戶',
+                duration: 2000,
+                color: 'warning',
+                position: 'top'
+              });
+              await toast.present();
+              return;
+            }
+
+            const confirmAlert = await this.alertCtrl.create({
+              header: '再次確認',
+              message: `確定要清空這 ${selectedIds.length} 個帳戶的交易紀錄嗎？此操作將【無法復原】！`,
+              buttons: [
+                {
+                  text: '取消',
+                  role: 'cancel'
+                },
+                {
+                  text: '確定清空',
+                  role: 'destructive',
+                  handler: async () => {
+                    let transactions = appData.transactions || [];
+                    transactions = transactions.filter(t => 
+                      !selectedIds.includes(t.accountId) && 
+                      !(t.toAccountId && selectedIds.includes(t.toAccountId))
+                    );
+                    
+                    this.financeVar.updateAppData({ transactions });
+
+                    const toast = await this.toastCtrl.create({
+                      message: '🗑️ 指定帳戶紀錄已清空',
+                      duration: 2000,
+                      color: 'success',
+                      position: 'top'
+                    });
+                    await toast.present();
+                  }
+                }
+              ]
+            });
+            await confirmAlert.present();
+          }
+        }
+      ]
+    });
+
+    await alert.present();
+  }
+
+  async clearRecordsAndAccounts() {
+    const appData = this.financeVar.getAppData();
+    const accounts = appData.accounts;
+    
+    if (!accounts || accounts.length === 0) {
+      const alert = await this.alertCtrl.create({
+        header: '無有效帳戶',
+        message: '系統目前沒有任何帳戶。',
+        buttons: ['確定']
+      });
+      await alert.present();
+      return;
+    }
+
+    const inputs = accounts.map(acc => ({
+      label: `${acc.name} (${acc.currency})`,
+      type: 'checkbox' as const,
+      value: acc.id,
+      checked: false
+    }));
+
+    const alert = await this.alertCtrl.create({
+      header: '清除紀錄並移除帳戶',
+      message: '請選擇要清空紀錄並移除的帳戶 (可多選)：',
+      inputs: inputs,
+      buttons: [
+        {
+          text: '取消',
+          role: 'cancel'
+        },
+        {
+          text: '確認清空並移除',
+          handler: async (selectedIds: string[]) => {
+            if (!selectedIds || selectedIds.length === 0) {
+              const toast = await this.toastCtrl.create({
+                message: '未選擇任何帳戶',
+                duration: 2000,
+                color: 'warning',
+                position: 'top'
+              });
+              await toast.present();
+              return;
+            }
+
+            const confirmAlert = await this.alertCtrl.create({
+              header: '再次確認',
+              message: `確定要清空並【完全刪除】這 ${selectedIds.length} 個帳戶嗎？此操作將同時刪除所有相關的交易紀錄，且【無法復原】！`,
+              buttons: [
+                {
+                  text: '取消',
+                  role: 'cancel'
+                },
+                {
+                  text: '確定刪除',
+                  role: 'destructive',
+                  handler: async () => {
+                    const filteredAccounts = (appData.accounts || []).filter(a => !selectedIds.includes(a.id));
+                    let transactions = appData.transactions || [];
+                    transactions = transactions.filter(t => 
+                      !selectedIds.includes(t.accountId) && 
+                      !(t.toAccountId && selectedIds.includes(t.toAccountId))
+                    );
+                    
+                    this.financeVar.updateAppData({ 
+                      accounts: filteredAccounts,
+                      transactions 
+                    });
+
+                    const toast = await this.toastCtrl.create({
+                      message: '🗑️ 指定帳戶及相關交易已被移除',
+                      duration: 2000,
+                      color: 'success',
+                      position: 'top'
+                    });
+                    await toast.present();
+                  }
+                }
+              ]
+            });
+            await confirmAlert.present();
           }
         }
       ]
@@ -260,6 +433,77 @@ export class SettingsPagePage implements OnInit {
     
     // 清空 input，允許重複上傳同一個檔案
     event.target.value = null;
+  }
+
+  triggerJsonUpload() {
+    document.getElementById('backupJsonUpload')?.click();
+  }
+
+  async onJsonFileSelected(event: any) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const jsonText = e.target?.result as string;
+      await this.processBackupJson(jsonText);
+    };
+    reader.readAsText(file);
+    
+    // Clear input to allow re-upload of same file
+    event.target.value = null;
+  }
+
+  async processBackupJson(jsonText: string) {
+    try {
+      const parsedData = JSON.parse(jsonText);
+      
+      // Basic validation checks
+      if (!parsedData || typeof parsedData !== 'object') {
+        throw new Error('解析的資料不是有效的 JSON 物件');
+      }
+      if (!Array.isArray(parsedData.accounts) || !Array.isArray(parsedData.transactions)) {
+        throw new Error('JSON 格式不符 (缺少 accounts 或 transactions 陣列)');
+      }
+
+      const alert = await this.alertCtrl.create({
+        header: '確認匯入',
+        message: '匯入 JSON 備份將會【覆蓋並取代】目前 App 的所有帳戶、交易紀錄、計畫、自訂分類與 AI 歷史！確定要繼續嗎？',
+        buttons: [
+          {
+            text: '取消',
+            role: 'cancel'
+          },
+          {
+            text: '確認覆蓋匯入',
+            role: 'destructive',
+            handler: async () => {
+              // Complete state replacement
+              this.financeVar.updateAppData(parsedData);
+              this.initForm(); // Refresh form key/base currency since settings might have changed
+
+              const toast = await this.toastCtrl.create({
+                message: '✅ 備份數據已成功匯入',
+                duration: 2000,
+                color: 'success',
+                position: 'top'
+              });
+              await toast.present();
+            }
+          }
+        ]
+      });
+      await alert.present();
+
+    } catch (err: any) {
+      console.error('JSON 匯入解析錯誤:', err);
+      const alert = await this.alertCtrl.create({
+        header: '匯入失敗',
+        message: `無法解析 JSON 備份檔。錯誤原因：${err.message || '格式無效'}`,
+        buttons: ['確定']
+      });
+      await alert.present();
+    }
   }
 
   async processMoneyPlusCsv(csvText: string) {

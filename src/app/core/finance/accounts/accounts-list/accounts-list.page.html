@@ -5,13 +5,33 @@
 </ion-header>
 
 <ion-content class="accounts-list-content">
-  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed" *ngIf="selectedTab === 'assets'">
     <ion-fab-button (click)="presentAddActionSheet()">
       <ion-icon name="add"></ion-icon>
     </ion-fab-button>
   </ion-fab>
-  <div class="assets-dashboard-hero">
-    <div class="dashboard-card">
+
+  <!-- Segmented navigation to toggle between normal balance list and prepay tracker dashboard -->
+  <div style="padding: 12px 16px 4px 16px;">
+    <ion-segment [(ngModel)]="selectedTab" mode="ios" style="--background: rgba(var(--ion-color-primary-rgb, 59, 130, 246), 0.05); border-radius: 12px;">
+      <ion-segment-button value="assets" style="--border-radius: 8px; font-weight: 600;">
+        <ion-label style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+          <ion-icon name="wallet"></ion-icon>
+          資產與餘額
+        </ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="loans" style="--border-radius: 8px; font-weight: 600;">
+        <ion-label style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+          <ion-icon name="people"></ion-icon>
+          朋友代付與還款
+        </ion-label>
+      </ion-segment-button>
+    </ion-segment>
+  </div>
+
+  <div *ngIf="selectedTab === 'assets'">
+    <div class="assets-dashboard-hero">
+      <div class="dashboard-card">
       <div class="card-header-label">實體總淨資產</div>
       <div class="net-worth-amount">
         <span class="currency-symbol">{{ baseCurrencySymbol }}</span>
@@ -201,5 +221,185 @@
         </ion-item-sliding>
       </ion-list>
     </div> 
+  </div>
+</div>
+
+  <!-- Master Friend Prepayments & Repayments Tracking Dashboard -->
+  <div *ngIf="selectedTab === 'loans'">
+    <!-- Friend selector pill horizontal scroll list -->
+    <div style="padding: 12px 16px; display: flex; gap: 8px; overflow-x: auto; white-space: nowrap; align-items: center; background: rgba(var(--ion-color-primary-rgb, 59, 130, 246), 0.02); border-bottom: 1px solid rgba(0,0,0,0.03);">
+      <span style="font-size: 13px; font-weight: 700; color: var(--ion-color-step-700); margin-right: 4px; display: flex; align-items: center; gap: 4px;">
+        <ion-icon name="funnel-outline" color="primary"></ion-icon>
+        篩選朋友:
+      </span>
+      <div (click)="selectedLoanFriendId = 'all'" 
+           [style.background]="selectedLoanFriendId === 'all' ? 'var(--ion-color-primary)' : '#fff'"
+           [style.color]="selectedLoanFriendId === 'all' ? '#fff' : 'var(--ion-color-step-800)'"
+           [style.border]="selectedLoanFriendId === 'all' ? '1px solid var(--ion-color-primary)' : '1px solid rgba(0,0,0,0.1)'"
+           style="padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.25s; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+        全部
+      </div>
+      <div *ngFor="let friend of getLoanFriends()" 
+           (click)="selectedLoanFriendId = friend.id" 
+           [style.background]="selectedLoanFriendId === friend.id ? 'var(--ion-color-primary)' : '#fff'"
+           [style.color]="selectedLoanFriendId === friend.id ? '#fff' : 'var(--ion-color-step-800)'"
+           [style.border]="selectedLoanFriendId === friend.id ? '1px solid var(--ion-color-primary)' : '1px solid rgba(0,0,0,0.1)'"
+           style="padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.25s; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+        👤 {{ friend.name }}
+      </div>
+    </div>
+
+    <!-- Friends Debt Summary Board (Shown inside the loans tab) -->
+    <div style="margin: 16px; background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(245, 247, 250, 0.95)); border-radius: 16px; border: 1px solid rgba(0,0,0,0.06); padding: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.02);">
+      <div style="font-size: 14px; font-weight: 700; color: var(--ion-color-secondary, #3b82f6); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 8px;">
+        <ion-icon name="stats-chart-outline" style="font-size: 18px;"></ion-icon>
+        📊 朋友未結代付餘額總覽 (Outstanding Summary)
+      </div>
+      
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <ng-container *ngFor="let summary of getFriendSummaryList()">
+          <div *ngIf="selectedLoanFriendId === 'all' || selectedLoanFriendId === summary.friend.id" 
+               style="display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.03); transition: all 0.3s ease;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <div style="background: rgba(var(--ion-color-secondary-rgb, 59, 130, 246), 0.1); border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; color: var(--ion-color-secondary, #3b82f6);">
+                {{ summary.friend.name.charAt(0).toUpperCase() }}
+              </div>
+              <span style="font-size: 14px; font-weight: 600; color: var(--ion-text-color);">{{ summary.friend.name }}</span>
+            </div>
+            
+            <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end;">
+              <span style="font-size: 14px; font-weight: 700;" [style.color]="summary.remaining > 0 ? '#d97706' : 'var(--ion-color-success)'">
+                {{ summary.remaining > 0 ? ('未結: ' + getCurrencySymbol(summary.friend.currency) + (summary.remaining | number:'1.0-0')) : '已結清 ✅' }}
+              </span>
+              <span style="font-size: 10px; color: var(--ion-color-step-500); margin-top: 1px;">
+                代付: {{ getCurrencySymbol(summary.friend.currency) }}{{ summary.split | number:'1.0-0' }} | 已還: {{ getCurrencySymbol(summary.friend.currency) }}{{ summary.repaid | number:'1.0-0' }}
+              </span>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+
+    <!-- Prepaid Transactions Section with Inline Expansion -->
+    <div style="margin: 16px; background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(245, 247, 250, 0.95)); border-radius: 16px; border: 1px solid rgba(0,0,0,0.06); padding: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.02);">
+      <div style="font-size: 14px; font-weight: 700; color: var(--ion-color-primary); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 8px;">
+        <ion-icon name="receipt-outline" style="font-size: 18px;"></ion-icon>
+        🛍️ 朋友代付與借款項目 (Prepaid Split Bills)
+      </div>
+
+      <div *ngIf="getPrepayTransactions().length === 0" style="padding: 32px 0; text-align: center; font-size: 13px; color: var(--ion-color-step-500);">
+        📭 尚無任何代付與借款項目
+      </div>
+
+      <div *ngFor="let tx of getPrepayTransactions()" style="border-bottom: 1px solid rgba(0,0,0,0.03); padding: 4px 0;">
+        <!-- Clickable main bill header -->
+        <div (click)="togglePrepayExpansion(tx.id)" 
+             style="display: flex; align-items: center; justify-content: space-between; padding: 12px 8px; cursor: pointer; transition: background 0.2s; border-radius: 8px;"
+             [style.background]="expandedPrepayTxId === tx.id ? 'rgba(var(--ion-color-primary-rgb, 59, 130, 246), 0.03)' : 'transparent'">
+          
+          <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0;">
+            <div style="background: rgba(var(--ion-color-primary-rgb, 59, 130, 246), 0.1); color: var(--ion-color-primary); width: 38px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+              {{ tx.icon || '🛍️' }}
+            </div>
+            <div style="display: flex; flex-direction: column; min-width: 0;">
+              <span style="font-size: 14px; font-weight: 600; color: var(--ion-text-color);" class="ion-text-ellipsis">
+                {{ tx.category }} - {{ tx.note || '無備忘錄' }}
+              </span>
+              <span style="font-size: 11px; color: var(--ion-color-step-500); display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px;">
+                <span>📅 {{ tx.date }}</span>
+                <span>• 總額: {{ getCurrencySymbol(tx.currency) }}{{ tx.amount | number:'1.0-2' }}</span>
+                <span style="color: var(--ion-color-success); font-weight: 600; display: inline-flex; align-items: center; gap: 2px;" *ngIf="getRemainingBalanceForFriend(tx, selectedLoanFriendId) === 0">
+                  已結清 ✅
+                </span>
+                <span style="color: #d97706; font-weight: 600;" *ngIf="getRemainingBalanceForFriend(tx, selectedLoanFriendId) > 0">
+                  未結: {{ getCurrencySymbol(tx.currency) }}{{ getRemainingBalanceForFriend(tx, selectedLoanFriendId) | number:'1.0-2' }}
+                </span>
+              </span>
+            </div>
+          </div>
+          
+          <div style="text-align: right; display: flex; align-items: center; gap: 8px;">
+            <div style="display: flex; flex-direction: column; align-items: flex-end;">
+              <span style="font-size: 14px; font-weight: 700; color: var(--ion-color-primary);">
+                +{{ getCurrencySymbol(tx.currency) }}{{ getSplitAmountForFriend(tx, selectedLoanFriendId) | number:'1.0-2' }}
+              </span>
+              <span style="font-size: 10px; color: var(--ion-color-step-500); margin-top: 2px;" *ngIf="getAlreadyRepaidAmountForFriend(tx, selectedLoanFriendId) > 0">
+                已還: {{ getCurrencySymbol(tx.currency) }}{{ getAlreadyRepaidAmountForFriend(tx, selectedLoanFriendId) | number:'1.0-2' }}
+              </span>
+            </div>
+            <ion-icon [name]="expandedPrepayTxId === tx.id ? 'chevron-up-outline' : 'chevron-down-outline'" color="medium" style="font-size: 16px;"></ion-icon>
+          </div>
+        </div>
+
+        <!-- Expanded nested details showing split shares progress and repayment history specifically for this bill -->
+        <div *ngIf="expandedPrepayTxId === tx.id" 
+             style="background: rgba(var(--ion-color-primary-rgb, 59, 130, 246), 0.02); margin: 4px 8px 12px 48px; border-left: 3px solid var(--ion-color-primary); padding: 12px 14px; border-radius: 0 12px 12px 0; transition: all 0.25s ease; box-shadow: inset 0 0 10px rgba(0,0,0,0.01);">
+          
+          <!-- 1. Split Shares Progress Breakdown Section -->
+          <div style="font-size: 11px; font-weight: 700; color: var(--ion-color-primary); margin-bottom: 8px; display: flex; align-items: center; gap: 4px; text-transform: uppercase; letter-spacing: 0.5px;">
+            <ion-icon name="people-outline"></ion-icon>
+            👥 各人分攤與結算進度 (Split Progress)
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; background: rgba(0,0,0,0.01); padding: 8px; border-radius: 8px;">
+            <div *ngFor="let share of getSplitSharesForTx(tx)" 
+                 style="display: flex; align-items: center; justify-content: space-between; font-size: 13px; padding: 4px 6px; border-radius: 6px;"
+                 [style.background]="selectedLoanFriendId === share.friend.id ? 'rgba(var(--ion-color-primary-rgb, 59, 130, 246), 0.06)' : 'transparent'"
+                 [style.border]="selectedLoanFriendId === share.friend.id ? '1px solid rgba(var(--ion-color-primary-rgb, 59, 130, 246), 0.15)' : 'none'">
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <div style="background: rgba(var(--ion-color-primary-rgb, 59, 130, 246), 0.15); border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; color: var(--ion-color-primary);">
+                  {{ share.friend.name.charAt(0).toUpperCase() }}
+                </div>
+                <span style="font-weight: 600;" [style.color]="selectedLoanFriendId === share.friend.id ? 'var(--ion-color-primary)' : 'var(--ion-text-color)'">
+                  {{ share.friend.name }}
+                </span>
+              </div>
+              <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end;">
+                <span style="font-size: 12px; font-weight: 700;" [style.color]="share.remaining > 0 ? '#d97706' : '#10b981'">
+                  分攤 {{ getCurrencySymbol(tx.currency) }}{{ share.amount | number:'1.0-0' }} | 
+                  {{ share.remaining > 0 ? ('未還 ' + getCurrencySymbol(tx.currency) + (share.remaining | number:'1.0-0')) : '已結清 ✅' }}
+                </span>
+                <span style="font-size: 9px; color: var(--ion-color-step-500); margin-top: 1px;" *ngIf="share.repaid > 0">
+                  已還款: {{ getCurrencySymbol(tx.currency) }}{{ share.repaid | number:'1.0-0' }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Repayments History Section -->
+          <div style="font-size: 11px; font-weight: 700; color: var(--ion-color-tertiary); margin-bottom: 8px; display: flex; align-items: center; gap: 4px; text-transform: uppercase; letter-spacing: 0.5px; border-top: 1px solid rgba(0,0,0,0.04); padding-top: 12px;">
+            <ion-icon name="arrow-undo-outline"></ion-icon>
+            🔗 相關還款紀錄 (Repayments History)
+          </div>
+          
+          <div *ngIf="getRepaymentsForBill(tx.id).length === 0" style="font-size: 12px; color: var(--ion-color-step-500); padding: 4px 6px;">
+            無相關還款紀錄
+          </div>
+
+          <div *ngFor="let repay of getRepaymentsForBill(tx.id)" 
+               style="display: flex; align-items: center; justify-content: space-between; padding: 6px 6px; border-bottom: 1px dashed rgba(0,0,0,0.03); font-size: 13px;">
+            <div style="display: flex; flex-direction: column; min-width: 0; flex: 1;">
+              <span style="font-weight: 600; color: var(--ion-text-color);" class="ion-text-ellipsis">
+                👤 {{ getTransferFriendName(repay) }} 還款結算
+              </span>
+              <span style="font-size: 10px; color: var(--ion-color-step-500); margin-top: 1px;">
+                📅 {{ repay.date }} ({{ repay.note || '無備忘錄' }})
+              </span>
+            </div>
+            <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end;">
+              <span style="font-weight: 700; color: var(--ion-color-tertiary);">
+                -{{ getCurrencySymbol(repay.currency) }}{{ getRepaymentAllocationForBill(repay, tx, selectedLoanFriendId) | number:'1.0-2' }}
+              </span>
+              <span style="font-size: 9px; color: var(--ion-color-step-400);" *ngIf="repay.amount > getRepaymentAllocationForBill(repay, tx, selectedLoanFriendId)">
+                (總還款: {{ getCurrencySymbol(repay.currency) }}{{ repay.amount | number:'1.0-2' }})
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Spacer -->
+    <div style="height: 100px;"></div>
   </div>
 </ion-content>

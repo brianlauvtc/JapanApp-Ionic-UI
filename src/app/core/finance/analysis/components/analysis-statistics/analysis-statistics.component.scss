@@ -292,11 +292,44 @@ html.dark .premium-segment {
   margin-bottom: 14px;
 }
 
+.card-header-with-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  
+  h2 {
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0;
+    color: var(--ion-color-step-800, #1e293b);
+  }
+}
+
 .card-header h2 {
   font-size: 15px;
   font-weight: 700;
   margin: 0;
   color: var(--ion-color-step-800, #1e293b);
+}
+
+.mini-chart-segment {
+  --background: rgba(0,0,0,0.03);
+  border-radius: 8px;
+  padding: 2px;
+  
+  ion-segment-button {
+    --indicator-color: var(--ion-color-primary, #6366f1);
+    --color-checked: #ffffff;
+    --color: var(--ion-color-step-600);
+    min-height: 24px;
+    font-size: 13px;
+    margin: 0;
+    
+    ion-icon {
+      font-size: 14px !important;
+    }
+  }
 }
 
 .chart-wrapper {

@@ -1,27 +1,67 @@
-<!-- Filter Bar & Exporter Section -->
-<div class="filter-header-bar">
-  <div class="month-picker-container">
-    <ion-icon name="calendar-outline" class="picker-icon"></ion-icon>
-    <ion-select [value]="analysisService.selectedMonth()" (ionChange)="changeMonthFilter($event)" interface="popover" class="premium-select">
-      <ion-select-option *ngFor="let month of availableMonths()" [value]="month">
-        {{ month.substring(0, 4) }}年 {{ month.substring(5, 7) }}月
-      </ion-select-option>
-    </ion-select>
+<!-- Range Selector Toolbar (F-8.1) -->
+<div class="range-selector-toolbar" style="margin-bottom: 12px;">
+  <ion-segment [value]="selectedRangeType()" (ionChange)="changeRangeType($event.detail.value)" mode="ios" class="premium-segment">
+    <ion-segment-button value="week">
+      <ion-label>週</ion-label>
+    </ion-segment-button>
+    <ion-segment-button value="month">
+      <ion-label>月</ion-label>
+    </ion-segment-button>
+    <ion-segment-button value="year">
+      <ion-label>年</ion-label>
+    </ion-segment-button>
+    <ion-segment-button value="custom">
+      <ion-label>自訂</ion-label>
+    </ion-segment-button>
+  </ion-segment>
+</div>
+
+<!-- Navigation Header Row (F-8.2) -->
+<div class="filter-header-bar" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding: 6px 12px;">
+  <!-- Prev Button -->
+  <ion-button fill="clear" size="small" [disabled]="selectedRangeType() === 'custom'" (click)="prevPeriod()" style="--padding-start: 4px; --padding-end: 4px; margin: 0; color: var(--ion-color-primary);">
+    <ion-icon name="chevron-back-outline" slot="icon-only" style="font-size: 20px;"></ion-icon>
+  </ion-button>
+
+  <!-- Range Label Display -->
+  <div style="display: flex; align-items: center; justify-content: center; flex: 1; text-align: center;">
+    <span style="font-size: 15px; font-weight: 700; color: var(--ion-color-step-900, #0f172a);">
+      {{ dateRangeLabel() }}
+    </span>
   </div>
-  
-  <ion-button fill="clear" color="primary" (click)="triggerExport()" class="export-button">
-    <ion-icon name="cloud-download-outline" slot="icon-only"></ion-icon>
+
+  <!-- Next Button -->
+  <ion-button fill="clear" size="small" [disabled]="selectedRangeType() === 'custom'" (click)="nextPeriod()" style="--padding-start: 4px; --padding-end: 4px; margin: 0; color: var(--ion-color-primary);">
+    <ion-icon name="chevron-forward-outline" slot="icon-only" style="font-size: 20px;"></ion-icon>
+  </ion-button>
+
+  <!-- Export Button -->
+  <ion-button fill="clear" color="primary" (click)="triggerExport()" class="export-button" style="margin: 0; --padding-start: 8px; --padding-end: 8px;">
+    <ion-icon name="cloud-download-outline" slot="icon-only" style="font-size: 18px;"></ion-icon>
   </ion-button>
 </div>
 
+<!-- Custom Dates Row (F-8.3) -->
+<div *ngIf="selectedRangeType() === 'custom'" class="custom-dates-row" style="display: flex; gap: 8px; align-items: center; margin-bottom: 16px; padding: 12px; background: rgba(var(--ion-color-primary-rgb, 99, 102, 241), 0.03); border-radius: 12px; border: 1px solid rgba(var(--ion-color-primary-rgb, 99, 102, 241), 0.08);">
+  <div style="flex: 1;">
+    <span style="font-size: 11px; color: var(--ion-color-medium); display: block; margin-bottom: 4px; font-weight: 600;">開始日期</span>
+    <input type="date" [value]="customStartDate()" (change)="changeCustomStartDate($event)" style="width: 100%; border: 1px solid rgba(0,0,0,0.08); border-radius: 8px; padding: 8px; font-size: 13px; font-weight: 600; background: var(--ion-item-background, #fff); color: var(--ion-text-color);">
+  </div>
+  <div style="font-size: 14px; font-weight: bold; color: var(--ion-color-medium); padding-top: 16px;">~</div>
+  <div style="flex: 1;">
+    <span style="font-size: 11px; color: var(--ion-color-medium); display: block; margin-bottom: 4px; font-weight: 600;">結束日期</span>
+    <input type="date" [value]="customEndDate()" (change)="changeCustomEndDate($event)" style="width: 100%; border: 1px solid rgba(0,0,0,0.08); border-radius: 8px; padding: 8px; font-size: 13px; font-weight: 600; background: var(--ion-item-background, #fff); color: var(--ion-text-color);">
+  </div>
+</div>
+
 <!-- GLOBAL EMPTY STATE (Rec 8) -->
-<div *ngIf="analysisService.transactionsInPeriod().length === 0" class="global-empty-state">
+<div *ngIf="transactionsInPeriod().length === 0" class="global-empty-state">
   <div class="empty-card">
     <div class="animation-container">
       <div class="piggy-bank-illustration">🐷💼</div>
     </div>
     <h2>此月份尚無收支紀錄</h2>
-    <p>您選擇的月份尚未登記任何收支。立即新增您的第一筆支出或收入，開始累積智慧理財分析！</p>
+    <p>您選擇的月份尚未登記任何收支。立即新增您的第一筆支出 or 收入，開始累積智慧理財分析！</p>
     <ion-button (click)="openAddForm()" expand="block" color="primary" class="cta-button">
       <ion-icon name="add-circle-outline" slot="start"></ion-icon>
       新增第一筆收支
@@ -30,7 +70,7 @@
 </div>
 
 <!-- MAIN ANALYTICS DASHBOARD -->
-<div *ngIf="analysisService.transactionsInPeriod().length > 0" class="analytics-dashboard-container">
+<div *ngIf="transactionsInPeriod().length > 0" class="analytics-dashboard-container">
   
   <!-- KPI Metrics Cards Grid (F-4) -->
   <div class="kpi-grid">
@@ -42,27 +82,27 @@
       <div class="kpi-content">
         <h3>總支出 / 總收入</h3>
         <div class="kpi-values">
-          <div class="exp-val">支 {{ baseCurrencySymbol() }}{{ formatCurrency(analysisService.totalExpenses()) }}</div>
-          <div class="inc-val">收 {{ baseCurrencySymbol() }}{{ formatCurrency(analysisService.totalIncomes()) }}</div>
+          <div class="exp-val">支 {{ baseCurrencySymbol() }}{{ formatCurrency(totalExpenses()) }}</div>
+          <div class="inc-val">收 {{ baseCurrencySymbol() }}{{ formatCurrency(totalIncomes()) }}</div>
         </div>
       </div>
     </div>
 
     <!-- Card 2: Savings Rate with dynamic health coding -->
     <div class="kpi-card glass-card savings-card" [ngClass]="{
-      'saving-excellent': analysisService.savingsRate() >= 15,
-      'saving-warning': analysisService.savingsRate() >= 0 && analysisService.savingsRate() < 15,
-      'saving-deficit': analysisService.savingsRate() < 0
+      'saving-excellent': savingsRate() >= 15,
+      'saving-warning': savingsRate() >= 0 && savingsRate() < 15,
+      'saving-deficit': savingsRate() < 0
     }">
       <div class="kpi-icon-wrapper">
         <ion-icon name="pie-chart-outline"></ion-icon>
       </div>
       <div class="kpi-content">
         <h3>儲蓄率</h3>
-        <span class="kpi-num">{{ analysisService.savingsRate() }}%</span>
+        <span class="kpi-num">{{ savingsRate() }}%</span>
         <p class="kpi-subtitle">
-          {{ analysisService.savingsRate() >= 15 ? '儲蓄狀況極佳！' : 
-             (analysisService.savingsRate() >= 0 ? '預算偏緊，請注意' : '目前處於透支狀態！') }}
+          {{ savingsRate() >= 15 ? '儲蓄狀況極佳！' : 
+             (savingsRate() >= 0 ? '預算偏緊，請注意' : '目前處於透支狀態！') }}
         </p>
       </div>
     </div>
@@ -74,7 +114,7 @@
       </div>
       <div class="kpi-content">
         <h3>日均支出</h3>
-        <span class="kpi-num">{{ baseCurrencySymbol() }}{{ formatCurrency(analysisService.dailyAverageExpense()) }}</span>
+        <span class="kpi-num">{{ baseCurrencySymbol() }}{{ formatCurrency(dailyAverageExpense()) }}</span>
         <p class="kpi-subtitle">今日平均每日花費</p>
       </div>
     </div>
@@ -82,7 +122,7 @@
 
   <!-- Segment Selector: Toggle Expenses vs Income vs Overall (F-1) -->
   <div class="toggle-segment-container">
-    <ion-segment [value]="analysisService.selectedType()" (ionChange)="changeTypeSegment($event)" mode="ios" class="premium-segment">
+    <ion-segment [value]="selectedType()" (ionChange)="changeTypeSegment($event)" mode="ios" class="premium-segment">
       <ion-segment-button value="expense">
         <ion-label>📊 支出分析</ion-label>
       </ion-segment-button>
@@ -95,26 +135,53 @@
     </ion-segment>
   </div>
 
-  <!-- Donut Chart Card (F-2) -->
+  <!-- Donut vs Bar Chart Card (F-2) -->
   <div class="chart-card glass-card">
-    <div class="card-header">
-      <h2>分類佔比分佈</h2>
+    <div class="card-header-with-actions" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 16px 8px 16px;">
+      <h2 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--ion-text-color);">分類佔比分佈</h2>
+      <ion-segment [(ngModel)]="selectedCategoryChartType" mode="ios" class="mini-chart-segment" style="width: auto; max-width: 110px; height: 32px; background: rgba(0,0,0,0.04);">
+        <ion-segment-button value="donut" style="--padding-top: 4px; --padding-bottom: 4px; min-height: 24px;">
+          <ion-icon name="pie-chart-outline" style="font-size: 16px;"></ion-icon>
+        </ion-segment-button>
+        <ion-segment-button value="bar" style="--padding-top: 4px; --padding-bottom: 4px; min-height: 24px;">
+          <ion-icon name="bar-chart-outline" style="font-size: 16px;"></ion-icon>
+        </ion-segment-button>
+      </ion-segment>
     </div>
+    
     <div class="chart-wrapper">
-      <apx-chart *ngIf="donutChartSeries.length > 0"
-        [series]="donutChartSeries"
-        [chart]="donutChartOptions.chart!"
-        [labels]="donutChartOptions.labels!"
-        [colors]="donutChartOptions.colors!"
-        [stroke]="donutChartOptions.stroke!"
-        [legend]="donutChartOptions.legend!"
-        [plotOptions]="donutChartOptions.plotOptions!"
-        [tooltip]="donutChartOptions.tooltip!"
-        [dataLabels]="donutChartOptions.dataLabels!">
-      </apx-chart>
+      <ng-container *ngIf="donutChartSeries.length > 0">
+        <!-- Donut Chart -->
+        <apx-chart *ngIf="selectedCategoryChartType === 'donut'"
+          [series]="donutChartSeries"
+          [chart]="donutChartOptions.chart!"
+          [labels]="donutChartOptions.labels!"
+          [colors]="donutChartOptions.colors!"
+          [stroke]="donutChartOptions.stroke!"
+          [legend]="donutChartOptions.legend!"
+          [plotOptions]="donutChartOptions.plotOptions!"
+          [tooltip]="donutChartOptions.tooltip!"
+          [dataLabels]="donutChartOptions.dataLabels!">
+        </apx-chart>
+
+        <!-- Horizontal Bar Chart -->
+        <apx-chart *ngIf="selectedCategoryChartType === 'bar'"
+          [series]="categoryBarChartSeries"
+          [chart]="categoryBarChartOptions.chart!"
+          [colors]="categoryBarChartOptions.colors!"
+          [plotOptions]="categoryBarChartOptions.plotOptions!"
+          [dataLabels]="categoryBarChartOptions.dataLabels!"
+          [xaxis]="categoryBarChartOptions.xaxis!"
+          [yaxis]="categoryBarChartOptions.yaxis!"
+          [grid]="categoryBarChartOptions.grid!"
+          [tooltip]="categoryBarChartOptions.tooltip!"
+          [legend]="categoryBarChartOptions.legend!">
+        </apx-chart>
+      </ng-container>
+
       <div *ngIf="donutChartSeries.length === 0" class="no-data-notice">
         <ion-icon name="analytics-outline"></ion-icon>
-        <p>此月份尚無{{ analysisService.selectedType() === 'overall' ? '綜合' : (analysisService.selectedType() === 'expense' ? '支出' : '收入') }}資料</p>
+        <p>此月份尚無{{ selectedType() === 'overall' ? '綜合' : (selectedType() === 'expense' ? '支出' : '收入') }}資料</p>
       </div>
     </div>
   </div>
@@ -142,12 +209,12 @@
   </div>
 
   <!-- Category List & Accordion Drill-Down (F-5 / Rec 1) -->
-  <div class="categories-list-card glass-card" *ngIf="analysisService.categorySummaries().length > 0">
+  <div class="categories-list-card glass-card" *ngIf="categorySummaries().length > 0">
     <div class="card-header">
       <h2>分類明細排行</h2>
     </div>
 
-    <div class="category-item-container" *ngFor="let cat of analysisService.categorySummaries()">
+    <div class="category-item-container" *ngFor="let cat of categorySummaries()">
       <!-- Accordion Header -->
       <div class="category-header-row" (click)="toggleCategory(cat.name)" [ngClass]="{ 'active-row': isCategoryExpanded(cat.name) }">
         <div class="category-icon">{{ cat.icon }}</div>
@@ -180,7 +247,7 @@
                 {{ getCurrencySymbol(t.currency) }}{{ formatCurrency(t.amount) }}
               </div>
               <!-- Base normalized reference -->
-              <div class="txn-base-val" *ngIf="t.currency !== analysisService.appDataSignal()?.settings?.baseCurrency">
+              <div class="txn-base-val" *ngIf="t.currency !== appDataSignal()?.settings?.baseCurrency">
                 折合 {{ baseCurrencySymbol() }}{{ formatCurrency(t.amount * t.exRate) }}
               </div>
             </div>

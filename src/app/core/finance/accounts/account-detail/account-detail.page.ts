@@ -256,6 +256,35 @@ export class AccountDetailPage implements OnInit {
     }
   }
 
+  async copyTransaction(transactionId: string) {
+    try {
+      const modal = await this.modalController.create({
+        component: AddTransactionPagePage,
+        componentProps: {
+          transactionId: transactionId,
+          accountId: this.accountId,
+          context: 'account',
+          isCopyMode: true
+        },
+        cssClass: 'add-transaction-modal'
+      });
+      
+      await modal.present();
+      
+      const { data } = await modal.onWillDismiss();
+      if (data) {
+        if (data.navigateToAutoUpload) {
+          this.router.navigate(['/auto-upload-receipt']);
+        } else {
+          console.log('Transaction copied and saved:', data);
+          this.renderAccountDetail();
+        }
+      }
+    } catch (error) {
+      console.error('Error opening add transaction modal in copy mode:', error);
+    }
+  }
+
   formatDate(dateStr: string): string {
     return dateStr.replace(/-/g, '/');
   }

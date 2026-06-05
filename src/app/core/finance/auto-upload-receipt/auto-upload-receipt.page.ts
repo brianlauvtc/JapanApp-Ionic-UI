@@ -10,7 +10,7 @@ import { FinanceVarService } from '../service/finance-var.service';
   styleUrls: ['./auto-upload-receipt.page.scss']
 })
 export class AutoUploadReceiptPage implements OnInit {
-  selectedImages: Photo[] = [];
+  selectedImages: { photo: Photo, comment: string }[] = [];
   hasApiKey: boolean = false;
 
   constructor(
@@ -73,7 +73,7 @@ export class AutoUploadReceiptPage implements OnInit {
       });
       
       if (photo) {
-        this.selectedImages.push(photo);
+        this.selectedImages.push({ photo, comment: '' });
       }
     } catch (error: any) {
       console.error('Image capture source execution issue:', error);
@@ -105,7 +105,10 @@ export class AutoUploadReceiptPage implements OnInit {
     try {
       // Direct pass to stateful sequential handling processor
       this.router.navigate(['/ai-processing'], {
-        state: { images: this.selectedImages }
+        state: { 
+          images: this.selectedImages.map(item => item.photo),
+          comments: this.selectedImages.map(item => item.comment)
+        }
       });
     } catch (err) {
       console.error('State routing context setup exception:', err);

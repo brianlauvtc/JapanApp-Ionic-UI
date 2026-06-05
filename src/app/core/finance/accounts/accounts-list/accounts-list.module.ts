@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
+import { FormsModule } from '@angular/forms';
 import { AccountsListPage } from '../accounts-list/accounts-list.page';
 import { AccountsListRoutingModule } from '../accounts-list/accounts-list-routing.module';
 import { SharedComponentsModule } from '../../../../shared/components/shared-components.module';
@@ -11,6 +12,7 @@ import { EditFundModalPageModule } from '../edit-fund-modal/edit-fund-modal.modu
   imports: [
     CommonModule,
     IonicModule,
+    FormsModule,
     AccountsListRoutingModule,
     SharedComponentsModule,
     EditAccountModalPageModule,

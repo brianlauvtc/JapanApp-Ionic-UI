@@ -15,6 +15,7 @@ import { CATEGORY_MAP } from '../../../../environments/categories';
 })
 export class AIProcessingPage implements OnInit {
   processingImages: Photo[] = [];
+  processingComments: string[] = [];
   extractedTransactions: any[] = []; 
   currentImageIndex: number = 0;
   totalImages: number = 0;
@@ -31,10 +32,11 @@ export class AIProcessingPage implements OnInit {
 
   ngOnInit() {
     const navigation = this.router.getCurrentNavigation();
-    const state = navigation?.extras?.state as { images: Photo[] };
+    const state = navigation?.extras?.state as { images: Photo[], comments?: string[] };
     
     if (state && state.images && state.images.length > 0) {
       this.processingImages = state.images;
+      this.processingComments = state.comments || [];
       this.totalImages = this.processingImages.length;
       this.apiKey = this.financeVar.getAppData()?.settings?.apiKey || '';
       
@@ -68,8 +70,9 @@ export class AIProcessingPage implements OnInit {
     this.isProcessing = true;
     try {
       const activePhoto = this.processingImages[index];
+      const comment = this.processingComments[index] || '';
       const base64Data = await this.convertPhotoToBase64(activePhoto);
-      const parsedResults = await this.aiService.analyzeReceiptImage(base64Data);
+      const parsedResults = await this.aiService.analyzeReceiptImage(base64Data, comment);
      
       const dynamicCategoryMap = this.financeVar.getCategoryMap();
       if (parsedResults && parsedResults.length > 0) {

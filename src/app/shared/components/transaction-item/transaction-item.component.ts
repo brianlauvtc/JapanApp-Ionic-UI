@@ -15,6 +15,7 @@ export class TransactionItemComponent {
   @Input() contextId?: string;
   @Output() editTransaction = new EventEmitter<string>();
   @Output() deleteTransaction = new EventEmitter<string>();
+  @Output() copyTransaction = new EventEmitter<string>();
 
   
   constructor(private financeService: FinanceService) {}
@@ -122,6 +123,15 @@ export class TransactionItemComponent {
     }
   }
 
+  onCopy(slidingItem?: IonItemSliding) {
+    if (!this.transaction.type.startsWith('sys_')) {
+      this.copyTransaction.emit(this.transaction.id);
+      if (slidingItem) {
+        slidingItem.close();
+      }
+    }
+  }
+
  
   onDelete(slidingItem?: IonItemSliding) {
     if (!this.transaction.type.startsWith('sys_')) {
@@ -133,5 +143,52 @@ export class TransactionItemComponent {
         slidingItem.close();
       }
     }
+  }
+
+  hasSplitShares(): boolean {
+    return !!this.transaction.isSplitPay && !!this.transaction.splitShares && this.transaction.splitShares.length > 0;
+  }
+
+  getSplitSharesDetails(): { name: string; amount: number; symbol: string }[] {
+    if (!this.transaction.splitShares) return [];
+    const appData = this.financeService['financeVar'].getAppData();
+    const currenciesObj = currencies as any;
+    const symbol = currenciesObj[this.transaction.currency]?.symbol || '$';
+    return this.transaction.splitShares.map(s => {
+      const accName = appData.accounts.find(a => a.id === s.loanAccountId)?.name || '朋友';
+      return { name: accName, amount: s.amount, symbol };
+    });
+  }
+
+  hasReferences(): boolean {
+    return !!this.transaction.referencedTransactionIds && this.transaction.referencedTransactionIds.length > 0;
+  }
+
+  getReferencedTxnsDetails(): { category: string; icon: string; note: string; date: string; amount: number; symbol: string }[] {
+    if (!this.transaction.referencedTransactionIds) return [];
+    const allTxns = this.financeService['financeVar'].getTransactions();
+    const currenciesObj = currencies as any;
+    
+    return this.transaction.referencedTransactionIds.map(id => {
+      const tx = allTxns.find(t => t.id === id);
+      if (!tx) return null;
+      const symbol = currenciesObj[tx.currency]?.symbol || '$';
+      
+      let loanAmt = tx.splitOthersShare || 0;
+      const loanAccId = this.transaction.accountId || this.transaction.toAccountId || '';
+      if (tx.splitShares && loanAccId) {
+        const share = tx.splitShares.find(s => s.loanAccountId === loanAccId);
+        if (share) loanAmt = share.amount;
+      }
+      
+      return {
+        category: tx.category || '分類',
+        icon: tx.icon || '💰',
+        note: tx.note || '無備忘錄',
+        date: tx.date,
+        amount: loanAmt,
+        symbol
+      };
+    }).filter(Boolean) as any[];
   }
 }

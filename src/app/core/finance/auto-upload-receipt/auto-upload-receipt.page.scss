@@ -102,74 +102,121 @@ ion-toolbar {
 
 /* Grid */
 .receipt-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-  padding: 0 16px 24px;
-
-  .upload-trigger-card, .receipt-preview-card {
-    aspect-ratio: 1 / 1.2;
-    border-radius: 16px;
-    position: relative;
-  }
+  padding: 0 16px 16px;
 
   .upload-trigger-card {
-    background: rgba(var(--ion-color-primary-rgb), 0.02);
-    border: 2px dashed rgba(var(--ion-color-primary-rgb), 0.3);
+    height: 90px;
+    border-radius: 16px;
+    position: relative;
+    background: rgba(var(--ion-color-primary-rgb, 79, 70, 229), 0.02);
+    border: 2px dashed rgba(var(--ion-color-primary-rgb, 79, 70, 229), 0.3);
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
     
     .trigger-content {
       display: flex;
-      flex-direction: column;
       align-items: center;
+      gap: 10px;
       color: var(--ion-color-primary);
       
-      ion-icon { font-size: 32px; margin-bottom: 8px; }
-      span { font-size: 14px; font-weight: 600; }
+      ion-icon { font-size: 26px; }
+      span { font-size: 15px; font-weight: 600; }
     }
     
     &.disabled { opacity: 0.5; border-color: var(--ion-color-medium); color: var(--ion-color-medium); }
   }
+}
 
-  .receipt-preview-card {
-    background: #e9ecef;
-    box-shadow: 0 8px 16px rgba(0,0,0,0.06);
-    overflow: hidden;
-    
-    img { width: 100%; height: 100%; object-fit: cover; }
-    
-    .card-index-overlay {
-      position: absolute;
-      bottom: 8px;
-      left: 8px;
-      background: rgba(0,0,0,0.5);
-      backdrop-filter: blur(4px);
-      color: white;
-      font-size: 11px;
+/* Receipt List and Comment Cards */
+.receipt-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 0 16px 24px;
+}
+
+.receipt-item-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: transform 0.2s ease;
+
+  &:active {
+    transform: scale(0.99);
+  }
+
+  .receipt-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 8px;
+
+    .receipt-index {
+      font-size: 14px;
       font-weight: 700;
-      padding: 4px 8px;
-      border-radius: 8px;
+      color: var(--ion-color-primary, #4f46e5);
+      background: rgba(var(--ion-color-primary-rgb, 79, 70, 229), 0.08);
+      padding: 4px 10px;
+      border-radius: 10px;
     }
 
-    .close-badge {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      width: 28px;
-      height: 28px;
-      background: rgba(255, 255, 255, 0.9);
-      backdrop-filter: blur(4px);
-      border: none;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      
-      ion-icon { font-size: 18px; color: var(--ion-color-danger); }
+    .remove-btn {
+      --padding-start: 4px;
+      --padding-end: 4px;
+      margin: 0;
+      height: 32px;
+    }
+  }
+
+  .receipt-card-body {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+
+    .thumbnail-wrapper {
+      width: 80px;
+      height: 100px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #e2e8f0;
+      flex-shrink: 0;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+    }
+
+    .comment-wrapper {
+      flex: 1;
+
+      .custom-comment-area {
+        --background: #f8fafc;
+        --padding-start: 12px;
+        --padding-end: 12px;
+        --padding-top: 10px;
+        --padding-bottom: 10px;
+        --border-radius: 12px;
+        font-size: 13px;
+        color: #334155;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+
+        &:focus-within {
+          border-color: var(--ion-color-secondary, #06b6d4);
+          background: white;
+          box-shadow: 0 0 0 3px rgba(var(--ion-color-secondary-rgb, 6, 182, 212), 0.15);
+        }
+      }
     }
   }
 }

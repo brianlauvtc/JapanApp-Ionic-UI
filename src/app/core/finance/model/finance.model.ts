@@ -50,6 +50,19 @@ export interface Transaction {
   _warnLimit?: boolean;
   _runningBal?: number;
   items?: TransactionItem[];
+  isSplitPay?: boolean;
+  splitMyShare?: number;
+  splitOthersShare?: number;
+  splitLoanAccountId?: string;
+  splitShares?: SplitShare[]; // list of other splits (friend's loanAccountId and their amount)
+  linkedTransactionId?: string;
+  linkedTransactionIds?: string[]; // list of linked transfer IDs for multi-split
+  referencedTransactionIds?: string[]; // list of referenced prepaid transaction IDs for repayment
+}
+
+export interface SplitShare {
+  loanAccountId: string;
+  amount: number;
 }
 
 export interface Plan {

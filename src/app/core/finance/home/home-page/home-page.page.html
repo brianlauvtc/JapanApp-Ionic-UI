@@ -95,6 +95,7 @@
           [transaction]="transaction" 
           context="home"
           (editTransaction)="editTransaction($event)"
+          (copyTransaction)="copyTransaction($event)"
           (deleteTransaction)="deleteTransaction($event)">
         </app-transaction-item>
       </div>
@@ -102,6 +103,8 @@
       <div *ngIf="homeData.days.length === 0" class="no-transactions">
         此月無紀錄
       </div>
+      <!-- Bottom spacing spacer to prevent FAB blocking transaction amounts when scrolled to the bottom -->
+      <div style="height: 80px; width: 100%;"></div>
     </ng-container>
   </div>
 </ion-content>

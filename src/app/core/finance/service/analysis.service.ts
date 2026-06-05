@@ -9,13 +9,41 @@ import moment from 'moment';
 })
 export class AnalysisService {
   // Reactive Signals for active state
+  public selectedRangeType = signal<'week' | 'month' | 'year' | 'custom'>('month');
+  public currentWeekDate = signal<string>(moment().format('YYYY-MM-DD'));
   public selectedMonth = signal<string>(moment().format('YYYY-MM'));
+  public selectedYear = signal<string>(moment().format('YYYY'));
+  public customStartDate = signal<string>(moment().subtract(30, 'days').format('YYYY-MM-DD'));
+  public customEndDate = signal<string>(moment().format('YYYY-MM-DD'));
   public selectedType = signal<'expense' | 'income' | 'overall'>('expense');
   public appDataSignal = signal<AppData | null>(null);
 
-  // Computed Date Range coordinates derived automatically from Month selection
-  public startDate = computed(() => `${this.selectedMonth()}-01`);
-  public endDate = computed(() => moment(`${this.selectedMonth()}-01`).endOf('month').format('YYYY-MM-DD'));
+  // Computed Date Range coordinates derived automatically from selection
+  public startDate = computed(() => {
+    const type = this.selectedRangeType();
+    if (type === 'week') {
+      return moment(this.currentWeekDate()).startOf('isoWeek').format('YYYY-MM-DD');
+    } else if (type === 'month') {
+      return `${this.selectedMonth()}-01`;
+    } else if (type === 'year') {
+      return `${this.selectedYear()}-01-01`;
+    } else {
+      return this.customStartDate();
+    }
+  });
+
+  public endDate = computed(() => {
+    const type = this.selectedRangeType();
+    if (type === 'week') {
+      return moment(this.currentWeekDate()).endOf('isoWeek').format('YYYY-MM-DD');
+    } else if (type === 'month') {
+      return moment(`${this.selectedMonth()}-01`).endOf('month').format('YYYY-MM-DD');
+    } else if (type === 'year') {
+      return `${this.selectedYear()}-12-31`;
+    } else {
+      return this.customEndDate();
+    }
+  });
 
   constructor(
     private financeVar: FinanceVarService,
@@ -182,7 +210,11 @@ export class AnalysisService {
     
     return Object.values(categoryTotals)
       .map(cat => ({
-        ...cat,
+        amount: cat.amount,
+        icon: cat.icon,
+        name: cat.name,
+        type: cat.type,
+        txns: cat.txns,
         percentage: totalAmount > 0 ? (cat.amount / totalAmount) * 100 : 0
       }))
       .sort((a, b) => b.amount - a.amount);

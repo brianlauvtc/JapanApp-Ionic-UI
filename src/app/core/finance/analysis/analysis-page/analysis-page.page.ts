@@ -79,7 +79,9 @@ export class AnalysisPagePage implements OnInit {
     this.isAnalyzing = true;
     
     try {
-      const month = this.analysisService.selectedMonth();
+      const startDate = this.analysisService.startDate();
+      const endDate = this.analysisService.endDate();
+      const periodRange = `${startDate} ~ ${endDate}`;
       const baseCurrency = this.financeVar.getAppData().settings.baseCurrency || 'HKD';
       let contextData: any = {};
 
@@ -109,7 +111,7 @@ export class AnalysisPagePage implements OnInit {
           amount: p.amount,
           targetMonth: p.targetMonth
         }));
-        contextData = { month, baseCurrency, accounts, metrics, categorySummaries, plans };
+        contextData = { periodRange, baseCurrency, accounts, metrics, categorySummaries, plans };
 
       } else if (this.selectedAnalysisType === 'expense_optimization') {
         const totalExpense = this.analysisService.totalExpenses();
@@ -135,7 +137,7 @@ export class AnalysisPagePage implements OnInit {
             currency: t.currency,
             note: t.note || ''
           }));
-        contextData = { month, baseCurrency, totalExpense, categorySummaries, recentTransactions };
+        contextData = { periodRange, baseCurrency, totalExpense, categorySummaries, recentTransactions };
 
       } else if (this.selectedAnalysisType === 'saving_goals') {
         const netWorth = this.financeService.getNetWorth();
@@ -147,7 +149,7 @@ export class AnalysisPagePage implements OnInit {
           amount: p.amount,
           targetMonth: p.targetMonth
         }));
-        contextData = { month, baseCurrency, totalAssetsBase: netWorth.ast, monthlyNetSavings, savingsRatePercent, plans };
+        contextData = { periodRange, baseCurrency, totalAssetsBase: netWorth.ast, monthlyNetSavings, savingsRatePercent, plans };
 
       } else if (this.selectedAnalysisType === 'asset_allocation') {
         const accounts = this.financeVar.getAccounts().map(a => ({
@@ -156,7 +158,7 @@ export class AnalysisPagePage implements OnInit {
           currency: a.currency,
           balance: this.financeService.getAccBalance(a.id)
         }));
-        contextData = { month, baseCurrency, accounts };
+        contextData = { periodRange, baseCurrency, accounts };
       }
 
       // Check if there is history for comparison (using previous english text or previous chinese text if English is not available)
@@ -225,6 +227,7 @@ export class AnalysisPagePage implements OnInit {
   }
 
   formatMarkdown(text: string): string {
+    // Converts basic markdown syntax to simple html tags
     if (!text) return '';
     let html = text;
     // Bold: **text**

@@ -3,8 +3,8 @@ import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
 import { FinanceVarService } from '../../service/finance-var.service';
 import { FinanceService } from '../../service/finance.service';
-import { Transaction, Account, Fund } from '../../model/finance.model';
-import { AlertController, ModalController, NavParams } from '@ionic/angular';
+import { Transaction, Account, Fund, SplitShare } from '../../model/finance.model';
+import { AlertController, ModalController, NavParams, ToastController } from '@ionic/angular';
 import  moment from 'moment';
 import { filter } from 'rxjs';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../../../../../environments/categories';
@@ -68,6 +68,7 @@ export class AddTransactionPagePage implements OnInit {
     private financeService: FinanceService,
     private modalCtrl: ModalController,
     private alertController: AlertController,
+    private toastCtrl: ToastController,
     @Optional() private navParams: NavParams
   ) {
     this.isModal = !!this.navParams && !!this.navParams.data;
@@ -76,6 +77,7 @@ export class AddTransactionPagePage implements OnInit {
   ngOnInit() {
     this.fetchRealRates();
     this.initForm();
+    this.initFriendSplits();
     this.setupTypeSubscription();
     this.loadContextFromRoute();      
 
@@ -201,13 +203,17 @@ export class AddTransactionPagePage implements OnInit {
       note: [''],
       category: [''],
       exchangeRate: [1],
-      allocations: this.fb.array([])
+      allocations: this.fb.array([]),
+      isSplitPay: [false],
+      splitOthersShare: [''],
+      splitLoanAccountId: ['']
     });
   }
 
   loadContextFromRoute() {
     let id = null;
     let viewedMonth = null;
+    let isCopyMode = false;
     
     if (this.isModal) {
       id = this.navParams?.get('id') || this.navParams?.get('transactionId');
@@ -215,6 +221,7 @@ export class AddTransactionPagePage implements OnInit {
       this.contextFundId = this.navParams?.get('fundId');
       this.contextType = this.navParams?.get('context');
       viewedMonth = this.navParams?.get('viewedMonth');
+      isCopyMode = this.navParams?.get('isCopyMode') || false;
     }
     
     if (!id && this.route && this.route.snapshot) {
@@ -223,12 +230,19 @@ export class AddTransactionPagePage implements OnInit {
       if (!this.contextFundId) this.contextFundId = this.route.snapshot.queryParamMap?.get('fundId');
       if (!this.contextType) this.contextType = this.route.snapshot.queryParamMap?.get('context');
       if (!viewedMonth) viewedMonth = this.route.snapshot.queryParamMap?.get('viewedMonth');
+      isCopyMode = this.route.snapshot.queryParamMap?.get('isCopyMode') === 'true';
     }
     
     if (id) {
-      this.isEditMode = true;
-      this.editTransactionId = id;
-      this.loadTransactionForEdit(id);
+      if (isCopyMode) {
+        this.isEditMode = false;
+        this.editTransactionId = undefined;
+        this.loadTransactionForEdit(id);
+      } else {
+        this.isEditMode = true;
+        this.editTransactionId = id;
+        this.loadTransactionForEdit(id);
+      }
     } else {
       // Set default values based on context
       let defaultAccountId = this.contextAccountId;
@@ -267,16 +281,29 @@ export class AddTransactionPagePage implements OnInit {
     
     this.transactionForm.get('accountId')?.valueChanges.subscribe(() => {
       if (!this.ignoreRateCalc) this.calculateExchangeRate();
+      this.loadReferencableTxns();
       this.checkFormDirty();
     });
 
     this.transactionForm.get('accountToId')?.valueChanges.subscribe(() => {
       if (!this.ignoreRateCalc) this.calculateExchangeRate();
+      this.loadReferencableTxns();
       this.checkFormDirty();
     });
     
     this.transactionForm.get('amount')?.valueChanges.subscribe(() => {
       this.updateCalculatedAmount();
+      this.calculateSplitShares();
+      this.checkFormDirty();
+    });
+
+    this.transactionForm.get('isSplitPay')?.valueChanges.subscribe(() => {
+      this.calculateSplitShares();
+      this.checkFormDirty();
+    });
+
+    this.transactionForm.get('splitOthersShare')?.valueChanges.subscribe(() => {
+      this.calculateSplitShares();
       this.checkFormDirty();
     });
 
@@ -800,8 +827,11 @@ export class AddTransactionPagePage implements OnInit {
     this.txnType = transaction.type as any;
     this.selectedCategory = { name: transaction.category, icon: transaction.icon || '💰' };
     
+    const isSplit = !!transaction.isSplitPay;
+    const totalAmount = isSplit ? (transaction.amount + (transaction.splitOthersShare || 0)) : transaction.amount;
+    
     this.transactionForm.patchValue({
-      amount: transaction.amount,
+      amount: totalAmount,
       currency: transaction.currency,
       accountId: transaction.accountId,
       accountToId: transaction.toAccountId || '',
@@ -809,8 +839,48 @@ export class AddTransactionPagePage implements OnInit {
       date: transaction.date,
       note: transaction.note || '',
       category: transaction.category,
-      exchangeRate: transaction.exRate || 1
+      exchangeRate: transaction.exRate || 1,
+      isSplitPay: isSplit,
+      splitOthersShare: transaction.splitOthersShare || '',
+      splitLoanAccountId: transaction.splitLoanAccountId || ''
     });
+    
+    this.initFriendSplits();
+    if (isSplit) {
+      if (transaction.splitShares && transaction.splitShares.length > 0) {
+        this.friendSplits.forEach(fs => {
+          const found = transaction.splitShares!.find(s => s.loanAccountId === fs.accountId);
+          if (found) {
+            fs.selected = true;
+            fs.amount = found.amount;
+          } else {
+            fs.selected = false;
+            fs.amount = 0;
+          }
+        });
+      } else if (transaction.splitLoanAccountId && transaction.splitOthersShare) {
+        this.friendSplits.forEach(fs => {
+          if (fs.accountId === transaction.splitLoanAccountId) {
+            fs.selected = true;
+            fs.amount = transaction.splitOthersShare!;
+          } else {
+            fs.selected = false;
+            fs.amount = 0;
+          }
+        });
+      }
+      this.calculateSplitShares();
+    }
+
+    if (transaction.type === 'transfer' && transaction.referencedTransactionIds) {
+      this.selectedReferenceTxIds = {};
+      transaction.referencedTransactionIds.forEach(id => {
+        this.selectedReferenceTxIds[id] = true;
+      });
+    } else {
+      this.selectedReferenceTxIds = {};
+    }
+    this.loadReferencableTxns();
     
     if (transaction.items && transaction.items.length > 0) {
       this.items = [...transaction.items];
@@ -823,6 +893,19 @@ export class AddTransactionPagePage implements OnInit {
       this.ignoreRateCalc = false; // 恢復自動算匯率
       this.captureInitialFormValues();
     }, 100);
+  }
+
+  async copyTransaction() {
+    this.editTransactionId = undefined;
+    this.isEditMode = false;
+    
+    const toast = await this.toastCtrl.create({
+      message: '✅ 已複製此交易至新增模式',
+      duration: 2000,
+      position: 'top',
+      color: 'success'
+    });
+    await toast.present();
   }
 
   // Save last used account for this transaction type
@@ -1038,65 +1121,218 @@ export class AddTransactionPagePage implements OnInit {
         await this.goBack();
 
       } else {
-        // ... (手動儲存邏輯保持上一次更新完的內容，不需變動) ...
         const formValue = this.transactionForm.value;
         const amount = parseFloat(formValue.amount);
         const manualRate = parseFloat(formValue.exchangeRate) || 1;
         
-        let accDeduction = 0;
-        let toAccDeduction = undefined;
-        
-        if (this.txnType === 'transfer' && formValue.accountToId) {
-            const fromAccount = this.financeVar.getAccounts().find(a => a.id === formValue.accountId);
-            const toAccount = this.financeVar.getAccounts().find(a => a.id === formValue.accountToId);
+        if (this.txnType === 'expense' && formValue.isSplitPay) {
+          const selectedSplits = this.friendSplits.filter(fs => fs.selected && (parseFloat(fs.amount as any) || 0) > 0);
+          
+          let finalOthersShare = 0;
+          let finalMyShare = amount;
+          const splitSharesToSave: SplitShare[] = [];
+          const linkedTxIds: string[] = [];
+
+          if (selectedSplits.length > 0) {
+            // Create accounts for newly added friends before generating transactions
+            selectedSplits.forEach(fs => {
+              if (fs.isNew) {
+                const newAccount: Account = {
+                  id: fs.accountId,
+                  name: fs.accountName,
+                  type: 'loan',
+                  currency: formValue.currency || 'HKD',
+                  initBalance: 0
+                };
+                this.financeVar.addAccount(newAccount);
+                delete fs.isNew;
+              }
+            });
+
+            finalOthersShare = selectedSplits.reduce((sum, fs) => sum + (parseFloat(fs.amount as any) || 0), 0);
+            finalMyShare = Math.max(0, amount - finalOthersShare);
+            selectedSplits.forEach(fs => {
+              splitSharesToSave.push({
+                loanAccountId: fs.accountId,
+                amount: parseFloat(fs.amount as any) || 0
+              });
+            });
+          } else if (formValue.splitLoanAccountId && formValue.splitOthersShare) {
+            // Single friend split fallback
+            finalOthersShare = parseFloat(formValue.splitOthersShare) || 0;
+            finalMyShare = Math.max(0, amount - finalOthersShare);
+            splitSharesToSave.push({
+              loanAccountId: formValue.splitLoanAccountId,
+              amount: finalOthersShare
+            });
+          }
+
+          if (this.isEditMode) {
+            // Clean up previous associated transfers to avoid duplicates
+            const oldTx = this.financeVar.getTransactions().find(t => t.id === this.editTransactionId);
+            if (oldTx) {
+              const idsToDelete = new Set<string>();
+              if (oldTx.linkedTransactionId) idsToDelete.add(oldTx.linkedTransactionId);
+              if (oldTx.linkedTransactionIds) oldTx.linkedTransactionIds.forEach(id => idsToDelete.add(id));
+              if (idsToDelete.size > 0) {
+                const cleanTxns = this.financeVar.getTransactions().filter(t => !idsToDelete.has(t.id));
+                this.financeVar.updateAppData({ transactions: cleanTxns });
+              }
+            }
+          }
+
+          const baseId = Date.now();
+          const expenseId = this.isEditMode ? this.editTransactionId! : `t_exp_${baseId}`;
+          const account = this.financeVar.getAccounts().find(a => a.id === formValue.accountId);
+          
+          let expenseDeduction = finalMyShare;
+          if (account && formValue.currency !== account.currency) {
+            expenseDeduction = finalMyShare * manualRate;
+          }
+
+          // Create the multiple associated transfer transactions
+          const transferTxns: Transaction[] = [];
+          splitSharesToSave.forEach((share, idx) => {
+            const transferId = `t_trf_${baseId}_${idx}`;
+            linkedTxIds.push(transferId);
+
+            let transDeduction = share.amount;
+            let toTransDeduction = -share.amount;
+            const toAccount = this.financeVar.getAccounts().find(a => a.id === share.loanAccountId);
             
-            if (fromAccount && toAccount) {
-                if (formValue.currency !== fromAccount.currency) {
-                   accDeduction = amount * manualRate;
-                } else {
-                   accDeduction = amount;
-                }
-                if (formValue.currency !== toAccount.currency) {
-                   toAccDeduction = -(amount * manualRate);
-                } else {
-                   toAccDeduction = -amount;
-                }
-            }
-        } else {
-            const account = this.financeVar.getAccounts().find(a => a.id === formValue.accountId);
             if (account && formValue.currency !== account.currency) {
-                accDeduction = this.txnType === 'income' ? -(amount * manualRate) : (amount * manualRate);
-            } else {
-                accDeduction = this.txnType === 'income' ? -amount : amount;
+              transDeduction = share.amount * manualRate;
             }
-        }
-        
-        const transaction: Transaction = {
-          id: this.isEditMode ? this.editTransactionId! : `t_${Date.now()}`,
-          type: this.txnType,
-          amount: amount,
-          currency: formValue.currency,
-          exRate: manualRate,
-          accDeduction: accDeduction,
-          toAccountId: this.txnType === 'transfer' ? formValue.accountToId : undefined,
-          toAccDeduction: toAccDeduction, 
-          accountId: formValue.accountId,
-          category: this.selectedCategory?.name || formValue.category,
-          icon: this.selectedCategory?.icon || '💰',
-          note: formValue.note,
-          date: formValue.date,
-          fundId: this.txnType === 'expense' ? formValue.fundId || undefined : undefined,
-          _warnLimit: false
-        };
-        
-        if (this.txnType === 'expense' && this.items.length > 0) {
-          transaction.items = [...this.items];
-        }
-        
-        if (this.isEditMode) {
-          this.financeVar.updateTransaction(this.editTransactionId!, transaction);
+            if (toAccount && formValue.currency !== toAccount.currency) {
+              toTransDeduction = -(share.amount * manualRate);
+            }
+
+            const transferTxn: Transaction = {
+              id: transferId,
+              type: 'transfer',
+              amount: share.amount,
+              currency: formValue.currency,
+              exRate: manualRate,
+              accDeduction: transDeduction,
+              accountId: formValue.accountId,
+              toAccountId: share.loanAccountId,
+              toAccDeduction: toTransDeduction,
+              note: `${formValue.note || ''} (他人代付/借款 - ${toAccount?.name || '朋友'})`,
+              date: formValue.date,
+              linkedTransactionId: expenseId,
+              _warnLimit: false
+            };
+            transferTxns.push(transferTxn);
+          });
+
+          // Create the main expense transaction
+          const expenseTxn: Transaction = {
+            id: expenseId,
+            type: 'expense',
+            amount: finalMyShare,
+            currency: formValue.currency,
+            exRate: manualRate,
+            accDeduction: expenseDeduction,
+            accountId: formValue.accountId,
+            category: this.selectedCategory?.name || formValue.category,
+            icon: this.selectedCategory?.icon || '💰',
+            note: formValue.note,
+            date: formValue.date,
+            fundId: formValue.fundId || undefined,
+            isSplitPay: true,
+            splitMyShare: finalMyShare,
+            splitOthersShare: finalOthersShare,
+            splitLoanAccountId: splitSharesToSave.length === 1 ? splitSharesToSave[0].loanAccountId : undefined,
+            splitShares: splitSharesToSave,
+            linkedTransactionId: transferTxns.length === 1 ? transferTxns[0].id : undefined,
+            linkedTransactionIds: linkedTxIds,
+            _warnLimit: false
+          };
+          if (this.items.length > 0) {
+            expenseTxn.items = [...this.items];
+          }
+
+          if (this.isEditMode) {
+            this.financeVar.updateTransaction(this.editTransactionId!, expenseTxn);
+            transferTxns.forEach(tx => this.financeVar.addTransaction(tx));
+          } else {
+            this.financeService.executeAddTransaction(expenseTxn);
+            transferTxns.forEach(tx => this.financeService.executeAddTransaction(tx));
+          }
+
         } else {
-          this.financeService.executeAddTransaction(transaction);
+          if (this.isEditMode) {
+            // Delete old linked transfers if we toggled splitPay to false
+            const oldTx = this.financeVar.getTransactions().find(t => t.id === this.editTransactionId);
+            if (oldTx) {
+              const idsToDelete = new Set<string>();
+              if (oldTx.linkedTransactionId) idsToDelete.add(oldTx.linkedTransactionId);
+              if (oldTx.linkedTransactionIds) oldTx.linkedTransactionIds.forEach(id => idsToDelete.add(id));
+              if (idsToDelete.size > 0) {
+                const cleanTxns = this.financeVar.getTransactions().filter(t => !idsToDelete.has(t.id));
+                this.financeVar.updateAppData({ transactions: cleanTxns });
+              }
+            }
+          }
+
+          let accDeduction = 0;
+          let toAccDeduction = undefined;
+          
+          if (this.txnType === 'transfer' && formValue.accountToId) {
+              const fromAccount = this.financeVar.getAccounts().find(a => a.id === formValue.accountId);
+              const toAccount = this.financeVar.getAccounts().find(a => a.id === formValue.accountToId);
+              
+              if (fromAccount && toAccount) {
+                  if (formValue.currency !== fromAccount.currency) {
+                     accDeduction = amount * manualRate;
+                  } else {
+                     accDeduction = amount;
+                  }
+                  if (formValue.currency !== toAccount.currency) {
+                     toAccDeduction = -(amount * manualRate);
+                  } else {
+                     toAccDeduction = -amount;
+                  }
+              }
+          } else {
+              const account = this.financeVar.getAccounts().find(a => a.id === formValue.accountId);
+              if (account && formValue.currency !== account.currency) {
+                  accDeduction = this.txnType === 'income' ? -(amount * manualRate) : (amount * manualRate);
+              } else {
+                  accDeduction = this.txnType === 'income' ? -amount : amount;
+              }
+          }
+          
+          const referencedIds = Object.keys(this.selectedReferenceTxIds).filter(id => this.selectedReferenceTxIds[id]);
+
+          const transaction: Transaction = {
+            id: this.isEditMode ? this.editTransactionId! : `t_${Date.now()}`,
+            type: this.txnType,
+            amount: amount,
+            currency: formValue.currency,
+            exRate: manualRate,
+            accDeduction: accDeduction,
+            toAccountId: this.txnType === 'transfer' ? formValue.accountToId : undefined,
+            toAccDeduction: toAccDeduction, 
+            accountId: formValue.accountId,
+            category: this.selectedCategory?.name || formValue.category,
+            icon: this.selectedCategory?.icon || '💰',
+            note: formValue.note,
+            date: formValue.date,
+            fundId: this.txnType === 'expense' ? formValue.fundId || undefined : undefined,
+            referencedTransactionIds: this.txnType === 'transfer' && referencedIds.length > 0 ? referencedIds : undefined,
+            _warnLimit: false
+          };
+          
+          if (this.txnType === 'expense' && this.items.length > 0) {
+            transaction.items = [...this.items];
+          }
+          
+          if (this.isEditMode) {
+            this.financeVar.updateTransaction(this.editTransactionId!, transaction);
+          } else {
+            this.financeService.executeAddTransaction(transaction);
+          }
         }
         
         this.saveLastAccount(formValue.accountId);
@@ -1110,6 +1346,177 @@ export class AddTransactionPagePage implements OnInit {
       console.error('Error saving transaction:', error);
       if (saveButton) saveButton.removeAttribute('disabled');
     }
+  }
+
+  mySplitShare = 0;
+  friendSplits: { accountId: string; accountName: string; amount: number; selected: boolean; isNew?: boolean }[] = [];
+  referencableTxns: Transaction[] = [];
+  selectedReferenceTxIds: { [txId: string]: boolean } = {};
+  newFriendName = '';
+
+  addNewFriend() {
+    const name = this.newFriendName.trim();
+    if (!name) return;
+
+    const existsInSplits = this.friendSplits.some(fs => fs.accountName.toLowerCase() === name.toLowerCase());
+    const existsInAccounts = this.financeVar.getAccounts().some(a => a.name.toLowerCase() === name.toLowerCase() && a.type === 'loan');
+
+    if (existsInSplits || existsInAccounts) {
+      const found = this.friendSplits.find(fs => fs.accountName.toLowerCase() === name.toLowerCase());
+      if (found) {
+        found.selected = true;
+        this.newFriendName = '';
+        this.onFriendSplitChange();
+      }
+      return;
+    }
+
+    const tempId = `loan_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    this.friendSplits.push({
+      accountId: tempId,
+      accountName: name,
+      amount: 0,
+      selected: true,
+      isNew: true
+    });
+
+    this.newFriendName = '';
+    this.onFriendSplitChange();
+  }
+
+  initFriendSplits() {
+    const loanAccounts = this.financeVar.getAccounts().filter(a => a.type === 'loan');
+    this.friendSplits = loanAccounts.map(a => ({
+      accountId: a.id,
+      accountName: a.name,
+      amount: 0,
+      selected: false
+    }));
+  }
+
+  onFriendSplitChange() {
+    const othersShare = this.friendSplits
+      .filter(fs => fs.selected)
+      .reduce((sum, fs) => sum + (parseFloat(fs.amount as any) || 0), 0);
+    
+    this.transactionForm.patchValue({
+      splitOthersShare: othersShare
+    }, { emitEvent: false });
+
+    this.calculateSplitShares();
+    this.checkFormDirty();
+  }
+
+  getRemainingBalance(tx: Transaction, loanAccId: string | null): number {
+    if (!loanAccId) return 0;
+    const originalAmount = this.getSplitAmountForAccount(tx, loanAccId);
+    if (originalAmount <= 0) return 0;
+
+    let totalRepaid = 0;
+    const allTxns = this.financeVar.getTransactions();
+
+    allTxns.forEach(t => {
+      if (this.isEditMode && t.id === this.editTransactionId) return;
+
+      if (t.type === 'transfer' && t.referencedTransactionIds && t.referencedTransactionIds.includes(tx.id)) {
+        // ONLY count transfers that involve this specific friend's loan account!
+        if (t.accountId !== loanAccId && t.toAccountId !== loanAccId) {
+          return;
+        }
+
+        const referencedTxns = allTxns.filter(refTx => t.referencedTransactionIds!.includes(refTx.id));
+        const sumShares = referencedTxns.reduce((sum, refTx) => sum + this.getSplitAmountForAccount(refTx, loanAccId), 0);
+
+        if (sumShares > 0) {
+          const allocation = t.amount * (originalAmount / sumShares);
+          totalRepaid += allocation;
+        } else {
+          totalRepaid += t.amount;
+        }
+      }
+    });
+
+    return Math.max(0, originalAmount - totalRepaid);
+  }
+
+  getAlreadyRepaidAmount(tx: Transaction): number {
+    const loanAccId = this.getSelectedLoanAccountId();
+    if (!loanAccId) return 0;
+    const original = this.getSplitAmountForAccount(tx, loanAccId);
+    const remaining = this.getRemainingBalance(tx, loanAccId);
+    return Math.max(0, original - remaining);
+  }
+
+  loadReferencableTxns() {
+    const loanAccId = this.getSelectedLoanAccountId();
+    if (!loanAccId) {
+      this.referencableTxns = [];
+      return;
+    }
+    this.referencableTxns = this.financeVar.getTransactions().filter(t => {
+      if (t.type !== 'expense' || !t.isSplitPay) return false;
+      const isLinked = (t.splitLoanAccountId === loanAccId) || 
+                       (t.splitShares && t.splitShares.some(s => s.loanAccountId === loanAccId));
+      if (!isLinked) return false;
+
+      const remaining = this.getRemainingBalance(t, loanAccId);
+      const isCurrentlySelected = this.isEditMode && this.selectedReferenceTxIds[t.id];
+      if (isCurrentlySelected) return true;
+
+      return remaining > 0.01;
+    });
+  }
+
+  getSelectedLoanAccountId(): string | null {
+    const fromId = this.transactionForm?.get('accountId')?.value;
+    const toId = this.transactionForm?.get('accountToId')?.value;
+    const allAccs = this.financeVar.getAccounts();
+    
+    const fromAcc = allAccs.find(a => a.id === fromId);
+    if (fromAcc && fromAcc.type === 'loan') return fromId;
+    
+    const toAcc = allAccs.find(a => a.id === toId);
+    if (toAcc && toAcc.type === 'loan') return toId;
+    
+    return null;
+  }
+
+  getSplitAmountForAccount(tx: Transaction, accountId: string | null): number {
+    if (!accountId) return 0;
+    if (tx.splitLoanAccountId === accountId) {
+      return tx.splitOthersShare || 0;
+    }
+    if (tx.splitShares) {
+      const share = tx.splitShares.find(s => s.loanAccountId === accountId);
+      return share ? share.amount : 0;
+    }
+    return 0;
+  }
+
+  suggestSettlementAmount() {
+    let sum = 0;
+    const loanAccId = this.getSelectedLoanAccountId();
+    if (!loanAccId) return;
+
+    this.referencableTxns.forEach(tx => {
+      if (this.selectedReferenceTxIds[tx.id]) {
+        sum += this.getRemainingBalance(tx, loanAccId);
+      }
+    });
+
+    if (sum > 0) {
+      this.transactionForm.patchValue({ amount: sum });
+    }
+  }
+
+  getLoanAccounts(): Account[] {
+    return this.financeVar.getAccounts().filter(a => a.type === 'loan');
+  }
+
+  calculateSplitShares() {
+    const totalAmount = parseFloat(this.transactionForm.get('amount')?.value) || 0;
+    const othersShare = parseFloat(this.transactionForm.get('splitOthersShare')?.value) || 0;
+    this.mySplitShare = Math.max(0, totalAmount - othersShare);
   }
 
   get availableAccounts() {
@@ -1283,6 +1690,7 @@ export class AddTransactionPagePage implements OnInit {
   }
 
   setTodayDate() {
+    // Aligned with today's calendar range picker actions
     this.transactionForm.patchValue({ date: this.getToday() });
     this.pickerActiveMonth = moment();
     this.generateCalendar();

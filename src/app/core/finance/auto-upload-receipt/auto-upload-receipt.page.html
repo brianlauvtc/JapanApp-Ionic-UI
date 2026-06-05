@@ -46,13 +46,30 @@
         <span>新增收據</span>
       </div>
     </div>
+  </div>
 
-    <div class="receipt-preview-card" *ngFor="let image of selectedImages; let i = index">
-      <img [src]="image.webPath || image.path" alt="Receipt Preview">
-      <button class="close-badge" (click)="removeImage(i)">
-        <ion-icon name="close-outline"></ion-icon>
-      </button>
-      <div class="card-index-overlay">#{{ i + 1 }}</div>
+  <div class="receipt-list-container" *ngIf="selectedImages.length > 0">
+    <div class="receipt-item-card" *ngFor="let item of selectedImages; let i = index">
+      <div class="receipt-card-header">
+        <span class="receipt-index">收據 #{{ i + 1 }}</span>
+        <ion-button fill="clear" color="danger" (click)="removeImage(i)" class="remove-btn">
+          <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+        </ion-button>
+      </div>
+      <div class="receipt-card-body">
+        <div class="thumbnail-wrapper">
+          <img [src]="item.photo.webPath || item.photo.path" alt="Receipt Preview">
+        </div>
+        <div class="comment-wrapper">
+          <ion-textarea 
+            rows="3" 
+            placeholder="請輸入給 AI 的指令（例如：『只申報其中的 130 元』、『朋友已付 270 元』）" 
+            [(ngModel)]="item.comment"
+            class="custom-comment-area"
+            mode="md">
+          </ion-textarea>
+        </div>
+      </div>
     </div>
   </div>
 </ion-content>

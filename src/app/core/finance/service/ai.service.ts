@@ -21,7 +21,7 @@ export class AIService {
   }
 
 
-  async analyzeReceiptImage(base64Image: string): Promise<any[] | null> {
+  async analyzeReceiptImage(base64Image: string, userComment?: string): Promise<any[] | null> {
     const apiKey = this.financeVar.getAppData().settings.apiKey;
     if (!apiKey) {
       throw new Error('API Key missing');
@@ -31,7 +31,7 @@ export class AIService {
     const allExpenseCats = this.financeVar.getAllExpenseCategories();
     const categoryIdsPrompt = allExpenseCats.map(c => `"${c.id}"`).join(', ');
     // 🧠 優化的英文 Prompt：省 Token 且精準度更高，強制 category 輸出繁體中文
-    const promptText = `You are an expert financial accountant. Analyze the provided receipt or credit card bill image.
+    let promptText = `You are an expert financial accountant. Analyze the provided receipt or credit card bill image.
   
       Perform these exact steps:
       1. Extract line items (name, quantity, price) into an "items" array.
@@ -60,7 +60,15 @@ export class AIService {
       RULES:
       - NO markdown syntax (like \`\`\`json).
       - NO conversational text.
-      - 1 receipt/bill = 1 object in the array.`; 
+      - 1 receipt/bill = 1 object in the array.`;
+
+    if (userComment && userComment.trim()) {
+      promptText += `\n\nCRITICAL USER DIRECTION/COMMENT:
+      The user left the following specific instruction for this receipt: "${userComment.trim()}"
+      You MUST strictly follow this note. For example:
+      - If they specify "only report 130 dollars of this 400 dollar bill", change the "amount" to 130, and filter/adjust the items list or notes to reflect this.
+      - If they give specific directions on date, category, currency, or note, honor them perfectly.`;
+    }
 
     const requestPayload = {
       contents: [{
