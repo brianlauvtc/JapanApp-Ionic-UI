@@ -22,6 +22,8 @@ export class FundDetailPage implements OnInit, OnDestroy {
   chartOptions: ApexOptions = {};
   chartSeries: any[] = [];
   today: string = '';
+  maxDate: string = '';
+  formattedMonthView: string = '';
   baseCurrency: string = 'HKD';
   baseCurrencySymbol: string = '$';
   groupedData: any = { days: [] };
@@ -45,7 +47,9 @@ export class FundDetailPage implements OnInit, OnDestroy {
   ngOnInit() {
     this.fundId = this.route.snapshot.paramMap.get('id')!;
     this.viewedMonth = moment().format('YYYY-MM');
-    this.today = this.financeService.getToday();
+    this.maxDate = this.financeService.getToday();
+    this.today = this.maxDate;
+    this.formattedMonthView = this.financeService.formatMonthView(this.viewedMonth);
     this.updateCurrencyInfo();
     this.renderFundDetail();
 
@@ -69,6 +73,7 @@ export class FundDetailPage implements OnInit, OnDestroy {
   }
 
   renderFundDetail(preventReset: boolean = false) {
+    this.formattedMonthView = this.financeService.formatMonthView(this.viewedMonth);
     this.groupedData = this.financeService.calculateDailyGroupedData(this.viewedMonth, 'fund', this.fundId);
     const data = this.groupedData;
     const fund = this.financeVar.getAppData().funds.find(f => f.id === this.fundId);

@@ -86,6 +86,7 @@ export interface AIAnalysisResult {
   date: string;
   chineseText: string;
   englishText?: string;
+  periodRange?: string;
 }
 
 export interface AppData {

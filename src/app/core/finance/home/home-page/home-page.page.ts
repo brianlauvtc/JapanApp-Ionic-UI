@@ -26,6 +26,8 @@ export class HomePagePage implements OnInit, OnDestroy {
   isLoading: boolean = true;
   homeData: any = { days: [], openBal: 0, closeBal: 0, totalInc: 0, totalExp: 0 };
   netWorthData: any = { net: 0 };
+  maxDate: string = '';
+  formattedMonthView: string = '';
 
   // Progressive loading variables
   visibleDays: any[] = [];
@@ -41,9 +43,10 @@ export class HomePagePage implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
+    this.maxDate = this.financeService.getToday();
+    this.today = this.maxDate;
     this.viewedMonth = moment().format('YYYY-MM');
-    this.today = this.financeService.getToday();
-    console.log(this.viewedMonth, this.today.substring(0, 7))
+    this.formattedMonthView = this.financeService.formatMonthView(this.viewedMonth);
     
     this.updateCurrencyInfo();
     this.appDataSubscription = this.financeVar.appData$.subscribe(() => {
@@ -55,6 +58,11 @@ export class HomePagePage implements OnInit, OnDestroy {
 
   private updateCurrencyInfo() {
     const appData = this.financeVar.getAppData();
+    if (!appData || !appData.settings) {
+      this.baseCurrency = 'HKD';
+      this.baseCurrencySymbol = '$';
+      return;
+    }
     this.baseCurrency = appData.settings.baseCurrency;
     const currenciesObj = this.currencies as any;
     this.baseCurrencySymbol = currenciesObj[this.baseCurrency]?.symbol || '$';
@@ -67,6 +75,13 @@ export class HomePagePage implements OnInit, OnDestroy {
   }
 
   renderHome(preventReset: boolean = false) {
+    const appData = this.financeVar.getAppData();
+    if (!appData) {
+      this.isLoading = true;
+      return;
+    }
+    this.formattedMonthView = this.financeService.formatMonthView(this.viewedMonth);
+
     if (preventReset) {
       // Synchronous, in-place update for optimal performance (no loading screen or delay)
       this.homeData = this.financeService.calculateDailyGroupedData(this.viewedMonth, 'home');

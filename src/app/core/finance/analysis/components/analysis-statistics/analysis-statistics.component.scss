@@ -589,3 +589,71 @@ html.dark .transaction-item {
     margin: 0;
   }
 }
+
+/* 9. AI Advisor Integration Styling */
+.ai-advisor-section {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.02);
+  transition: all 0.3s ease;
+}
+
+html.dark .ai-advisor-section {
+  background: rgba(30, 41, 59, 0.6);
+  border-color: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.analysis-result-card {
+  .result-content {
+    h3 {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--ion-color-primary, #6366f1);
+      margin-top: 16px;
+      margin-bottom: 8px;
+    }
+
+    h4 {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--ion-color-primary-shade, #4f46e5);
+      margin-top: 12px;
+      margin-bottom: 6px;
+    }
+
+    li {
+      margin-left: 16px;
+      margin-bottom: 4px;
+      list-style-type: disc;
+      color: var(--ion-text-color, #1e293b);
+    }
+
+    strong {
+      color: var(--ion-text-color, #0f172a);
+      font-weight: 700;
+    }
+  }
+}
+
+.active-history {
+  border: 1px solid rgba(var(--ion-color-primary-rgb, 99, 102, 241), 0.5) !important;
+  --background: rgba(var(--ion-color-primary-rgb, 99, 102, 241), 0.08) !important;
+}
+
+.ai-advisor-selector {
+  ion-segment-button {
+    --indicator-color: var(--ion-card-background, #ffffff);
+    --color: var(--ion-color-medium, #6b7280);
+    --color-checked: var(--ion-color-primary, #4f46e5);
+    font-weight: 700;
+    --padding-top: 6px;
+    --padding-bottom: 6px;
+    --indicator-height: 100%;
+    --indicator-box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+    margin: 0;
+    border-radius: 10px;
+  }
+}

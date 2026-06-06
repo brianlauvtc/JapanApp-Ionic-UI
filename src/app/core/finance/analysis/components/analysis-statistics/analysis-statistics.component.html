@@ -186,8 +186,8 @@
     </div>
   </div>
 
-  <!-- Cashflow daily trend bar chart (F-3) -->
-  <div class="chart-card glass-card trend-chart-card">
+  <!-- Cashflow daily trend bar chart (F-3) - Hidden but kept intact -->
+  <div class="chart-card glass-card trend-chart-card" *ngIf="false">
     <div class="card-header">
       <h2>本月收支趨勢對比</h2>
     </div>
@@ -265,4 +265,128 @@
     </div>
   </div>
 
+</div>
+
+<!-- ✨ AI ADVISOR COMBINED HUB (F-9) -->
+<div class="ai-advisor-section glass-card" style="margin-top: 16px; border-radius: 20px; padding: 16px; margin-bottom: 24px;">
+  <div class="section-title-row" style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+    <span style="font-size: 20px;">✨</span>
+    <h2 style="margin: 0; font-size: 17px; font-weight: 800; color: var(--ion-text-color);">AI 財務智慧顧問</h2>
+  </div>
+
+  <div *ngIf="!hasAPIKey()" class="api-key-warning" style="margin-bottom: 16px;">
+    <ion-card style="margin: 0; border-radius: 12px; border: 1px solid var(--ion-color-warning-tint, #ffe082); background: rgba(var(--ion-color-warning-rgb, 255, 196, 9), 0.05); box-shadow: none;">
+      <ion-card-content style="padding: 12px;">
+        <div class="warning-content" style="display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px;">
+          <ion-icon name="warning" color="warning" style="font-size: 32px;"></ion-icon>
+          <p style="margin: 0; font-size: 13px; font-weight: 600; color: var(--ion-color-step-800, #374151);">
+            ⚠️ 尚未設定 API Key，請前往設定輸入您的 Gemini API Key 以啟用 AI 顧問功能。
+          </p>
+          <ion-button routerLink="/tabs/settings" fill="outline" color="warning" size="small" style="font-weight: bold; margin-top: 4px;">
+            前往設定
+          </ion-button>
+        </div>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- AI Advisor Category Selector -->
+  <div style="margin-bottom: 16px;" *ngIf="hasAPIKey()">
+    <ion-segment [value]="selectedAnalysisType" (ionChange)="switchAnalysisType($event.detail.value)" scrollable="true" class="ai-advisor-selector" mode="ios" style="border-radius: 12px; height: 38px; background: rgba(0,0,0,0.04);">
+      <ion-segment-button value="financial_health">
+        <ion-label style="font-size: 12px; font-weight: 700;">⚖️ 財務健康</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="expense_optimization">
+        <ion-label style="font-size: 12px; font-weight: 700;">💸 消費優化</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="saving_goals">
+        <ion-label style="font-size: 12px; font-weight: 700;">🎯 儲蓄計畫</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="asset_allocation">
+        <ion-label style="font-size: 12px; font-weight: 700;">🏦 資產配置</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+  </div>
+
+  <!-- Processing Loader -->
+  <div *ngIf="isAnalyzing" class="no-history-card" style="padding: 40px 16px; text-align: center; background: var(--ion-card-background, #fff); border-radius: 16px; border: 1px solid rgba(0,0,0,0.06); box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+    <ion-spinner name="crescent" color="primary" style="transform: scale(1.3); margin-bottom: 16px;"></ion-spinner>
+    <h3 style="font-weight: 800; color: var(--ion-color-primary); margin: 8px 0 4px 0; font-size: 16px;">✨ AI 正在進行深度分析與評估...</h3>
+    <p style="font-size: 12px; color: var(--ion-color-medium); margin: 0;">這大約需要 5-10 秒，請不要關閉頁面</p>
+  </div>
+
+  <!-- Active Advisor Report View -->
+  <div *ngIf="!isAnalyzing && hasAPIKey()">
+    <div class="latest-analysis-header" *ngIf="latestResult" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; gap: 8px;">
+      <div style="flex: 1;">
+        <h3 style="margin: 0 0 4px 0; font-size: 15px; font-weight: 800; color: var(--ion-text-color);">✨ AI 顧問分析報告</h3>
+        <p style="margin: 0; font-size: 11px; color: var(--ion-color-medium); font-weight: 600;">
+          分析區間: <span style="color: var(--ion-color-primary);">{{ latestResult.periodRange || '未指定' }}</span>
+        </p>
+        <p style="margin: 2px 0 0 0; font-size: 11px; color: var(--ion-color-medium);">
+          產出時間: {{ latestResult.date }}
+        </p>
+      </div>
+      <ion-button size="small" fill="outline" style="margin: 0; font-weight: bold; --border-radius: 8px;" (click)="triggerAIAdvisorAnalysis()">
+        <ion-icon name="refresh-outline" slot="start"></ion-icon>
+        重新分析
+      </ion-button>
+    </div>
+
+    <ion-card class="analysis-result-card" *ngIf="latestResult" style="margin: 0 0 16px 0; border-radius: 16px; border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 4px 12px rgba(0,0,0,0.01); background: var(--ion-card-background, #fff);">
+      <ion-card-content class="result-content" [innerHTML]="formatMarkdown(latestResult.chineseText)" style="padding: 16px; font-size: 14px; line-height: 1.6; color: var(--ion-text-color);">
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Empty state when no report is generated yet -->
+    <ion-card *ngIf="!latestResult" style="border-radius: 16px; border: 1px solid rgba(0,0,0,0.06); margin: 0 0 16px 0; box-shadow: none; background: var(--ion-card-background, #fff);">
+      <ion-card-content class="no-history" style="padding: 32px 16px; text-align: center;">
+        <ion-icon name="bulb-outline" color="primary" style="font-size: 44px; margin-bottom: 12px;"></ion-icon>
+        <h3 style="font-weight: 800; color: var(--ion-text-color); margin-bottom: 8px; font-size: 16px;">尚無分析建議</h3>
+        <p style="font-size: 13px; color: var(--ion-color-medium); margin-bottom: 16px; line-height: 1.5;">
+          AI 顧問將根據您<b>當前選擇的篩選時間區間</b>（{{ dateRangeLabel() }}）內的收支交易、資產狀態及儲蓄計畫，為您提供專屬的優化建議與評估。
+        </p>
+        <ion-button expand="block" (click)="triggerAIAdvisorAnalysis()" style="--border-radius: 12px; font-weight: bold; margin: 0;">
+          立即產生 AI 顧問建議
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- History List Section (keeps up to 3 items per type) -->
+    <ion-card class="history-list-card" *ngIf="historyList.length > 0" style="border-radius: 16px; border: 1px solid rgba(0,0,0,0.06); margin: 0; box-shadow: none; background: var(--ion-card-background, #fff);">
+      <ion-card-header style="padding: 14px 16px 8px 16px;">
+        <ion-card-title style="font-size: 14px; font-weight: 800; color: var(--ion-color-medium);">📜 本類別歷史分析紀錄 (最多保留 3 筆)</ion-card-title>
+      </ion-card-header>
+      <ion-card-content style="padding: 0 16px 14px 16px;">
+        <ion-list lines="none" style="background: transparent; padding: 0;">
+          <ion-item *ngFor="let item of historyList; let i = index" [button]="true" (click)="viewHistoryItem(item)" style="--background: rgba(0,0,0,0.02); --border-radius: 12px; margin-bottom: 8px;" [class.active-history]="latestResult?.id === item.id">
+            <ion-icon [name]="latestResult?.id === item.id ? 'checkmark-circle' : 'time-outline'" slot="start" [color]="latestResult?.id === item.id ? 'primary' : 'medium'"></ion-icon>
+            <ion-label>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <h3 style="font-weight: 800; color: var(--ion-text-color); font-size: 13px; margin: 0;">分析報告 #{{ historyList.length - i }}</h3>
+                <span style="font-size: 10px; font-weight: 700; background: rgba(var(--ion-color-primary-rgb, 99, 102, 241), 0.1); color: var(--ion-color-primary); padding: 2px 6px; border-radius: 6px;">
+                  {{ item.periodRange || '未指定區間' }}
+                </span>
+              </div>
+              <p style="font-size: 10px; color: var(--ion-color-medium); margin-bottom: 4px;">產出時間: {{ item.date }}</p>
+              <p style="font-size: 11px; color: var(--ion-color-step-600, #666); text-overflow: ellipsis; white-space: nowrap; overflow: hidden; margin: 0;">
+                {{ item.chineseText | slice:0:50 }}...
+              </p>
+            </ion-label>
+          </ion-item>
+        </ion-list>
+        
+        <div style="display: flex; gap: 8px; margin-top: 12px;">
+          <ion-button fill="outline" color="danger" size="small" expand="block" style="flex: 1; --border-radius: 8px; font-weight: bold; margin: 0;" (click)="confirmClearHistory(selectedAnalysisType)">
+            <ion-icon name="trash" slot="start"></ion-icon>
+            清除本類歷史
+          </ion-button>
+          <ion-button fill="outline" color="danger" size="small" expand="block" style="flex: 1; --border-radius: 8px; font-weight: bold; margin: 0;" (click)="confirmClearHistory()">
+            <ion-icon name="alert-circle" slot="start"></ion-icon>
+            清除全部歷史
+          </ion-button>
+        </div>
+      </ion-card-content>
+    </ion-card>
+  </div>
 </div>

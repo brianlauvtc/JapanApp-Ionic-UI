@@ -22,6 +22,8 @@ export class AccountDetailPage implements OnInit {
   chartOptions: ApexOptions = {};
   chartSeries: any[] = [];
   today: string = '';
+  maxDate: string = '';
+  formattedMonthView: string = '';
   private appDataSubscription!: Subscription;
   groupedData: any = { days: [] };
 
@@ -43,7 +45,9 @@ export class AccountDetailPage implements OnInit {
   ngOnInit() {
     this.accountId = this.route.snapshot.paramMap.get('id')!;
     this.viewedMonth = moment().format('YYYY-MM');
-    this.today = this.financeService.getToday();
+    this.maxDate = this.financeService.getToday();
+    this.today = this.maxDate;
+    this.formattedMonthView = this.financeService.formatMonthView(this.viewedMonth);
     this.renderAccountDetail();
     this.appDataSubscription = this.financeVar.appData$.subscribe(() => {
       // 收到通知後，僅執行讀取與渲染，不執行任何修改
@@ -58,6 +62,7 @@ export class AccountDetailPage implements OnInit {
     }
   }
   renderAccountDetail(preventReset: boolean = false) {
+    this.formattedMonthView = this.financeService.formatMonthView(this.viewedMonth);
     this.groupedData = this.financeService.calculateDailyGroupedData(this.viewedMonth, 'account', this.accountId);
     const data = this.groupedData;
     const account = this.financeVar.getAppData().accounts.find(a => a.id === this.accountId);

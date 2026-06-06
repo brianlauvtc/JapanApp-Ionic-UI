@@ -2,7 +2,8 @@ import { Component, OnInit, OnDestroy, computed, signal, effect, ChangeDetectorR
 import { AnalysisService } from '../../../service/analysis.service';
 import { FinanceVarService } from '../../../service/finance-var.service';
 import { FinanceService } from '../../../service/finance.service';
-import { Transaction } from '../../../model/finance.model';
+import { AIService } from '../../../service/ai.service';
+import { Transaction, AIAnalysisType, AIAnalysisResult } from '../../../model/finance.model';
 import { ApexOptions } from 'ng-apexcharts';
 import { AlertController, ToastController, ModalController } from '@ionic/angular';
 import { AddTransactionPagePage } from '../../../add-transaction/add-transaction-page/add-transaction-page.page';
@@ -26,6 +27,13 @@ export class AnalysisStatisticsComponent implements OnInit, OnDestroy {
   // Local component states
   public isDarkMode = false;
   public isPageEntered = false;
+  
+  // AI Advisor state merged from analysis-page
+  public selectedAnalysisType: AIAnalysisType = 'financial_health';
+  public isAnalyzing: boolean = false;
+  public latestResult: AIAnalysisResult | null = null;
+  public historyList: AIAnalysisResult[] = [];
+  public isEnglishExpanded: boolean = false;
   
   // Drill-down UI control maps
   public expandedCategories: { [key: string]: boolean } = {};
@@ -77,6 +85,7 @@ export class AnalysisStatisticsComponent implements OnInit, OnDestroy {
     public analysisService: AnalysisService,
     private financeVar: FinanceVarService,
     private financeService: FinanceService,
+    private aiService: AIService,
     private alertController: AlertController,
     private toastCtrl: ToastController,
     private modalCtrl: ModalController,
@@ -101,6 +110,7 @@ export class AnalysisStatisticsComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.setupDarkModeListener();
+    this.switchAnalysisType('financial_health');
   }
 
   ngOnDestroy() {
@@ -114,6 +124,7 @@ export class AnalysisStatisticsComponent implements OnInit, OnDestroy {
   public ionViewDidEnter() {
     this.isPageEntered = true;
     this.drawCharts();
+    this.loadHistoryAndLatest();
     this.cdr.detectChanges();
   }
 
@@ -424,73 +435,75 @@ export class AnalysisStatisticsComponent implements OnInit, OnDestroy {
       legend: { show: false }
     };
 
-    // Monthly Bar Chart: Cash flow timeline trends
-    this.trendChartSeries = [
-      { name: '收入', data: trendData.incomes },
-      { name: '支出', data: trendData.expenses }
-    ];
-    this.trendChartOptions = {
-      chart: {
-        type: 'bar',
-        height: 220,
-        stacked: false,
-        foreColor: isDark ? '#e2e8f0' : '#1e293b',
-        toolbar: { show: false }
-      },
-      colors: ['#10b981', '#ef4444'], // Glowing Green and premium Caution Red
-      plotOptions: {
-        bar: {
-          horizontal: false,
-          columnWidth: '55%',
-          borderRadius: 4
-        }
-      },
-      dataLabels: { enabled: false },
-      stroke: {
-        show: true,
-        width: 2,
-        colors: ['transparent']
-      },
-      xaxis: {
-        categories: trendData.dates,
-        axisBorder: { show: false },
-        axisTicks: { show: false },
-        labels: {
-          style: { colors: isDark ? '#94a3b8' : '#64748b', fontSize: '11px' }
-        }
-      },
-      yaxis: {
-        labels: {
-          style: { colors: isDark ? '#94a3b8' : '#64748b', fontSize: '11px' },
-          formatter: (val: number) => `${symbol}${val.toFixed(0)}`
-        }
-      },
-      grid: {
-        show: true,
-        borderColor: isDark ? '#334155' : '#e2e8f0',
-        strokeDashArray: 4
-      },
-      // Responsive Tooltip clipping guard (Rec 7)
-      tooltip: {
-        theme: isDark ? 'dark' : 'light',
-        shared: true,
-        intersect: false,
-        fixed: {
-          enabled: true,
-          position: 'topRight', // fixed top right prevents off-screen rendering
-          offsetX: 0,
-          offsetY: -10
+    // Monthly Bar Chart: Cash flow timeline trends - Bypassed at runtime for performance
+    if (false as boolean) {
+      this.trendChartSeries = [
+        { name: '收入', data: trendData.incomes },
+        { name: '支出', data: trendData.expenses }
+      ];
+      this.trendChartOptions = {
+        chart: {
+          type: 'bar',
+          height: 220,
+          stacked: false,
+          foreColor: isDark ? '#e2e8f0' : '#1e293b',
+          toolbar: { show: false }
         },
-        y: {
-          formatter: (val: number) => `${symbol}${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        colors: ['#10b981', '#ef4444'], // Glowing Green and premium Caution Red
+        plotOptions: {
+          bar: {
+            horizontal: false,
+            columnWidth: '55%',
+            borderRadius: 4
+          }
+        },
+        dataLabels: { enabled: false },
+        stroke: {
+          show: true,
+          width: 2,
+          colors: ['transparent']
+        },
+        xaxis: {
+          categories: trendData.dates,
+          axisBorder: { show: false },
+          axisTicks: { show: false },
+          labels: {
+            style: { colors: isDark ? '#94a3b8' : '#64748b', fontSize: '11px' }
+          }
+        },
+        yaxis: {
+          labels: {
+            style: { colors: isDark ? '#94a3b8' : '#64748b', fontSize: '11px' },
+            formatter: (val: number) => `${symbol}${val.toFixed(0)}`
+          }
+        },
+        grid: {
+          show: true,
+          borderColor: isDark ? '#334155' : '#e2e8f0',
+          strokeDashArray: 4
+        },
+        // Responsive Tooltip clipping guard (Rec 7)
+        tooltip: {
+          theme: isDark ? 'dark' : 'light',
+          shared: true,
+          intersect: false,
+          fixed: {
+            enabled: true,
+            position: 'topRight', // fixed top right prevents off-screen rendering
+            offsetX: 0,
+            offsetY: -10
+          },
+          y: {
+            formatter: (val: number) => `${symbol}${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+          }
+        },
+        legend: {
+          show: true,
+          position: 'top',
+          labels: { colors: isDark ? '#94a3b8' : '#475569' }
         }
-      },
-      legend: {
-        show: true,
-        position: 'top',
-        labels: { colors: isDark ? '#94a3b8' : '#475569' }
-      }
-    };
+      };
+    }
   }
 
   /**
@@ -641,5 +654,198 @@ export class AnalysisStatisticsComponent implements OnInit, OnDestroy {
     } catch (error) {
       console.error('Error opening add transaction modal:', error);
     }
+  }
+
+  // ===== Merged AI Advisor Methods =====
+  public switchAnalysisType(type: AIAnalysisType) {
+    this.selectedAnalysisType = type;
+    this.isEnglishExpanded = false;
+    this.loadHistoryAndLatest();
+  }
+
+  public loadHistoryAndLatest() {
+    const history = this.financeVar.getAIAnalysisHistory(this.selectedAnalysisType);
+    this.historyList = history;
+    this.latestResult = history.length > 0 ? history[0] : null;
+  }
+
+  public viewHistoryItem(item: AIAnalysisResult) {
+    this.latestResult = item;
+  }
+
+  public hasAPIKey(): boolean {
+    return !!this.financeVar.getAppData()?.settings?.apiKey;
+  }
+
+  public async triggerAIAdvisorAnalysis() {
+    if (!this.hasAPIKey()) return;
+    this.isAnalyzing = true;
+    this.cdr.detectChanges();
+    
+    try {
+      const startDate = this.analysisService.startDate();
+      const endDate = this.analysisService.endDate();
+      
+      // Calculate effective date range: cap end date to today if it is in the future
+      const todayStr = moment().format('YYYY-MM-DD');
+      const effectiveEndDate = moment(endDate).isAfter(todayStr) ? todayStr : endDate;
+      const periodRange = `${startDate} ~ ${effectiveEndDate}`;
+      
+      const baseCurrency = this.financeVar.getAppData().settings.baseCurrency || 'HKD';
+      let contextData: any = {};
+
+      if (this.selectedAnalysisType === 'financial_health') {
+        const accounts = this.financeVar.getAccounts().map(a => ({
+          name: a.name,
+          type: a.type,
+          currency: a.currency,
+          balance: this.financeService.getAccBalance(a.id)
+        }));
+        const metrics = {
+          totalIncome: this.analysisService.totalIncomes(),
+          totalExpense: this.analysisService.totalExpenses(),
+          netSavings: this.analysisService.netSavings(),
+          savingsRatePercent: this.analysisService.savingsRate(),
+          dailyAverageExpense: this.analysisService.dailyAverageExpense()
+        };
+        const categorySummaries = this.analysisService.categorySummaries().map(c => ({
+          name: c.name,
+          type: c.type,
+          amount: Number(c.amount.toFixed(2)),
+          percentage: Number(c.percentage.toFixed(2))
+        }));
+        const plans = this.financeVar.getPlans().map(p => ({
+          name: p.name,
+          type: p.type,
+          amount: p.amount,
+          targetMonth: p.targetMonth
+        }));
+        contextData = { periodRange, baseCurrency, accounts, metrics, categorySummaries, plans };
+
+      } else if (this.selectedAnalysisType === 'expense_optimization') {
+        const totalExpense = this.analysisService.totalExpenses();
+        const categorySummaries = this.analysisService.categorySummaries()
+          .filter(c => c.type === 'expense')
+          .map(c => ({
+            name: c.name,
+            amount: Number(c.amount.toFixed(2)),
+            percentage: Number(c.percentage.toFixed(2))
+          }));
+        
+        const recentTransactions = this.financeVar.getAppData().transactions
+          .filter(t => t.type === 'expense' && t.date >= startDate && t.date <= endDate)
+          .sort((a, b) => b.date.localeCompare(a.date))
+          .slice(0, 10)
+          .map(t => ({
+            date: t.date,
+            category: t.category,
+            amount: t.amount,
+            currency: t.currency,
+            note: t.note || ''
+          }));
+        contextData = { periodRange, baseCurrency, totalExpense, categorySummaries, recentTransactions };
+
+      } else if (this.selectedAnalysisType === 'saving_goals') {
+        const netWorth = this.financeService.getNetWorth();
+        const monthlyNetSavings = this.analysisService.netSavings();
+        const savingsRatePercent = this.analysisService.savingsRate();
+        const plans = this.financeVar.getPlans().map(p => ({
+          name: p.name,
+          type: p.type,
+          amount: p.amount,
+          targetMonth: p.targetMonth
+        }));
+        contextData = { periodRange, baseCurrency, totalAssetsBase: netWorth.ast, monthlyNetSavings, savingsRatePercent, plans };
+
+      } else if (this.selectedAnalysisType === 'asset_allocation') {
+        const accounts = this.financeVar.getAccounts().map(a => ({
+          name: a.name,
+          type: a.type,
+          currency: a.currency,
+          balance: this.financeService.getAccBalance(a.id)
+        }));
+        contextData = { periodRange, baseCurrency, accounts };
+      }
+
+      // Check if there is history for comparison (using previous english text or previous chinese text if English is not available)
+      const previousResult = this.historyList.length > 0 ? (this.historyList[0].englishText || this.historyList[0].chineseText) : undefined;
+
+      // Call single-request Traditional Chinese Gemini Advisor analysis
+      const chineseAdvice = await this.aiService.generateAIAdvisorAnalysis(
+        this.selectedAnalysisType,
+        contextData,
+        previousResult
+      );
+
+      if (chineseAdvice) {
+        const newResult: AIAnalysisResult = {
+          id: `ai_${Date.now()}`,
+          type: this.selectedAnalysisType,
+          date: new Date().toLocaleString('zh-TW', { hour12: false }),
+          chineseText: chineseAdvice,
+          periodRange: periodRange
+        };
+        this.financeVar.addAIAnalysisResult(newResult);
+        this.loadHistoryAndLatest();
+      } else {
+        this.showToastError('無法取得分析建議，請稍後再試。');
+      }
+    } catch (e: any) {
+      console.error('Advisor analysis failed:', e);
+      this.showToastError('分析發生錯誤：' + (e?.message || e));
+    } finally {
+      this.isAnalyzing = false;
+      this.cdr.detectChanges();
+    }
+  }
+
+  public async confirmClearHistory(type?: AIAnalysisType) {
+    const header = type ? '⚠️ 清除本類歷史' : '⚠️ 清除全部歷史';
+    const message = type ? '您確定要清除本類別的所有 AI 分析紀錄嗎？' : '您確定要清除所有類別的 AI 分析紀錄嗎？';
+
+    const alert = await this.alertController.create({
+      header,
+      message,
+      buttons: [
+        {
+          text: '取消',
+          role: 'cancel'
+        },
+        {
+          text: '確定清除',
+          cssClass: 'danger',
+          handler: () => {
+            this.financeVar.clearAIAnalysisHistory(type);
+            this.loadHistoryAndLatest();
+          }
+        }
+      ]
+    });
+
+    await alert.present();
+  }
+
+  public async showToastError(msg: string) {
+    const alert = await this.alertController.create({
+      header: '分析失敗',
+      message: msg,
+      buttons: ['確定']
+    });
+    await alert.present();
+  }
+
+  public formatMarkdown(text: string): string {
+    if (!text) return '';
+    let html = text;
+    // Bold: **text**
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    // Bullet points starting with - or *
+    html = html.replace(/^\s*[-*]\s+(.*)$/gm, '<li>$1</li>');
+    // Subheaders: ### Title
+    html = html.replace(/^###\s+(.*)$/gm, '<h4>$1</h4>');
+    html = html.replace(/^##\s+(.*)$/gm, '<h3>$1</h3>');
+    // Newlines to br
+    html = html.replace(/\n/g, '<br>');
+    return html;
   }
 }
