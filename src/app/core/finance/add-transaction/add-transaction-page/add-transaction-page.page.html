@@ -96,13 +96,23 @@
       <div class="modern-amount-box" [ngClass]="txnType">
         <div class="input-main-zone">
           <span class="currency-symbol">{{ getCurrencySymbol(transactionForm.get('currency')?.value) }}</span>
-          <ion-input 
-            class="massive-amount-input"
-            formControlName="amount" 
-            type="number" 
-            placeholder="0"
-            inputmode="decimal">
-          </ion-input>
+          <div style="display: flex; flex-direction: column; flex: 1; position: relative;">
+            <ion-input 
+              class="massive-amount-input"
+              [(ngModel)]="amountExpression"
+              [ngModelOptions]="{standalone: true}"
+              type="text" 
+              placeholder="0"
+              [readonly]="isMobile"
+              [inputmode]="isMobile ? 'none' : 'text'"
+              (ionFocus)="showNumPad = true"
+              (click)="showNumPad = true"
+              (ionInput)="onExpressionChange()">
+            </ion-input>
+            <div class="expr-preview-badge" *ngIf="hasOperators(amountExpression)" style="font-size: 14px; font-weight: 600; opacity: 0.8; margin-top: -4px; margin-bottom: 4px;">
+              = {{ evaluateExpression(amountExpression) | number:'1.0-2' }}
+            </div>
+          </div>
         </div>
         <div class="currency-picker-pill">
           <ion-select formControlName="currency" interface="action-sheet" mode="ios">
@@ -124,7 +134,8 @@
           step="0.0001"
           label-placement="start"
           inputmode="decimal"
-          style="text-align: right; color: var(--ion-color-primary);">
+          style="text-align: right; color: var(--ion-color-primary);"
+          (ionFocus)="showNumPad = false">
         </ion-input>
       </ion-item>
       <ion-item lines="none" class="rate-result">
@@ -287,7 +298,7 @@
                 <!-- Right Input (Show only when selected) -->
                 <div style="width: 130px; display: flex; align-items: center; gap: 4px;" *ngIf="fs.selected">
                   <span style="font-size: 12px; font-weight: 600; color: #d97706;">{{ getCurrencySymbol(transactionForm.get('currency')?.value) }}</span>
-                  <ion-input type="number" [(ngModel)]="fs.amount" [ngModelOptions]="{standalone: true}" (ionInput)="onFriendSplitChange()" placeholder="0" style="--background: #fff; --padding-start: 10px; --padding-end: 10px; border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 8px; font-size: 14px; font-weight: 700; text-align: right; height: 32px; margin: 0; box-shadow: inset 0 1px 3px rgba(0,0,0,0.03); color: #d97706;"></ion-input>
+                  <ion-input type="number" [(ngModel)]="fs.amount" [ngModelOptions]="{standalone: true}" (ionInput)="onFriendSplitChange()" placeholder="0" style="--background: #fff; --padding-start: 10px; --padding-end: 10px; border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 8px; font-size: 14px; font-weight: 700; text-align: right; height: 32px; margin: 0; box-shadow: inset 0 1px 3px rgba(0,0,0,0.03); color: #d97706;" (ionFocus)="showNumPad = false"></ion-input>
                 </div>
               </div>
             </div>
@@ -295,7 +306,7 @@
             <!-- Add New Friend Row -->
             <div class="add-friend-inline-row" style="display: flex; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px dashed rgba(245, 158, 11, 0.15); gap: 8px;">
               <ion-icon name="person-add-outline" color="warning" style="font-size: 18px;"></ion-icon>
-              <ion-input type="text" [(ngModel)]="newFriendName" [ngModelOptions]="{standalone: true}" placeholder="輸入新朋友姓名..." style="--background: rgba(0,0,0,0.02); --padding-start: 12px; --padding-end: 12px; border-radius: 8px; font-size: 13px; height: 36px; flex: 1; border: 1px solid rgba(0,0,0,0.06); font-weight: 500;" (keyup.enter)="addNewFriend()"></ion-input>
+              <ion-input type="text" [(ngModel)]="newFriendName" [ngModelOptions]="{standalone: true}" placeholder="輸入新朋友姓名..." style="--background: rgba(0,0,0,0.02); --padding-start: 12px; --padding-end: 12px; border-radius: 8px; font-size: 13px; height: 36px; flex: 1; border: 1px solid rgba(0,0,0,0.06); font-weight: 500;" (keyup.enter)="addNewFriend()" (ionFocus)="showNumPad = false"></ion-input>
               <ion-button fill="solid" color="warning" size="small" (click)="addNewFriend()" style="margin: 0; height: 36px; font-size: 12px; font-weight: 600; --border-radius: 8px; --box-shadow: 0 2px 6px rgba(245, 158, 11, 0.2);">
                 <ion-icon slot="start" name="add-outline"></ion-icon>
                 新增朋友
@@ -395,7 +406,7 @@
 
       <ion-item lines="none">
         <ion-icon name="document-text-outline" slot="start" color="medium"></ion-icon>
-        <ion-input formControlName="note" placeholder="新增備註 (選填)..."></ion-input>
+        <ion-input formControlName="note" placeholder="新增備註 (選填)..." (ionFocus)="showNumPad = false"></ion-input>
       </ion-item>
     </ion-list>
 
@@ -418,10 +429,10 @@
       </ion-item>
 
       <div class="add-item-form ion-padding">
-        <ion-input [(ngModel)]="itemForm.name" [ngModelOptions]="{standalone: true}" placeholder="品項名稱 (如: 蘋果)" class="item-input"></ion-input>
+        <ion-input [(ngModel)]="itemForm.name" [ngModelOptions]="{standalone: true}" placeholder="品項名稱 (如: 蘋果)" class="item-input" (ionFocus)="showNumPad = false"></ion-input>
         <div class="item-row">
-          <ion-input [(ngModel)]="itemForm.quantity" [ngModelOptions]="{standalone: true}" type="number" placeholder="數量" class="item-input half"></ion-input>
-          <ion-input [(ngModel)]="itemForm.price" [ngModelOptions]="{standalone: true}" type="number" placeholder="單價" class="item-input half"></ion-input>
+          <ion-input [(ngModel)]="itemForm.quantity" [ngModelOptions]="{standalone: true}" type="number" placeholder="數量" class="item-input half" (ionFocus)="showNumPad = false"></ion-input>
+          <ion-input [(ngModel)]="itemForm.price" [ngModelOptions]="{standalone: true}" type="number" placeholder="單價" class="item-input half" (ionFocus)="showNumPad = false"></ion-input>
         </div>
         <ion-button expand="block" (click)="addItem()" [disabled]="!canAddItem()" mode="ios" color="light" class="ion-margin-top">
           <ion-icon name="add-circle-outline" slot="start"></ion-icon> 新增明細
@@ -439,5 +450,64 @@
       </ion-item>
     </ion-list>
 
+    <!-- Spacer to prevent custom calculator from overlapping form fields at the bottom -->
+    <div class="calculator-spacer" [class.show]="showNumPad"></div>
+
   </div>
 </ion-content>
+
+<!-- Custom Premium Number Pad -->
+<div class="calculator-num-pad" [class.show]="showNumPad" [class.ios]="isIos">
+  <!-- Keypad Header -->
+  <div class="keypad-header">
+    <div class="expression-display">
+      <span class="expr-label">算式:</span>
+      <span class="expr-text">{{ amountExpression || '0' }}</span>
+    </div>
+    <div class="preview-display" *ngIf="hasOperators(amountExpression)">
+      <span class="preview-equals">=</span>
+      <span class="preview-val">{{ evaluateExpression(amountExpression) | number:'1.0-2' }}</span>
+    </div>
+    <ion-button fill="clear" size="small" class="close-pad-btn" (click)="showNumPad = false">
+      <ion-icon name="chevron-down-outline" slot="start"></ion-icon>
+      隱藏
+    </ion-button>
+  </div>
+
+  <!-- Keypad Grid -->
+  <div class="keypad-grid">
+    <!-- Row 1 -->
+    <button type="button" class="keypad-btn action-key" (click)="onKeyPress('C')">C</button>
+    <button type="button" class="keypad-btn action-key" (click)="onKeyPress('⌫')">
+      <ion-icon name="backspace-outline"></ion-icon>
+    </button>
+    <button type="button" class="keypad-btn operator-key" (click)="onKeyPress('/')">÷</button>
+    <button type="button" class="keypad-btn operator-key" (click)="onKeyPress('*')">×</button>
+
+    <!-- Row 2 -->
+    <button type="button" class="keypad-btn digit-key" (click)="onKeyPress('7')">7</button>
+    <button type="button" class="keypad-btn digit-key" (click)="onKeyPress('8')">8</button>
+    <button type="button" class="keypad-btn digit-key" (click)="onKeyPress('9')">9</button>
+    <button type="button" class="keypad-btn operator-key" (click)="onKeyPress('-')">-</button>
+
+    <!-- Row 3 -->
+    <button type="button" class="keypad-btn digit-key" (click)="onKeyPress('4')">4</button>
+    <button type="button" class="keypad-btn digit-key" (click)="onKeyPress('5')">5</button>
+    <button type="button" class="keypad-btn digit-key" (click)="onKeyPress('6')">6</button>
+    <button type="button" class="keypad-btn operator-key" (click)="onKeyPress('+')">+</button>
+
+    <!-- Row 4 -->
+    <button type="button" class="keypad-btn digit-key" (click)="onKeyPress('1')">1</button>
+    <button type="button" class="keypad-btn digit-key" (click)="onKeyPress('2')">2</button>
+    <button type="button" class="keypad-btn digit-key" (click)="onKeyPress('3')">3</button>
+    <button type="button" class="keypad-btn eval-key" (click)="onKeyPress('=')">=</button>
+
+    <!-- Row 5 -->
+    <button type="button" class="keypad-btn digit-key" (click)="onKeyPress('0')">0</button>
+    <button type="button" class="keypad-btn digit-key" (click)="onKeyPress('00')">00</button>
+    <button type="button" class="keypad-btn digit-key" (click)="onKeyPress('.')">.</button>
+    <button type="button" class="keypad-btn done-key" (click)="onKeyPress('Done')">
+      <ion-icon name="checkmark-outline" style="margin-right: 4px; font-weight: bold;"></ion-icon> Done
+    </button>
+  </div>
+</div>

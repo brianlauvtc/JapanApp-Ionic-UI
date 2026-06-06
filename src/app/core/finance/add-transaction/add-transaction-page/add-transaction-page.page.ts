@@ -4,7 +4,7 @@ import { FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
 import { FinanceVarService } from '../../service/finance-var.service';
 import { FinanceService } from '../../service/finance.service';
 import { Transaction, Account, Fund, SplitShare } from '../../model/finance.model';
-import { AlertController, ModalController, NavParams, ToastController } from '@ionic/angular';
+import { AlertController, ModalController, NavParams, ToastController, Platform } from '@ionic/angular';
 import  moment from 'moment';
 import { filter } from 'rxjs';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../../../../../environments/categories';
@@ -22,6 +22,12 @@ export class AddTransactionPagePage implements OnInit {
   isEditMode = false;
   editTransactionId: string | null = null;
   categories: any[] = [];
+
+  // Calculator custom number pad state
+  showNumPad = false;
+  amountExpression = '';
+  isMobile = false;
+  isIos = false;
 
   // Performance caching and guard variables
   ignoreTypeChange = false;
@@ -75,12 +81,15 @@ export class AddTransactionPagePage implements OnInit {
     private modalCtrl: ModalController,
     private alertController: AlertController,
     private toastCtrl: ToastController,
+    private platform: Platform,
     @Optional() private navParams: NavParams
   ) {
     this.isModal = !!this.navParams && !!this.navParams.data;
   }
 
   ngOnInit() {
+    this.isMobile = this.platform.is('mobile') || this.platform.is('capacitor') || this.platform.is('cordova');
+    this.isIos = this.platform.is('ios');
     this.initForm();
     this.fetchRealRates();
     this.initFriendSplits();
@@ -310,10 +319,23 @@ export class AddTransactionPagePage implements OnInit {
       this.checkFormDirty();
     });
     
-    this.transactionForm.get('amount')?.valueChanges.subscribe(() => {
+    this.transactionForm.get('amount')?.valueChanges.subscribe((val) => {
       this.updateCalculatedAmount();
       this.calculateSplitShares();
       this.checkFormDirty();
+
+      // Sync to amountExpression if updated externally (like edit load or AI scans)
+      if (val === '' || val === null || val === undefined) {
+        if (this.amountExpression !== '') {
+          this.amountExpression = '';
+        }
+        return;
+      }
+      const numVal = parseFloat(val);
+      const currentEval = this.evaluateExpression(this.amountExpression);
+      if (!isNaN(numVal) && numVal !== currentEval) {
+        this.amountExpression = numVal.toString();
+      }
     });
 
     this.transactionForm.get('isSplitPay')?.valueChanges.subscribe(() => {
@@ -389,6 +411,7 @@ export class AddTransactionPagePage implements OnInit {
   }
 
   setTxnType(type: 'expense' | 'income' | 'transfer') {
+    this.showNumPad = false;
     if (this.ignoreTypeChange) {
       return;
     }
@@ -407,6 +430,7 @@ export class AddTransactionPagePage implements OnInit {
   }
 
   selectCategory(category: any) {
+    this.showNumPad = false;
     this.selectedCategory = category;
     this.transactionForm.patchValue({ category: category.name });
   }
@@ -548,6 +572,7 @@ export class AddTransactionPagePage implements OnInit {
   }
 
   swapTransferAccounts() {
+    this.showNumPad = false;
     const fromId = this.transactionForm.get('accountId')?.value;
     const toId = this.transactionForm.get('accountToId')?.value;
 
@@ -732,6 +757,144 @@ export class AddTransactionPagePage implements OnInit {
 
   getAccBalance(accountId: string): number {
     return this.financeService.getAccBalance(accountId);
+  }
+
+  evaluateExpression(expr: string): number {
+    if (!expr) return 0;
+    const cleanExpr = expr.replace(/\s+/g, '');
+    if (!cleanExpr) return 0;
+
+    try {
+      // Standard mathematical expression tokenizer
+      const tokens: string[] = [];
+      let currentToken = '';
+      
+      for (let i = 0; i < cleanExpr.length; i++) {
+        const char = cleanExpr[i];
+        if (/[0-9.]/.test(char)) {
+          currentToken += char;
+        } else if (/[\+\-\*/]/.test(char)) {
+          if (currentToken) {
+            tokens.push(currentToken);
+            currentToken = '';
+          }
+          tokens.push(char);
+        }
+      }
+      if (currentToken) {
+        tokens.push(currentToken);
+      }
+
+      if (tokens.length === 0) return 0;
+
+      // Filter out trailing operators to prevent errors (e.g. "10 + " -> tokens is ["10", "+"])
+      while (tokens.length > 0 && /[\+\-\*/]/.test(tokens[tokens.length - 1])) {
+        tokens.pop();
+      }
+
+      if (tokens.length === 0) return 0;
+
+      // First pass: handle multiplication and division
+      const firstPassTokens: string[] = [];
+      let i = 0;
+      while (i < tokens.length) {
+        const token = tokens[i];
+        if (token === '*' || token === '/') {
+          const prev = firstPassTokens.pop() || '0';
+          const prevVal = parseFloat(prev);
+          const nextVal = parseFloat(tokens[i + 1] || '1');
+          if (token === '*') {
+            firstPassTokens.push((prevVal * nextVal).toString());
+          } else {
+            firstPassTokens.push((nextVal !== 0 ? prevVal / nextVal : 0).toString());
+          }
+          i += 2;
+        } else {
+          firstPassTokens.push(token);
+          i++;
+        }
+      }
+
+      // Second pass: handle addition and subtraction
+      if (firstPassTokens.length === 0) return 0;
+      let result = parseFloat(firstPassTokens[0]) || 0;
+      let j = 1;
+      while (j < firstPassTokens.length) {
+        const op = firstPassTokens[j];
+        const nextVal = parseFloat(firstPassTokens[j + 1] || '0');
+        if (op === '+') {
+          result += nextVal;
+        } else if (op === '-') {
+          result -= nextVal;
+        }
+        j += 2;
+      }
+
+      return isNaN(result) ? 0 : parseFloat(result.toFixed(4));
+    } catch (e) {
+      console.error('Error evaluating expression:', e);
+      return 0;
+    }
+  }
+
+  onKeyPress(key: string) {
+    if (key === 'C') {
+      this.amountExpression = '';
+    } else if (key === 'backspace' || key === '⌫') {
+      if (this.amountExpression.length > 0) {
+        this.amountExpression = this.amountExpression.substring(0, this.amountExpression.length - 1);
+      }
+    } else if (key === '=') {
+      const result = this.evaluateExpression(this.amountExpression);
+      this.amountExpression = result > 0 ? result.toString() : '';
+    } else if (key === 'done' || key === 'Done') {
+      const result = this.evaluateExpression(this.amountExpression);
+      this.amountExpression = result > 0 ? result.toString() : '';
+      this.showNumPad = false;
+    } else {
+      const isOperator = /[\+\-\*/]/.test(key);
+      const lastChar = this.amountExpression.slice(-1);
+      const isLastCharOperator = /[\+\-\*/]/.test(lastChar);
+      
+      // Prevent starting with operators other than minus
+      if (this.amountExpression === '' && isOperator && key !== '-') {
+        return;
+      }
+
+      // Prevent consecutive operators (replace old operator with new one)
+      if (isOperator && isLastCharOperator) {
+        this.amountExpression = this.amountExpression.slice(0, -1) + key;
+        this.onExpressionChange();
+        return;
+      }
+
+      // Prevent consecutive decimals (e.g. 10..5)
+      if (key === '.') {
+        const parts = this.amountExpression.split(/[\+\-\*/]/);
+        const lastTerm = parts[parts.length - 1];
+        if (lastTerm.includes('.')) {
+          return;
+        }
+      }
+
+      this.amountExpression += key;
+    }
+
+    this.onExpressionChange();
+  }
+
+  onExpressionChange() {
+    const evaluated = this.evaluateExpression(this.amountExpression);
+    if (evaluated > 0) {
+      this.transactionForm.get('amount')?.setValue(evaluated, { emitEvent: true });
+    } else {
+      this.transactionForm.get('amount')?.setValue('', { emitEvent: true });
+    }
+  }
+
+  hasOperators(expr: string): boolean {
+    if (!expr) return false;
+    return /[\+\-\*/]/.test(expr);
   }
 
   getCurrencySymbol(currency: string): string {
@@ -1431,6 +1594,7 @@ export class AddTransactionPagePage implements OnInit {
   newFriendName = '';
 
   addNewFriend() {
+    this.showNumPad = false;
     const name = this.newFriendName.trim();
     if (!name) return;
 
@@ -1805,6 +1969,7 @@ export class AddTransactionPagePage implements OnInit {
   // ==========================================
 
   openCustomDatePicker() {
+    this.showNumPad = false;
     const currentVal = this.transactionForm.get('date')?.value || this.getToday();
     this.pickerActiveMonth = moment(currentVal, 'YYYY-MM-DD');
     this.generateCalendar();

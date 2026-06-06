@@ -814,3 +814,406 @@ ion-list.settings-list, ion-list.items-list {
     }
   }
 }
+
+/* ==========================================================================
+   Premium Mathematical Calculator Keypad Style Sheet
+   ========================================================================== */
+
+.calculator-spacer {
+  height: 0;
+  transition: height 0.28s cubic-bezier(0.19, 1, 0.22, 1);
+  will-change: height;
+  
+  &.show {
+    height: 330px;
+  }
+}
+
+.calculator-num-pad {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1100; // Place above ion-content but below standard modals
+  width: 100%;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 24px 24px 0 0;
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.06), 0 -2px 10px rgba(0, 0, 0, 0.02);
+  
+  // Transition properties for slick sliding effect
+  transform: translateY(100%);
+  transition: transform 0.32s cubic-bezier(0.19, 1, 0.22, 1);
+  will-change: transform;
+  
+  &.show {
+    transform: translateY(0);
+  }
+  
+  &.ios {
+    padding-bottom: calc(12px + var(--ion-safe-area-bottom, 0px));
+    
+    .calculator-spacer.show {
+      height: calc(330px + var(--ion-safe-area-bottom, 0px));
+    }
+  }
+}
+
+.keypad-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 24px 24px 0 0;
+
+  .expression-display {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    flex: 1;
+    min-width: 0;
+    margin-right: 12px;
+
+    .expr-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--ion-color-medium, #6b7280);
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+
+    .expr-text {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--ion-color-dark, #111827);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-family: 'Outfit', 'Inter', -apple-system, sans-serif;
+    }
+  }
+
+  .preview-display {
+    display: flex;
+    align-items: center;
+    background: rgba(var(--ion-color-secondary-rgb, 6, 182, 212), 0.08);
+    padding: 6px 12px;
+    border-radius: 20px;
+    margin-right: 12px;
+    border: 1px solid rgba(var(--ion-color-secondary-rgb, 6, 182, 212), 0.12);
+    animation: pulseGlow 2s infinite alternate;
+
+    .preview-equals {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ion-color-secondary, #06b6d4);
+      margin-right: 4px;
+    }
+
+    .preview-val {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--ion-color-secondary, #06b6d4);
+      font-family: 'Outfit', 'Inter', sans-serif;
+    }
+  }
+
+  .close-pad-btn {
+    --color: var(--ion-color-primary, #4f46e5);
+    font-size: 13px;
+    font-weight: 700;
+    height: 32px;
+    margin: 0;
+    --padding-start: 8px;
+    --padding-end: 8px;
+  }
+}
+
+.keypad-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  padding: 14px 16px 16px 16px;
+  background: transparent;
+}
+
+.keypad-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  outline: none;
+  padding: 0;
+  margin: 0;
+  height: 52px;
+  border-radius: 14px;
+  font-family: 'Outfit', 'Inter', -apple-system, sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+
+  // Premium haptic touch feedback
+  &:active {
+    transform: scale(0.92);
+    filter: brightness(0.92);
+  }
+
+  // Key Categories Styling
+  &.digit-key {
+    background: #ffffff;
+    color: #1e293b;
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+
+    &:active {
+      background: #f1f5f9;
+    }
+  }
+
+  &.operator-key {
+    background: rgba(var(--ion-color-secondary-rgb, 6, 182, 212), 0.06);
+    color: var(--ion-color-secondary, #06b6d4);
+    border: 1px solid rgba(var(--ion-color-secondary-rgb, 6, 182, 212), 0.08);
+
+    &:active {
+      background: rgba(var(--ion-color-secondary-rgb, 6, 182, 212), 0.15);
+    }
+  }
+
+  &.action-key {
+    background: rgba(var(--ion-color-danger-rgb, 239, 68, 68), 0.06);
+    color: var(--ion-color-danger, #ef4444);
+    border: 1px solid rgba(var(--ion-color-danger-rgb, 239, 68, 68), 0.08);
+
+    ion-icon {
+      font-size: 22px;
+    }
+
+    &:active {
+      background: rgba(var(--ion-color-danger-rgb, 239, 68, 68), 0.15);
+    }
+  }
+
+  &.eval-key {
+    background: rgba(var(--ion-color-warning-rgb, 245, 158, 11), 0.06);
+    color: var(--ion-color-warning, #f59e0b);
+    border: 1px solid rgba(var(--ion-color-warning-rgb, 245, 158, 11), 0.08);
+
+    &:active {
+      background: rgba(var(--ion-color-warning-rgb, 245, 158, 11), 0.15);
+    }
+  }
+
+  &.done-key {
+    background: linear-gradient(135deg, var(--ion-color-primary, #4f46e5), var(--ion-color-secondary, #06b6d4));
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 16px;
+    grid-column: span 1; // standard key width
+    box-shadow: 0 4px 12px rgba(var(--ion-color-primary-rgb, 79, 70, 229), 0.25);
+    border: none;
+
+    ion-icon {
+      font-size: 18px;
+    }
+
+    &:active {
+      filter: brightness(1.1) contrast(1.05);
+      box-shadow: 0 2px 6px rgba(var(--ion-color-primary-rgb, 79, 70, 229), 0.15);
+    }
+  }
+}
+
+@keyframes pulseGlow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(var(--ion-color-secondary-rgb, 6, 182, 212), 0.1);
+  }
+  100% {
+    box-shadow: 0 0 8px 2px rgba(var(--ion-color-secondary-rgb, 6, 182, 212), 0.18);
+  }
+}
+
+/* Dark Mode and Custom Theme Adjustments for Calculator */
+@media (prefers-color-scheme: dark) {
+  .calculator-num-pad {
+    background: rgba(26, 26, 38, 0.88);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.35), 0 -2px 10px rgba(0, 0, 0, 0.15);
+
+    .keypad-header {
+      background: rgba(26, 26, 38, 0.3);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+
+      .expression-display {
+        .expr-label {
+          color: #94a3b8;
+        }
+        .expr-text {
+          color: #f1f5f9;
+        }
+      }
+
+      .preview-display {
+        background: rgba(6, 182, 212, 0.12);
+        border-color: rgba(6, 182, 212, 0.25);
+        
+        .preview-equals, .preview-val {
+          color: #22d3ee;
+        }
+      }
+
+      .close-pad-btn {
+        --color: #818cf8;
+      }
+    }
+
+    .keypad-btn {
+      &.digit-key {
+        background: #27273a;
+        color: #f1f5f9;
+        border: 1px solid rgba(255, 255, 255, 0.03);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+
+        &:active {
+          background: #33334e;
+        }
+      }
+
+      &.operator-key {
+        background: rgba(6, 182, 212, 0.1);
+        color: #22d3ee;
+        border-color: rgba(6, 182, 212, 0.15);
+
+        &:active {
+          background: rgba(6, 182, 212, 0.2);
+        }
+      }
+
+      &.action-key {
+        background: rgba(239, 68, 68, 0.1);
+        color: #f87171;
+        border-color: rgba(239, 68, 68, 0.15);
+
+        &:active {
+          background: rgba(239, 68, 68, 0.2);
+        }
+      }
+
+      &.eval-key {
+        background: rgba(245, 158, 11, 0.1);
+        color: #fbbf24;
+        border-color: rgba(245, 158, 11, 0.15);
+
+        &:active {
+          background: rgba(245, 158, 11, 0.2);
+        }
+      }
+
+      &.done-key {
+        background: linear-gradient(135deg, #6366f1, #06b6d4);
+        box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+
+        &:active {
+          box-shadow: 0 2px 6px rgba(99, 102, 241, 0.2);
+        }
+      }
+    }
+  }
+}
+
+.dark {
+  .calculator-num-pad {
+    background: rgba(26, 26, 38, 0.88);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.35), 0 -2px 10px rgba(0, 0, 0, 0.15);
+
+    .keypad-header {
+      background: rgba(26, 26, 38, 0.3);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+
+      .expression-display {
+        .expr-label {
+          color: #94a3b8;
+        }
+        .expr-text {
+          color: #f1f5f9;
+        }
+      }
+
+      .preview-display {
+        background: rgba(6, 182, 212, 0.12);
+        border-color: rgba(6, 182, 212, 0.25);
+        
+        .preview-equals, .preview-val {
+          color: #22d3ee;
+        }
+      }
+
+      .close-pad-btn {
+        --color: #818cf8;
+      }
+    }
+
+    .keypad-btn {
+      &.digit-key {
+        background: #27273a;
+        color: #f1f5f9;
+        border: 1px solid rgba(255, 255, 255, 0.03);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+
+        &:active {
+          background: #33334e;
+        }
+      }
+
+      &.operator-key {
+        background: rgba(6, 182, 212, 0.1);
+        color: #22d3ee;
+        border-color: rgba(6, 182, 212, 0.15);
+
+        &:active {
+          background: rgba(6, 182, 212, 0.2);
+        }
+      }
+
+      &.action-key {
+        background: rgba(239, 68, 68, 0.1);
+        color: #f87171;
+        border-color: rgba(239, 68, 68, 0.15);
+
+        &:active {
+          background: rgba(239, 68, 68, 0.2);
+        }
+      }
+
+      &.eval-key {
+        background: rgba(245, 158, 11, 0.1);
+        color: #fbbf24;
+        border-color: rgba(245, 158, 11, 0.15);
+
+        &:active {
+          background: rgba(245, 158, 11, 0.2);
+        }
+      }
+
+      &.done-key {
+        background: linear-gradient(135deg, #6366f1, #06b6d4);
+        box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+
+        &:active {
+          box-shadow: 0 2px 6px rgba(99, 102, 241, 0.2);
+        }
+      }
+    }
+  }
+}
