@@ -917,7 +917,7 @@ export class AddTransactionPagePage implements OnInit {
 
   onExpressionChange() {
     const evaluated = this.evaluateExpression(this.amountExpression);
-    if (evaluated > 0) {
+    if (this.amountExpression !== '') {
       this.transactionForm.get('amount')?.setValue(evaluated, { emitEvent: true });
     } else {
       this.transactionForm.get('amount')?.setValue('', { emitEvent: true });
@@ -1071,6 +1071,9 @@ export class AddTransactionPagePage implements OnInit {
     const isSplit = !!transaction.isSplitPay;
     const totalAmount = isSplit ? (transaction.amount + (transaction.splitOthersShare || 0)) : transaction.amount;
     
+    // Explicitly set amountExpression to totalAmount to show in the massive-amount-input field
+    this.amountExpression = totalAmount > 0 ? totalAmount.toString() : '';
+
     this.transactionForm.patchValue({
       amount: totalAmount,
       currency: transaction.currency,

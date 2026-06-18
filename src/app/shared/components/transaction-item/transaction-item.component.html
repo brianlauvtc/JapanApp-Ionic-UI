@@ -3,7 +3,7 @@
   <ion-item [button]="!transaction?.type?.startsWith('sys_')" (click)="onEdit()" lines="none" class="transaction-item">
     <ion-avatar slot="start">
       <div class="icon-container">
-        {{ transaction?.icon || '💰' }}
+        {{ getTransactionDisplay().icon }}
       </div>
     </ion-avatar>
     

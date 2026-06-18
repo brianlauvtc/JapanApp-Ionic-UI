@@ -20,10 +20,10 @@ export class TransactionItemComponent {
   
   constructor(private financeService: FinanceService) {}
 
-  getTransactionDisplay(): { prefix: string; color: string; note: string; displayHtml: string; catName: string } {
+  getTransactionDisplay(): { prefix: string; color: string; note: string; displayHtml: string; catName: string; icon: string } {
 
     if (!this.transaction) {
-      return { prefix: '', color: '', note: '', displayHtml: '', catName: '' };
+      return { prefix: '', color: '', note: '', displayHtml: '', catName: '', icon: '' };
     }
 
     let prefix = '';
@@ -34,6 +34,7 @@ export class TransactionItemComponent {
     const currenciesObj = currencies as any;
     let symbol = currenciesObj[this.transaction.currency]?.symbol || '$';
     let accSymbol = null;
+    let icon = this.transaction.icon || '💰';
 
     const appData = this.financeService['financeVar'].getAppData();
     const acc = appData.accounts.find(a => a.id === this.contextId);
@@ -61,7 +62,7 @@ export class TransactionItemComponent {
       }
     } else if (this.transaction.type === 'transfer') {
       catName = '轉帳';
-      this.transaction.icon = '🔄';
+      icon = '🔄';
       const fromAcc = appData.accounts.find(a => a.id === this.transaction.accountId);
       const toAcc = appData.accounts.find(a => a.id === this.transaction.toAccountId);
 
@@ -98,7 +99,7 @@ export class TransactionItemComponent {
     }
 
     // ✨ 修正：把 catName 也回傳，讓 HTML 畫面的 {{ getTransactionDisplay().catName }} 能夠正確讀取
-    return { prefix, color, note, displayHtml, catName };
+    return { prefix, color, note, displayHtml, catName, icon };
   }
 
   getCurrencySymbol(): string {
