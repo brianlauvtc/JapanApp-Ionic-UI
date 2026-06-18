@@ -67,6 +67,22 @@ export class AddTransactionPagePage implements OnInit {
 
   currentErrors: string[] = [];
 
+  // Premium Sub-Modal Visibility Flags & Transactional Copy States
+  isSplitPayModalOpen = false;
+  isItemsModalOpen = false;
+  private tempFriendSplits: any[] = [];
+  private tempItems: any[] = [];
+  private tempIsSplitPay = false;
+  private isConfirmingItems = false;
+  private isConfirmingSplitPay = false;
+
+  // Calendar swipe gesture touch coordinates
+  private touchStartX = 0;
+  private touchStartY = 0;
+  isDraggingCalendar = false;
+  calendarDragOffset = 0;
+  calendarAnimationClass = '';
+
   // Custom Date Picker state variables
   isDatePickerOpen = false;
   pickerActiveMonth!: moment.Moment;
@@ -689,14 +705,29 @@ export class AddTransactionPagePage implements OnInit {
             text: '捨棄全部',
             role: 'destructive',
             handler: () => {
-              // Navigate back based on context
-              if (this.contextType === 'account' && this.contextAccountId) {
-                this.router.navigate(['/account-detail', this.contextAccountId]);
-              } else if (this.contextType === 'fund' && this.contextFundId) {
-                this.router.navigate(['/fund-detail', this.contextFundId]);
-              } else {
-                this.router.navigate(['/tabs/home']);
+              this.isAIScanningMode = false;
+              this.aiTransactions = [];
+              this.currentTransactionIndex = 0;
+              this.items = [];
+              this.amountExpression = '';
+              
+              // Reset standard form and friends
+              this.initForm();
+              this.initFriendSplits();
+              
+              // Pre-fill fallback account/category
+              let defaultAccountId = this.contextAccountId;
+              if (!defaultAccountId) {
+                const lastAccount = this.loadLastAccount();
+                if (lastAccount) {
+                  defaultAccountId = lastAccount;
+                }
               }
+              if (defaultAccountId) {
+                this.transactionForm.patchValue({ accountId: defaultAccountId });
+              }
+              this.selectedCategory = this.categories.find(c => c.id === 'food') || this.categories[0];
+              this.transactionForm.patchValue({ category: this.selectedCategory.name });
             }
           }
         ]
@@ -838,6 +869,7 @@ export class AddTransactionPagePage implements OnInit {
   }
 
   onKeyPress(key: string) {
+    this.vibrate();
     if (key === 'C') {
       this.amountExpression = '';
     } else if (key === 'backspace' || key === '⌫') {
@@ -2041,5 +2073,184 @@ export class AddTransactionPagePage implements OnInit {
     }
 
     this.calendarWeeks = weeks;
+  }
+
+  // ==========================================
+  // Premium Sub-Modal Lifecycle Methods
+  // ==========================================
+
+  openSplitPayModal() {
+    this.showNumPad = false;
+    this.vibrate();
+    this.isConfirmingSplitPay = false;
+    // Deep copy current friend splits to allow reverting on cancel
+    this.tempFriendSplits = this.friendSplits.map(fs => ({ ...fs }));
+    this.tempIsSplitPay = this.transactionForm.get('isSplitPay')?.value || false;
+    this.isSplitPayModalOpen = true;
+  }
+
+  confirmSplitPayModal() {
+    this.vibrate();
+    // Dynamically calculate if splits are active: any selected friend split has amount > 0
+    const hasSplitDetails = this.friendSplits.some(fs => fs.selected && (parseFloat(fs.amount as any) || 0) > 0);
+    this.transactionForm.patchValue({ isSplitPay: hasSplitDetails }, { emitEvent: true });
+    this.onFriendSplitChange();
+    this.isConfirmingSplitPay = true;
+    this.isSplitPayModalOpen = false;
+  }
+
+  cancelSplitPayModal() {
+    this.vibrate();
+    if (!this.isConfirmingSplitPay) {
+      // Restore copy of friend splits
+      this.friendSplits = this.tempFriendSplits.map(fs => ({ ...fs }));
+      this.transactionForm.patchValue({ isSplitPay: this.tempIsSplitPay }, { emitEvent: false });
+      this.calculateSplitShares();
+    }
+    this.isSplitPayModalOpen = false;
+  }
+
+  openItemsModal() {
+    this.showNumPad = false;
+    this.vibrate();
+    this.isConfirmingItems = false;
+    // Deep copy current receipt items to allow reverting on cancel
+    this.tempItems = this.items.map(item => ({ ...item }));
+    this.isItemsModalOpen = true;
+  }
+
+  confirmItemsModal() {
+    this.vibrate();
+    this.isConfirmingItems = true;
+    this.isItemsModalOpen = false;
+  }
+
+  cancelItemsModal() {
+    this.vibrate();
+    if (!this.isConfirmingItems) {
+      // Restore items
+      this.items = this.tempItems.map(item => ({ ...item }));
+    }
+    this.isItemsModalOpen = false;
+  }
+
+  // ==========================================
+  // Premium Mobile Micro-interaction Helpers
+  // ==========================================
+
+  vibrate() {
+    if (this.isMobile && 'vibrate' in navigator) {
+      try {
+        navigator.vibrate(15); // Subtle, short vibration
+      } catch (e) {
+        console.warn('Vibration API not supported or blocked:', e);
+      }
+    }
+  }
+
+  // System keyboard toggle removed to force in-app pad.
+
+  // ==========================================
+  // Custom Calendar Swipe Gesture Handlers & Animations
+  // ==========================================
+
+  onTouchStart(event: TouchEvent) {
+    if (event.touches && event.touches[0]) {
+      this.touchStartX = event.touches[0].clientX;
+      this.touchStartY = event.touches[0].clientY;
+      this.isDraggingCalendar = true;
+      this.calendarDragOffset = 0;
+    }
+  }
+
+  onTouchMove(event: TouchEvent) {
+    if (!this.isDraggingCalendar) return;
+    if (event.touches && event.touches[0]) {
+      const currentX = event.touches[0].clientX;
+      const currentY = event.touches[0].clientY;
+      const diffX = currentX - this.touchStartX;
+      const diffY = currentY - this.touchStartY;
+
+      // Only drag horizontally if horizontal swipe is dominant
+      if (Math.abs(diffX) > Math.abs(diffY)) {
+        if (event.cancelable) {
+          event.preventDefault();
+        }
+        this.calendarDragOffset = diffX;
+      }
+    }
+  }
+
+  onTouchEnd(event: TouchEvent) {
+    if (!this.isDraggingCalendar) return;
+    this.isDraggingCalendar = false;
+
+    const threshold = 75; // px threshold
+    const diffX = this.calendarDragOffset;
+
+    if (diffX > threshold) {
+      // Swiped Right -> Go to previous month (-1)
+      this.vibrate();
+      this.animateSlideExitAndEnter(-1);
+    } else if (diffX < -threshold) {
+      // Swiped Left -> Go to next month (1)
+      this.vibrate();
+      this.animateSlideExitAndEnter(1);
+    } else {
+      // Snap back to center
+      this.calendarDragOffset = 0;
+    }
+  }
+
+  animateSlideExitAndEnter(offset: number) {
+    const isNext = offset > 0;
+    
+    // We already have some drag offset, let's complete the exit slide
+    const finalExitOffset = isNext ? -340 : 340;
+    this.calendarDragOffset = finalExitOffset;
+    
+    setTimeout(() => {
+      this.pickerActiveMonth.add(offset, 'months');
+      this.generateCalendar();
+      
+      // Teleport to the opposite side instantly (no transition)
+      this.isDraggingCalendar = true;
+      this.calendarDragOffset = isNext ? 340 : -340;
+      
+      // Slide in from the edge to the center (with transition)
+      setTimeout(() => {
+        this.isDraggingCalendar = false;
+        this.calendarDragOffset = 0;
+      }, 20);
+    }, 180);
+  }
+
+  animateMonthChange(offset: number) {
+    if (this.calendarDragOffset !== 0) {
+      return; // Prevent duplicate transition triggers if already animating
+    }
+
+    this.vibrate();
+    const isNext = offset > 0;
+    
+    // Slide out the current days-grid in the opposite direction
+    this.isDraggingCalendar = false;
+    this.calendarDragOffset = isNext ? -340 : 340;
+
+    // Swap months after the slide-out phase is finished
+    setTimeout(() => {
+      this.pickerActiveMonth.add(offset, 'months');
+      this.generateCalendar();
+      
+      // Teleport to the opposite side instantly (no transition)
+      this.isDraggingCalendar = true;
+      this.calendarDragOffset = isNext ? 340 : -340;
+      
+      // Slide in from the edge to the center (with transition)
+      setTimeout(() => {
+        this.isDraggingCalendar = false;
+        this.calendarDragOffset = 0;
+      }, 20);
+    }, 180);
   }
 }

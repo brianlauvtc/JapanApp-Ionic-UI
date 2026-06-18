@@ -104,7 +104,7 @@
               type="text" 
               placeholder="0"
               [readonly]="isMobile"
-              [inputmode]="isMobile ? 'none' : 'text'"
+              inputmode="none"
               (ionFocus)="showNumPad = true"
               (click)="showNumPad = true"
               (ionInput)="onExpressionChange()">
@@ -114,12 +114,14 @@
             </div>
           </div>
         </div>
-        <div class="currency-picker-pill">
-          <ion-select formControlName="currency" interface="action-sheet" mode="ios">
-            <ion-select-option value="HKD">HKD</ion-select-option>
-            <ion-select-option value="JPY">JPY</ion-select-option>
-          </ion-select>
-          <ion-icon name="chevron-down-outline" class="select-arrow"></ion-icon>
+        <div class="amount-box-actions">
+          <div class="currency-picker-pill">
+            <ion-select formControlName="currency" interface="action-sheet" mode="ios">
+              <ion-select-option value="HKD">HKD</ion-select-option>
+              <ion-select-option value="JPY">JPY</ion-select-option>
+            </ion-select>
+            <ion-icon name="chevron-down-outline" class="select-arrow"></ion-icon>
+          </div>
         </div>
       </div>
     </div>
@@ -248,98 +250,226 @@
           </ion-select>
         </ion-item>
 
-        <!-- 朋友代付拆帳 (Component 9) -->
-        <ion-item lines="full" *ngIf="txnType === 'expense'">
-          <ion-icon name="people-outline" slot="start" color="warning"></ion-icon>
-          <ion-label>朋友代付拆帳</ion-label>
-          <ion-toggle formControlName="isSplitPay" slot="end"></ion-toggle>
+        <!-- 朋友代付拆帳 Entry Point -->
+        <ion-item button detail="true" lines="full" *ngIf="txnType === 'expense'" (click)="openSplitPayModal()" class="premium-entry-item">
+          <ion-icon name="people-outline" slot="start" color="warning" class="premium-entry-icon"></ion-icon>
+          <ion-label class="ion-text-wrap">
+            <h2 class="premium-entry-title">朋友代付拆帳</h2>
+            <p class="premium-entry-subtitle" *ngIf="!transactionForm.get('isSplitPay')?.value">選填，由多人分攤或他人代付帳單</p>
+            <p class="premium-entry-subtitle active-split" *ngIf="transactionForm.get('isSplitPay')?.value">
+              他人分攤: <strong class="warning-amount">{{ getCurrencySymbol(transactionForm.get('currency')?.value) }}{{ (transactionForm.get('splitOthersShare')?.value || 0) | number:'1.2-2' }}</strong> (我的實際支出: <strong>{{ getCurrencySymbol(transactionForm.get('currency')?.value) }}{{ mySplitShare | number:'1.2-2' }}</strong>)
+            </p>
+          </ion-label>
         </ion-item>
 
-        <ng-container *ngIf="txnType === 'expense' && transactionForm.get('isSplitPay')?.value">
-          <!-- Premium Redesigned Multi-Friend Split-Pay Dashboard -->
-          <div style="margin: 16px; padding: 16px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.03) 0%, rgba(251, 191, 36, 0.05) 100%); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 16px; box-shadow: 0 8px 24px rgba(245, 158, 11, 0.04); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);">
-            
-            <!-- Dashboard Header -->
-            <div style="font-size: 14px; font-weight: 700; color: #d97706; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
-              <span style="display: flex; align-items: center; gap: 6px;">
-                <ion-icon name="people-circle-outline" style="font-size: 20px;" color="warning"></ion-icon>
-                👥 朋友代付分配明細
-              </span>
-              <span style="font-size: 10px; font-weight: 500; background: rgba(245, 158, 11, 0.1); color: #d97706; padding: 2px 8px; border-radius: 20px;">
-                動態拆帳
-              </span>
-            </div>
-            
-            <div *ngIf="friendSplits.length === 0" style="font-size: 13px; color: var(--ion-color-step-500); padding: 16px 0; text-align: center; background: rgba(0,0,0,0.02); border-radius: 12px; margin-bottom: 12px; border: 1px dashed rgba(0,0,0,0.06);">
-              📭 目前尚無任何朋友，請在下方新增！
-            </div>
+        <!-- 朋友代付拆帳 Fullscreen Modal -->
+        <ion-modal [isOpen]="isSplitPayModalOpen" (didDismiss)="cancelSplitPayModal()" class="premium-fullscreen-modal" mode="ios">
+          <ng-template>
+            <ion-header class="ion-no-border">
+              <ion-toolbar>
+                <ion-buttons slot="start">
+                  <ion-button (click)="cancelSplitPayModal()" color="medium">
+                    取消
+                  </ion-button>
+                </ion-buttons>
+                <ion-title mode="ios">朋友代付拆帳</ion-title>
+                <ion-buttons slot="end">
+                  <ion-button (click)="confirmSplitPayModal()" color="warning" style="font-weight: 700;">
+                    確認
+                  </ion-button>
+                </ion-buttons>
+              </ion-toolbar>
+            </ion-header>
 
-            <!-- Scrollable Checklist Container -->
-            <div *ngIf="friendSplits.length > 0" style="max-height: 240px; overflow-y: auto; padding-right: 2px; margin-bottom: 12px;">
-              <div *ngFor="let fs of friendSplits" 
-                   [style.background]="fs.selected ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.4)'"
-                   [style.border-color]="fs.selected ? 'rgba(245, 158, 11, 0.3)' : 'rgba(0,0,0,0.05)'"
-                   style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-radius: 12px; border: 1px solid; margin-bottom: 8px; gap: 12px; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
-                
-                <!-- Left Details (Checkbox + Avatar icon + Name) -->
-                <div style="display: flex; align-items: center; gap: 10px;">
-                  <ion-checkbox [(ngModel)]="fs.selected" [ngModelOptions]="{standalone: true}" (ionChange)="onFriendSplitChange()" style="--size: 18px; --border-radius: 4px; --checkbox-background-checked: var(--ion-color-warning); --border-color-checked: var(--ion-color-warning);"></ion-checkbox>
-                  <div style="display: flex; align-items: center; gap: 6px;">
-                    <div [style.background]="fs.selected ? 'rgba(245, 158, 11, 0.15)' : 'rgba(0,0,0,0.05)'" [style.color]="fs.selected ? '#d97706' : '#6b7280'" style="width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; transition: all 0.25s;">
-                      {{ fs.accountName.charAt(0).toUpperCase() }}
-                    </div>
-                    <span [style.color]="fs.selected ? 'var(--ion-color-step-900, #000)' : 'var(--ion-color-step-500, #666)'" [style.font-weight]="fs.selected ? '600' : '400'" style="font-size: 14px; transition: all 0.25s;">
-                      {{ fs.accountName }}
-                      <ion-badge *ngIf="fs.isNew" color="success" style="font-size: 9px; margin-left: 4px; padding: 2px 6px; border-radius: 4px; font-weight: 600;">新</ion-badge>
+            <ion-content class="ion-padding modal-split-content">
+              <!-- Modal Body Content -->
+              <div class="premium-split-container">
+                  <!-- Dashboard Header -->
+                  <div class="split-dashboard-header">
+                    <span class="header-title">
+                      <ion-icon name="people-circle-outline" color="warning"></ion-icon>
+                      👥 朋友代付分配明細
                     </span>
+                    <span class="header-badge">動態拆帳</span>
+                  </div>
+                  
+                  <div *ngIf="friendSplits.length === 0" class="empty-friends-box">
+                    📭 目前尚無任何朋友，請在下方新增！
+                  </div>
+
+                  <!-- Dynamic friend checklist (No nested scroll conflict - expands fully!) -->
+                  <div *ngIf="friendSplits.length > 0" class="friends-expandable-list">
+                    <div *ngFor="let fs of friendSplits" 
+                         class="friend-split-row"
+                         [class.selected]="fs.selected">
+                      
+                      <!-- Left Details -->
+                      <div class="row-left">
+                        <ion-checkbox [(ngModel)]="fs.selected" [ngModelOptions]="{standalone: true}" (ionChange)="onFriendSplitChange()" class="large-checkbox"></ion-checkbox>
+                        <div class="friend-avatar-wrapper" (click)="fs.selected = !fs.selected; onFriendSplitChange()">
+                          <div class="avatar-circle" [class.selected]="fs.selected">
+                            {{ fs.accountName.charAt(0).toUpperCase() }}
+                          </div>
+                          <span class="friend-name" [class.selected]="fs.selected">
+                            {{ fs.accountName }}
+                            <ion-badge *ngIf="fs.isNew" color="success" class="new-friend-badge">新</ion-badge>
+                          </span>
+                        </div>
+                      </div>
+
+                      <!-- Right Input (Show only when selected) -->
+                      <div class="row-right" *ngIf="fs.selected">
+                        <span class="split-currency">{{ getCurrencySymbol(transactionForm.get('currency')?.value) }}</span>
+                        <ion-input type="number" [(ngModel)]="fs.amount" [ngModelOptions]="{standalone: true}" (ionInput)="onFriendSplitChange()" placeholder="0" class="split-amount-input" (ionFocus)="showNumPad = false"></ion-input>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Add New Friend Row -->
+                  <div class="add-friend-inline-row">
+                    <ion-icon name="person-add-outline" color="warning" class="add-friend-icon"></ion-icon>
+                    <ion-input type="text" [(ngModel)]="newFriendName" [ngModelOptions]="{standalone: true}" placeholder="輸入新朋友姓名..." class="add-friend-input" (keyup.enter)="addNewFriend()" (ionFocus)="showNumPad = false"></ion-input>
+                    <ion-button fill="solid" color="warning" size="small" (click)="addNewFriend()" class="add-friend-btn">
+                      <ion-icon slot="start" name="add-outline"></ion-icon>
+                      新增
+                    </ion-button>
                   </div>
                 </div>
 
-                <!-- Right Input (Show only when selected) -->
-                <div style="width: 130px; display: flex; align-items: center; gap: 4px;" *ngIf="fs.selected">
-                  <span style="font-size: 12px; font-weight: 600; color: #d97706;">{{ getCurrencySymbol(transactionForm.get('currency')?.value) }}</span>
-                  <ion-input type="number" [(ngModel)]="fs.amount" [ngModelOptions]="{standalone: true}" (ionInput)="onFriendSplitChange()" placeholder="0" style="--background: #fff; --padding-start: 10px; --padding-end: 10px; border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 8px; font-size: 14px; font-weight: 700; text-align: right; height: 32px; margin: 0; box-shadow: inset 0 1px 3px rgba(0,0,0,0.03); color: #d97706;" (ionFocus)="showNumPad = false"></ion-input>
+                <!-- 警告提示 (無借貸帳戶) -->
+                <div *ngIf="friendSplits.length === 0" class="split-warning-box">
+                  <ion-icon name="warning-outline" color="warning" style="font-size: 20px;"></ion-icon>
+                  <div class="warning-text">
+                    <strong>無借貸帳戶：</strong>您目前尚未建立「借貸」類型的帳戶。您可以在上方輸入朋友姓名，點擊「新增」，我們將在儲存時自動為他建立借貸帳戶，以便正確追蹤欠款！
+                  </div>
                 </div>
-              </div>
+
+                <!-- 計算結果 -->
+                <ion-list inset="true" class="split-summary-list">
+                  <ion-item lines="full" class="split-info-item">
+                    <ion-icon name="calculator-outline" slot="start" color="medium"></ion-icon>
+                    <ion-label>他人分攤總計</ion-label>
+                    <div slot="end" class="summary-value">
+                      {{ getCurrencySymbol(transactionForm.get('currency')?.value) }}{{ (transactionForm.get('splitOthersShare')?.value || 0) | number:'1.2-2' }}
+                    </div>
+                  </ion-item>
+
+                  <ion-item lines="none" class="split-info-item">
+                    <ion-icon name="person-outline" slot="start" color="primary"></ion-icon>
+                    <ion-label>我的實際支出 (自動計算)</ion-label>
+                    <div slot="end" class="summary-value-highlight">
+                      {{ getCurrencySymbol(transactionForm.get('currency')?.value) }}{{ mySplitShare | number:'1.2-2' }}
+                    </div>
+                  </ion-item>
+                </ion-list>
+            </ion-content>
+          </ng-template>
+        </ion-modal>
+      </ng-container>
+
+      <!-- 附加購物明細 Entry Point -->
+      <ion-item button detail="true" lines="full" *ngIf="txnType === 'expense'" (click)="openItemsModal()" class="premium-entry-item">
+        <ion-icon name="receipt-outline" slot="start" color="tertiary" class="premium-entry-icon"></ion-icon>
+        <ion-label class="ion-text-wrap">
+          <h2 class="premium-entry-title">附加購物明細</h2>
+          <p class="premium-entry-subtitle" *ngIf="items.length === 0">選填，新增多個商品明細與單價</p>
+          <p class="premium-entry-subtitle active-items" *ngIf="items.length > 0">
+            已加明細: <strong class="success-count">{{ items.length }} 件商品</strong> (總計: <strong>{{ getCurrencySymbol(transactionForm.get('currency')?.value) }}{{ getItemsTotal() | number:'1.2-2' }}</strong>)
+          </p>
+        </ion-label>
+      </ion-item>
+
+      <!-- 附加購物明細 Fullscreen Modal -->
+      <ion-modal [isOpen]="isItemsModalOpen" (didDismiss)="cancelItemsModal()" class="premium-fullscreen-modal" mode="ios">
+        <ng-template>
+          <ion-header class="ion-no-border">
+            <ion-toolbar>
+              <ion-buttons slot="start">
+                <ion-button (click)="cancelItemsModal()" color="medium">
+                  取消
+                </ion-button>
+              </ion-buttons>
+              <ion-title mode="ios">附加購物明細</ion-title>
+              <ion-buttons slot="end">
+                <ion-button (click)="confirmItemsModal()" color="primary" style="font-weight: 700;">
+                  確認
+                </ion-button>
+              </ion-buttons>
+            </ion-toolbar>
+          </ion-header>
+
+          <ion-content class="ion-padding modal-items-content">
+            <!-- Item List -->
+            <ion-list inset="true" class="modal-items-list" *ngIf="items.length > 0">
+              <ion-item-sliding *ngFor="let item of items; let i = index">
+                <ion-item lines="full" class="modal-item-row">
+                  <ion-label>
+                    <h3 class="modal-item-name">{{ item.name }}</h3>
+                    <p class="modal-item-qty">{{ item.quantity }} x {{ getCurrencySymbol(transactionForm.get('currency')?.value) }}{{ item.price | number:'1.2-2' }}</p>
+                  </ion-label>
+                  <ion-note slot="end" class="modal-item-total">
+                    {{ getCurrencySymbol(transactionForm.get('currency')?.value) }}{{ item.quantity * item.price | number:'1.2-2' }}
+                  </ion-note>
+                  <ion-buttons slot="end">
+                    <ion-button fill="clear" color="danger" (click)="removeItem(i)" class="modal-item-delete-btn">
+                      <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+                    </ion-button>
+                  </ion-buttons>
+                </ion-item>
+              </ion-item-sliding>
+            </ion-list>
+
+            <div *ngIf="items.length === 0" class="empty-items-box">
+              📦 尚未新增任何商品明細
             </div>
 
-            <!-- Add New Friend Row -->
-            <div class="add-friend-inline-row" style="display: flex; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px dashed rgba(245, 158, 11, 0.15); gap: 8px;">
-              <ion-icon name="person-add-outline" color="warning" style="font-size: 18px;"></ion-icon>
-              <ion-input type="text" [(ngModel)]="newFriendName" [ngModelOptions]="{standalone: true}" placeholder="輸入新朋友姓名..." style="--background: rgba(0,0,0,0.02); --padding-start: 12px; --padding-end: 12px; border-radius: 8px; font-size: 13px; height: 36px; flex: 1; border: 1px solid rgba(0,0,0,0.06); font-weight: 500;" (keyup.enter)="addNewFriend()" (ionFocus)="showNumPad = false"></ion-input>
-              <ion-button fill="solid" color="warning" size="small" (click)="addNewFriend()" style="margin: 0; height: 36px; font-size: 12px; font-weight: 600; --border-radius: 8px; --box-shadow: 0 2px 6px rgba(245, 158, 11, 0.2);">
-                <ion-icon slot="start" name="add-outline"></ion-icon>
-                新增朋友
+            <!-- Add Item Form inside the modal -->
+            <div class="modal-add-item-form">
+              <div class="add-item-header">
+                <ion-icon name="add-circle-outline" color="primary"></ion-icon>
+                <span>新增/編輯品項</span>
+              </div>
+              
+              <ion-item lines="full" class="form-item">
+                <ion-label position="stacked">品項名稱</ion-label>
+                <ion-input [(ngModel)]="itemForm.name" [ngModelOptions]="{standalone: true}" placeholder="例如：蘋果 / 藥妝" class="form-input" (ionFocus)="showNumPad = false"></ion-input>
+              </ion-item>
+              
+              <div class="item-form-grid">
+                <ion-item lines="full" class="form-item">
+                  <ion-label position="stacked">數量</ion-label>
+                  <ion-input [(ngModel)]="itemForm.quantity" [ngModelOptions]="{standalone: true}" type="number" placeholder="1" class="form-input" (ionFocus)="showNumPad = false"></ion-input>
+                </ion-item>
+                
+                <ion-item lines="full" class="form-item">
+                  <ion-label position="stacked">單價</ion-label>
+                  <ion-input [(ngModel)]="itemForm.price" [ngModelOptions]="{standalone: true}" type="number" placeholder="0" class="form-input" (ionFocus)="showNumPad = false"></ion-input>
+                </ion-item>
+              </div>
+
+              <ion-button expand="block" (click)="addItem()" [disabled]="!canAddItem()" class="modal-add-btn" mode="ios">
+                <ion-icon name="checkmark-circle-outline" slot="start"></ion-icon>
+                {{ editingIndex !== null ? '更新此明細' : '加入明細列表' }}
               </ion-button>
             </div>
-          </div>
 
-          <!-- 警告提示 (無借貸帳戶) -->
-          <div *ngIf="friendSplits.length === 0" class="split-warning-box" style="margin: 8px 16px; padding: 12px; background: rgba(245, 158, 11, 0.08); border-radius: 12px; border: 1px solid rgba(245, 158, 11, 0.15); display: flex; align-items: flex-start; gap: 8px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.02);">
-            <ion-icon name="warning-outline" color="warning" style="font-size: 18px; margin-top: 2px;"></ion-icon>
-            <div style="font-size: 12px; color: var(--ion-color-step-800); line-height: 1.4;">
-              <strong>無借貸帳戶：</strong>您目前尚未建立「借貸」類型的帳戶。您可以在上方輸入朋友姓名，點擊「新增」，我們將在儲存時自動為他建立借貸帳戶，以便正確追蹤欠款！
-            </div>
-          </div>
-
-          <!-- 計算結果 -->
-          <ion-item lines="full" class="split-info-item">
-            <ion-icon name="calculator-outline" slot="start" color="medium"></ion-icon>
-            <ion-label>他人分攤總計</ion-label>
-            <div slot="end" style="font-weight: 600; color: var(--ion-color-step-700);">
-              {{ getCurrencySymbol(transactionForm.get('currency')?.value) }}{{ (transactionForm.get('splitOthersShare')?.value || 0) | number:'1.2-2' }}
-            </div>
-          </ion-item>
-
-          <ion-item lines="full" class="split-info-item">
-            <ion-icon name="person-outline" slot="start" color="primary"></ion-icon>
-            <ion-label>我的實際支出 (自動計算)</ion-label>
-            <div slot="end" class="split-my-share-text" style="font-weight: 700; color: var(--ion-color-primary);">
-              {{ getCurrencySymbol(transactionForm.get('currency')?.value) }}{{ mySplitShare | number:'1.2-2' }}
-            </div>
-          </ion-item>
-        </ng-container>
-      </ng-container>
+            <!-- Calculation Result inside the modal -->
+            <ion-list inset="true" class="split-summary-list" *ngIf="items.length > 0">
+              <ion-item lines="none" class="split-info-item">
+                <ion-icon name="receipt-outline" slot="start" color="primary"></ion-icon>
+                <ion-label>明細總計</ion-label>
+                <div slot="end" class="summary-value-highlight">
+                  {{ getCurrencySymbol(transactionForm.get('currency')?.value) }}{{ getItemsTotal() | number:'1.2-2' }}
+                </div>
+              </ion-item>
+              <div *ngIf="getItemsTotal() > transactionForm.get('amount')?.value" class="modal-warning-banner">
+                <ion-icon name="warning-outline" color="danger"></ion-icon>
+                <span>⚠️ 注意：明細總計已超出上方輸入的總金額！</span>
+              </div>
+            </ion-list>
+          </ion-content>
+        </ng-template>
+      </ion-modal>
 
       <ion-item lines="full">
         <ion-button fill="clear" slot="start" class="today-shortcut-btn" (click)="setTodayDate()" style="--padding-start: 0; --padding-end: 0; margin-inline-end: 16px; margin-top: 0; margin-bottom: 0;">
@@ -353,13 +483,13 @@
 
       <ion-modal [isOpen]="isDatePickerOpen" [keepContentsMounted]="true" (didDismiss)="closeCustomDatePicker()" class="custom-calendar-modal" mode="ios">
         <ng-template>
-          <div class="calendar-modal-container">
+          <div class="calendar-modal-container" (touchstart)="onTouchStart($event)" (touchmove)="onTouchMove($event)" (touchend)="onTouchEnd($event)">
             <div class="calendar-header">
-              <ion-button fill="clear" (click)="changePickerMonth(-1)">
+              <ion-button fill="clear" (click)="animateMonthChange(-1)">
                 <ion-icon name="chevron-back" slot="icon-only"></ion-icon>
               </ion-button>
               <h3>{{ pickerActiveMonth.format('YYYY年 M月') }}</h3>
-              <ion-button fill="clear" (click)="changePickerMonth(1)">
+              <ion-button fill="clear" (click)="animateMonthChange(1)">
                 <ion-icon name="chevron-forward" slot="icon-only"></ion-icon>
               </ion-button>
             </div>
@@ -381,7 +511,10 @@
               <div>六</div>
             </div>
 
-            <div class="days-grid">
+            <div class="days-grid" 
+                 [class]="'days-grid ' + calendarAnimationClass"
+                 [style.transform]="calendarDragOffset !== 0 ? 'translateX(' + calendarDragOffset + 'px)' : ''"
+                 [style.transition]="isDraggingCalendar ? 'none' : 'transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.2s ease-out'">
               <ng-container *ngFor="let week of calendarWeeks">
                 <div 
                   *ngFor="let day of week" 
@@ -410,45 +543,7 @@
       </ion-item>
     </ion-list>
 
-    <ion-list inset="true" class="items-list" *ngIf="txnType === 'expense'">
-      <ion-list-header>
-        <ion-label color="medium" style="font-weight: 600; font-size: 14px;">附加購物明細 (選填)</ion-label>
-      </ion-list-header>
-      
-      <ion-item lines="full" *ngFor="let item of items; let i = index">
-        <ion-label>
-          <h3 style="font-weight: bold;">{{ item.name }}</h3>
-          <p color="medium">{{ item.quantity }} x {{ getCurrencySymbol(transactionForm.get('currency')?.value) }}{{ item.price }}</p>
-        </ion-label>
-        <ion-note slot="end" color="dark" style="font-weight: 600;">
-          {{ getCurrencySymbol(transactionForm.get('currency')?.value) }}{{ item.quantity * item.price | number:'1.2-2' }}
-        </ion-note>
-        <div slot="end" class="item-actions">
-          <ion-button fill="clear" color="danger" (click)="removeItem(i)"><ion-icon name="trash"></ion-icon></ion-button>
-        </div>
-      </ion-item>
 
-      <div class="add-item-form ion-padding">
-        <ion-input [(ngModel)]="itemForm.name" [ngModelOptions]="{standalone: true}" placeholder="品項名稱 (如: 蘋果)" class="item-input" (ionFocus)="showNumPad = false"></ion-input>
-        <div class="item-row">
-          <ion-input [(ngModel)]="itemForm.quantity" [ngModelOptions]="{standalone: true}" type="number" placeholder="數量" class="item-input half" (ionFocus)="showNumPad = false"></ion-input>
-          <ion-input [(ngModel)]="itemForm.price" [ngModelOptions]="{standalone: true}" type="number" placeholder="單價" class="item-input half" (ionFocus)="showNumPad = false"></ion-input>
-        </div>
-        <ion-button expand="block" (click)="addItem()" [disabled]="!canAddItem()" mode="ios" color="light" class="ion-margin-top">
-          <ion-icon name="add-circle-outline" slot="start"></ion-icon> 新增明細
-        </ion-button>
-      </div>
-
-      <ion-item lines="none" *ngIf="items.length > 0" class="total-row">
-        <ion-label slot="end" class="ion-text-right">
-          <span style="font-size: 14px; color: var(--ion-color-medium);">明細總計: </span>
-          <strong style="font-size: 18px;">{{ getCurrencySymbol(transactionForm.get('currency')?.value) }}{{ getItemsTotal() | number:'1.2-2' }}</strong>
-          <div *ngIf="getItemsTotal() > transactionForm.get('amount')?.value" style="color: var(--ion-color-danger); font-size: 12px; margin-top: 4px;">
-            (⚠️ 超出上方輸入的總金額)
-          </div>
-        </ion-label>
-      </ion-item>
-    </ion-list>
 
     <!-- Spacer to prevent custom calculator from overlapping form fields at the bottom -->
     <div class="calculator-spacer" [class.show]="showNumPad"></div>
@@ -468,10 +563,16 @@
       <span class="preview-equals">=</span>
       <span class="preview-val">{{ evaluateExpression(amountExpression) | number:'1.0-2' }}</span>
     </div>
-    <ion-button fill="clear" size="small" class="close-pad-btn" (click)="showNumPad = false">
-      <ion-icon name="chevron-down-outline" slot="start"></ion-icon>
-      隱藏
-    </ion-button>
+    <div class="keypad-header-actions">
+      <ion-button fill="clear" size="small" class="toggle-keyboard-header-btn" (click)="toggleKeyboard()">
+        <ion-icon name="keypad-outline" slot="start"></ion-icon>
+        系統鍵盤
+      </ion-button>
+      <ion-button fill="clear" size="small" class="close-pad-btn" (click)="showNumPad = false">
+        <ion-icon name="chevron-down-outline" slot="start"></ion-icon>
+        隱藏
+      </ion-button>
+    </div>
   </div>
 
   <!-- Keypad Grid -->
